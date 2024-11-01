@@ -2,9 +2,9 @@ FROM golang:1.23 AS builder
 
 WORKDIR /app
 
-ARG VERSION="dev"
+ARG VERSION=dev
 RUN --mount=type=bind,target=. go mod download \
-            && CGO_ENABLED=0 go build -ldflags="-X cmd.Version=${VERSION}" -o /varnishlog-parser
+            && CGO_ENABLED=0 go build -ldflags="-X github.com/aorith/varnishlog-parser/cmd.Version=${VERSION}" -o /varnishlog-parser
 
 FROM scratch
 
