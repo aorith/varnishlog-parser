@@ -46,19 +46,21 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 		case vsl.BackendOpenRecord:
 			s.addRow(r.Tag(), "", fmt.Sprintf("%s (%s:%d) %s", record.Name(), record.RemoteAddr().String(), record.RemotePort(), record.Reason()), "")
 		case vsl.LinkRecord:
-			s.addRow(r.Tag(), "", r.Value(), "")
 			childTx := tx.Children()[record.TXID()]
 			if childTx == nil {
-				s.addRow("Linked Child TX not found", "", record.RawLog(), "")
+				s.addRow(r.Tag(), "", r.Value(), "strike")
+				childTx = vsl.NewMissingTransaction(record)
 			} else {
-				s.WriteString(fmt.Sprintf(`<ul class="color-%d">`, color))
-				color++
-				if color > 3 {
-					color = 0
-				}
-				renderTxTree(s, childTx, visited, color)
-				s.WriteString("</ul>")
+				s.addRow(r.Tag(), "", r.Value(), "")
 			}
+
+			s.WriteString(fmt.Sprintf(`<ul class="color-%d">`, color))
+			color++
+			if color > 3 {
+				color = 0
+			}
+			renderTxTree(s, childTx, visited, color)
+			s.WriteString("</ul>")
 		default:
 			s.addRow(r.Tag(), "", r.Value(), "")
 		}

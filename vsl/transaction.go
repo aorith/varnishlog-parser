@@ -282,3 +282,25 @@ func NewTransaction(line string) (*Transaction, error) {
 		children: make(map[string]*Transaction),
 	}, nil
 }
+
+// NewMissingTransaction initializes a transaction that is missing in the VSL logs
+// from a Link tag record
+func NewMissingTransaction(r LinkRecord) *Transaction {
+	var txType string
+	switch r.Type() {
+	case "sess":
+		txType = TxTypeSession
+	case "bereq":
+		txType = TxTypeBereq
+	default:
+		txType = TxTypeRequest
+	}
+
+	return &Transaction{
+		txid:   r.TXID(),
+		txType: txType,
+		logRecords: []Record{
+			BaseRecord{tag: "__MISSING", value: "This transaction is not present in the provided VSL logs"},
+		},
+	}
+}
