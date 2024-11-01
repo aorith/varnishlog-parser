@@ -34,7 +34,7 @@ func ParseTab(txsSet vsl.TransactionSet) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabParse\" class=\"tabcontent\"><p>Paste <code>varnishlog</code> logs in plain text format below.</p><ul><li>Compatible with Varnish version 6 and above.</li><li>Requires complete <code>varnishlog</code> output; filters such as <code>-i</code> or <code>-I</code> are not supported.</li><li>Verbose mode (<code>-v</code>) is not supported.</li><li>Try to use grouping options like <code>-g session</code> or <code>-g request</code> so child transactions are present in the logs.</li></ul><br><form action=\"/\" method=\"POST\"><textarea rows=\"10\" cols=\"100\" name=\"logs\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabParse\" class=\"tabcontent\"><p>Paste <a href=\"https://varnish-cache.org/docs/trunk/reference/varnishlog.html\" target=\"_blank\">varnishlog</a> logs in plain text format below.</p><ul><li>Compatible with Varnish version 6 and above.</li><li>Requires complete <code>varnishlog</code> output; filters such as <code>-i</code> or <code>-I</code> are not supported.</li><li>Verbose mode (<code>-v</code>) is not supported.</li><li>Try to use grouping options like <code>-g session</code> or <code>-g request</code> so child transactions are present in the logs.</li></ul><br><form action=\"/\" method=\"POST\"><textarea rows=\"10\" cols=\"100\" name=\"logs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
