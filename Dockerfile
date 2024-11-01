@@ -10,5 +10,7 @@ FROM scratch
 
 COPY --from=builder /varnishlog-parser /
 
+USER 65534:65534
+
 ENTRYPOINT ["/varnishlog-parser"]
 CMD ["server"]
