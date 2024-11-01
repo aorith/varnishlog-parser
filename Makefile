@@ -7,4 +7,4 @@ test:
 update_templ:
 	@go install github.com/a-h/templ/cmd/templ@latest
 
-PHONY: watch run update_templ
+PHONY: watch test update_templ
