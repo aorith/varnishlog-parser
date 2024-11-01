@@ -692,9 +692,9 @@ div.txtree ul span.tx-header {
 
 div.txtree ul {
   display: grid;
-  grid-template-columns: min-content auto;
-  column-gap: var(--space-1);
-  row-gap: 4px;
+  grid-template-columns: minmax(min-content, 115px) auto; /* 115px should be enough for all tags */
+  column-gap: 3px;
+  row-gap: 5px;
 
   grid-column: span 2; /* when this element is a child, occupy 2 columns */
 }
