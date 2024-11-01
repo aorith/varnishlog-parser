@@ -1,5 +1,5 @@
 watch:
-	@templ generate -watch -cmd "go run . server --port=8088"
+	@templ generate -watch -cmd "go run . server --port=8080"
 
 test:
 	@go test -count=1 ./...
