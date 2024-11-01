@@ -1,0 +1,29 @@
+package content
+
+import (
+	"fmt"
+
+	"github.com/aorith/varnishlog-parser/vsl"
+	"github.com/aorith/varnishlog-parser/pkg/render"
+	"github.com/aorith/varnishlog-parser/pkg/server/templates/partials"
+)
+
+templ OverviewTab(txsSet vsl.TransactionSet) {
+	<div id="tabOverview" class="tabcontent">
+		<p>A total of <b>{ fmt.Sprintf("%d", len(txsSet.Transactions())) }</b> transactions have been parsed and organized into <b>{ fmt.Sprintf("%d", len(txsSet.GroupRelatedTransactions())) }</b> <abbr title="Transactions are grouped into related sets, called transaction groups. This grouping occurs because individual transactions can have parent and child relationships. For example, a client request transaction often has a child transaction of type backend request if the object is not in cache. Varnishlog can group transactions using the '-g' flag.">transaction groups</abbr>.</p>
+		for _, tx := range txsSet.UniqueRootParents() {
+			<h2>{ tx.TXID() }</h2>
+			<h3>Sequence Diagram</h3>
+			<pre class="mermaid">
+				@templ.Raw(render.SequenceDiagram(tx))
+			</pre>
+			<h3>VSL log</h3>
+			<pre>
+				<code>
+					@templ.Raw(tx.RawLogIncAllChildren())
+				</code>
+			</pre>
+		}
+		@partials.LoadMermaid()
+	</div>
+}

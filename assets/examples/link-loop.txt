@@ -1,0 +1,62 @@
+*   << Session  >> 1
+-   Begin          sess 0 HTTP/1
+-   SessOpen       192.168.50.1 55650 http 192.168.50.10 80 1728889150.256391 26
+-   Link           req 2 rxreq
+-   SessClose      REM_CLOSE 0.003
+-   End
+
+**  << Request  >> 2
+--  Begin          req 1 rxreq
+--  Timestamp      Start: 1728889150.256523 0.000000 0.000000
+--  Timestamp      Req: 1728889150.256523 0.000000 0.000000
+--  VCL_use        boot
+--  ReqStart       192.168.50.1 55650 http
+--  ReqMethod      GET
+--  ReqURL         /esi/
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: www.example1.com
+--  ReqHeader      User-Agent: curl/8.9.1
+--  ReqHeader      Accept: */*
+--  ReqHeader      X-Forwarded-For: 192.168.50.1
+--  ReqHeader      Via: 1.1 22f5ed6d0d3e (Varnish/7.5)
+--  VCL_call       RECV
+--  ReqURL         /esi/?test=1
+--  ReqUnset       Host: www.example1.com
+--  ReqHeader      host: www.example2.com
+--  ReqHeader      xid: 2
+--  ReqHeader      X-Test-Header: Test Value
+--  VCL_return     hash
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  VCL_call       MISS
+--  VCL_return     fetch
+--  Link           sess 1 loop
+--  Link           req 2 loop
+--  Link           bereq 3 fetch
+--  Timestamp      Fetch: 1728889150.258359 0.001835 0.001835
+--  RespProtocol   HTTP/1.1
+--  RespStatus     200
+--  RespReason     OK
+--  RespHeader     Date: Mon, 14 Oct 2024 06:59:10 GMT
+--  RespHeader     Server: Varnish
+--  RespHeader     X-Varnish: 2
+--  RespHeader     Content-Type: text/html; charset=utf-8
+--  RespHeader     Content-Length: 82
+--  RespHeader     X-Varnish: 2
+--  RespHeader     Age: 0
+--  RespHeader     Via: 1.1 22f5ed6d0d3e (Varnish/7.5)
+--  RespHeader     Accept-Ranges: bytes
+--  VCL_call       DELIVER
+--  RespHeader     X-Greet: Hello
+--  VCL_Log        X-Greet: Hello
+--  VCL_return     deliver
+--  Timestamp      Process: 1728889150.258409 0.001886 0.000050
+--  Filters         esi
+--  RespUnset      Content-Length: 82
+--  RespHeader     Connection: keep-alive
+--  RespHeader     Transfer-Encoding: chunked
+--  Link           req 4 esi 1
+--  Timestamp      Resp: 1728889150.259288 0.002765 0.000879
+--  ReqAcct        83 0 83 276 84 360
+--  End
+

@@ -1,0 +1,13 @@
+package content
+
+import "fmt"
+
+templ ErrorTab(err error) {
+	<div id="tabError" class="tabcontent">
+		<pre>
+			<code>
+				{ fmt.Sprintf("%s", err) }
+			</code>
+		</pre>
+	</div>
+}
