@@ -17,7 +17,7 @@ func TestParse(t *testing.T) {
 		t.Errorf("Parse() failed %s", err)
 	}
 
-	if len(txs) != 24 {
+	if len(txs) != 25 {
 		t.Errorf("incorrect len for test case, wanted: %v got: %v", 24, len(txs))
 	}
 

@@ -53,7 +53,7 @@ func TestTransactions(t *testing.T) {
 	txs := txsSet.Transactions()
 	txsMap := txsSet.TransactionsMap()
 
-	tx := txs[10]
+	tx := txs[9]
 	children := []string{}
 	for _, c := range tx.ChildrenSortedByVXID() {
 		children = append(children, c.TXID())
@@ -83,8 +83,8 @@ func TestTransactions(t *testing.T) {
 
 	// GroupRelatedTransactions() check for VCLComplete1 which has 24 transactions
 	// with 4 groups of related transactions
-	wantedTotal := 24
-	wantedGroups := 4
+	wantedTotal := 25
+	wantedGroups := 5
 	txsGroup := txsSet.GroupRelatedTransactions()
 	if len(txsGroup) != wantedGroups {
 		t.Errorf("GroupRelatedTransactions(): (group count) wanted: %d, got: %d", wantedGroups, len(txsGroup))

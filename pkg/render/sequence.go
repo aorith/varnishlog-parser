@@ -3,6 +3,8 @@ package render
 import (
 	"fmt"
 	"log"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/aorith/varnishlog-parser/vsl"
 	"github.com/aorith/varnishlog-parser/vsl/header"
@@ -151,7 +153,7 @@ func requestSequence(tx *vsl.Transaction, final bool) string {
 		host = hh.HeaderValue()
 	}
 
-	return method + " " + url + "<br>" + host
+	return method + " " + truncateStr(url, 50) + "<br>" + host
 }
 
 func statusSequence(tx *vsl.Transaction, status int, reasonTag string, acctTag string) string {
@@ -166,4 +168,17 @@ func statusSequence(tx *vsl.Transaction, status int, reasonTag string, acctTag s
 		s += fmt.Sprintf("<br>(Tx: %s | Rx: %s)", acct.TotalTx().String(), acct.TotalRx().String())
 	}
 	return s
+}
+
+// truncateStr trims the input string to a maximum length, appending "…" if it exceeds the length.
+func truncateStr(s string, maxLen int) string {
+	if utf8.RuneCountInString(s) <= maxLen {
+		return s
+	}
+
+	runes := []rune(s)
+	if maxLen > len(runes) {
+		maxLen = len(runes) // Cap maxLen if it's greater than the length of runes
+	}
+	return strings.TrimSpace(string(runes[:maxLen])) + "…"
 }
