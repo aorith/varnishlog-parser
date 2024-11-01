@@ -147,6 +147,7 @@ html {
   background-color: var(--fixed-warm-0);
   color: var(--white-0);
 
+  width: 100%;
   margin: 0;
   padding: 0;
 
@@ -182,8 +183,10 @@ html {
   background-color: var(--fixed-warm-0);
   color: var(--white-0);
 
+  width: 100%;
   padding-top: calc(var(--vertical-0) * 0.6);
   padding-bottom: calc(var(--vertical-0) * 0.6);
+
   font-size: calc(var(--base-font-size) * 0.75);
   text-align: center;
   flex: none;
