@@ -99,11 +99,6 @@
     --base-font-size: 14px;
     --code-font-size: 12px;
   }
-
-  .footer {
-    padding-top: calc(var(--vertical-0) * 0.4);
-    padding-bottom: calc(var(--vertical-0) * 0.4);
-  }
 }
 
 /* Common */
@@ -122,9 +117,9 @@ body {
   flex-direction: column;
   font-family: var(--font-family);
   font-size: var(--base-font-size);
+  line-height: var(--line-height);
   color: var(--fg-0);
   background-color: var(--bg-0);
-  line-height: var(--line-height);
 }
 
 body,
@@ -135,7 +130,8 @@ html {
 /* BEGIN Layout */
 #main-container {
   display: flex;
-  flex: 1;
+  flex: 1 0;
+  overflow-x: auto;
   background-color: var(--bg-0);
 }
 
@@ -154,6 +150,7 @@ html {
   font-size: calc(var(--base-font-size) * 1.1);
   text-align: center;
   align-items: center;
+
   flex: none;
 }
 
@@ -175,21 +172,10 @@ html {
 }
 
 #content {
-  flex: 1;
+  flex: 1 0;
   padding: var(--space-1);
-}
-
-.footer {
-  background-color: var(--fixed-warm-0);
-  color: var(--white-0);
-
-  width: 100%;
-  padding-top: calc(var(--vertical-0) * 0.6);
-  padding-bottom: calc(var(--vertical-0) * 0.6);
-
-  font-size: calc(var(--base-font-size) * 0.75);
-  text-align: center;
-  flex: none;
+  min-height: 100%;
+  overflow-y: auto; /* keeps the sidebar in place */
 }
 /* END Layout */
 
@@ -229,7 +215,8 @@ html {
 }
 
 .topbar a:hover {
-  color: var(--white-0);
+  background-color: inherit;
+  color: var(--bg-0);
 }
 
 .topbar-1 {
@@ -254,7 +241,7 @@ html {
 }
 
 .sidebar-btns button {
-  flex-grow: 1;
+  flex: 1;
   outline: none;
   border: none;
 
@@ -379,15 +366,14 @@ input[type="text"]:focus {
   outline: none;
   color: var(--bg-1);
   background-color: var(--fg-1);
-  border-color: var(--fg-1);
+  border-color: var(--fg-0);
   border-width: 2px;
   border-radius: 6px;
   padding: calc(var(--space-0) * 0.8);
   text-decoration: none;
   cursor: pointer;
-  transition-duration: 250ms;
-  transition-property: background-color, border-color, box-shadow, color;
 }
+
 .btn:hover {
   background-color: var(--warm);
   border-color: var(--warm);
@@ -487,6 +473,16 @@ abbr {
   cursor: help;
 }
 
+a {
+  padding: 2px;
+  color: var(--blue-0);
+}
+
+a:hover {
+  background-color: var(--blue-0);
+  color: var(--bg-0);
+}
+
 .strike {
   text-decoration: line-through;
 }
@@ -566,7 +562,7 @@ summary {
 
 /* Request builder form */
 form#headerForm {
-  max-width: 400px;
+  width: 600px;
   padding: var(--space-1);
   background-color: var(--bg-1);
   border: 1px solid var(--bg-2);
@@ -584,9 +580,13 @@ form#headerForm > input[type="radio"] {
 }
 
 fieldset {
-  border: none;
-  padding: 0;
-  margin-bottom: var(--space-2);
+  display: inline-block;
+  background-color: var(--bg-2);
+  border: 1px solid var(--fg-2);
+  border-radius: 5px;
+  padding: 10px;
+  margin: 3px;
+  margin-bottom: var(--space-1);
 }
 
 fieldset label {
@@ -609,13 +609,18 @@ legend {
 }
 
 form#headerForm select {
-  width: 100%;
+  min-width: 80px;
   margin: 3px 0px 8px 0px;
   padding: var(--space-0);
   font-size: var(--base-font-size);
   border-radius: 4px;
   border: 1px solid var(--fg-2);
-  background-color: var(--bg-2);
+  background-color: var(--bg-1);
+}
+
+select#transactionSelect,
+select#transactionBackend {
+  width: 500px;
 }
 
 select:focus,
@@ -644,20 +649,29 @@ form#headerForm select {
 
 /* VCL Log Tree */
 div.txtree {
+  display: inline-block;
   font-family: var(--font-family-mono);
   font-size: var(--code-font-size);
 }
 
 div.txtree ul {
   list-style-type: none;
-  margin: 6px 2rem 6px 1.4rem;
-  padding: 10px;
   background-color: var(--tree-color-0);
-  border: 1px solid var(--tree-border-color);
   color: var(--fg-0);
+  border: 1px solid var(--tree-border-color);
+  border-radius: 6px;
+
+  margin: 6px 1rem 6px 1.5rem;
+  padding: 10px;
   padding-top: 8px;
   padding-bottom: 8px;
-  border-radius: 6px;
+
+  display: grid;
+  grid-template-columns: minmax(min-content, 112px) max-content; /* max should be enough for all tags */
+  column-gap: 4px;
+  row-gap: 5px;
+
+  grid-column: span 2; /* when this element is a child, occupy 2 columns */
 }
 
 div.txtree ul.color-0 {
@@ -681,20 +695,26 @@ div.txtree ul.root-ul {
 }
 
 div.txtree ul li {
+  display: block;
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-div.txtree ul span.tx-header {
+div.txtree ul div {
+  display: block;
+}
+
+div.txtree ul div.tx-header {
   font-weight: bold;
   font-size: var(--base-font-size);
 }
 
-div.txtree ul {
-  display: grid;
-  grid-template-columns: minmax(min-content, 115px) auto; /* 115px should be enough for all tags */
-  column-gap: 3px;
-  row-gap: 5px;
+/* HTMX animation after element creation */
+.fade-me-in.htmx-added {
+  transform: translate(-150%);
+}
 
-  grid-column: span 2; /* when this element is a child, occupy 2 columns */
+.fade-me-in {
+  transform: translate(0);
+  transition: all 0.3s ease;
 }

@@ -26,16 +26,16 @@ type ReqBuilderForm struct {
 
 templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 	<div id="tabRequest" class="tabcontent">
-		<p>In this section, you can generate a <a href="https://curl.se/" target="_blank">cURL</a> command based on parsed transactions.</p>
-		<p>The command is built by extracting required information from the transactions VSL tags.</p>
+		<p>Here you can generate a <a href="https://curl.se/" target="_blank">cURL</a> command based on parsed transactions VSL tags.</p>
 		<form
 			id="headerForm"
 			hx-post="/reqbuilder/"
 			hx-target="#reqBuilderResults"
+			hx-swap="innerHTML settle:0.3s"
 			hx-include="[name='logs']"
 		>
 			<fieldset>
-				<legend>Select Transaction: </legend>
+				<legend>Transaction: </legend>
 				<select id="transactionSelect" name="transaction">
 					for _, tx := range txsSet.Transactions() {
 						if tx.Type() != vsl.TxTypeSession {
@@ -44,6 +44,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 					}
 				</select>
 			</fieldset>
+			<br/>
 			<fieldset>
 				<legend>Protocol: </legend>
 				<label>
@@ -68,6 +69,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 					<input type="radio" name="headerType" value="final"/> Final
 				</label>
 			</fieldset>
+			<br/>
 			<fieldset>
 				<legend>Send To: </legend>
 				<label>
@@ -96,6 +98,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 					<input type="text" name="customResolve" pattern=".*:.*" placeholder="<IP>:<PORT>"/>
 				</label>
 			</fieldset>
+			<br/>
 			<button class="btn loading">Generate</button>
 		</form>
 		<br/>
@@ -104,7 +107,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 }
 
 templ ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) {
-	<pre>
+	<pre class="fade-me-in">
 		<code>
 			@templ.Raw(curlHeaders(tx, f))
 		</code>

@@ -14,7 +14,7 @@ templ page(title, version string) {
 		<head>
 			<meta charset="UTF-8"/>
 			<title>{ title }</title>
-			<link rel="icon" type="image/svg+xml" href="/styles/favicon.svg"/>
+			<link rel="icon" type="image/x-icon" href="/static/favicon.ico"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<meta name="robots" content="index, follow"/>
 			<meta name="language" content="English"/>
@@ -22,11 +22,10 @@ templ page(title, version string) {
 			<link rel="stylesheet" href="/static/styles.css"/>
 		</head>
 		<body hx-indicator=".loading">
-			@partials.TopBar()
+			@partials.TopBar(version)
 			<div id="main-container">
 				{ children... }
 			</div>
-			@partials.Footer(version)
 			<script src="/static/app.js"></script>
 		</body>
 	</html>

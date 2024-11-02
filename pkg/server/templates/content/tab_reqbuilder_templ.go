@@ -53,7 +53,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabRequest\" class=\"tabcontent\"><p>In this section, you can generate a <a href=\"https://curl.se/\" target=\"_blank\">cURL</a> command based on parsed transactions.</p><p>The command is built by extracting required information from the transactions VSL tags.</p><form id=\"headerForm\" hx-post=\"/reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-include=\"[name=&#39;logs&#39;]\"><fieldset><legend>Select Transaction: </legend> <select id=\"transactionSelect\" name=\"transaction\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate a <a href=\"https://curl.se/\" target=\"_blank\">cURL</a> command based on parsed transactions VSL tags.</p><form id=\"headerForm\" hx-post=\"/reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name=&#39;logs&#39;]\"><fieldset><legend>Transaction: </legend> <select id=\"transactionSelect\" name=\"transaction\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -91,7 +91,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				}
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></fieldset><fieldset><legend>Protocol: </legend> <label><input type=\"checkbox\" name=\"https\" checked> https</label></fieldset><fieldset><legend>URL: </legend> <label><input type=\"radio\" name=\"urlType\" value=\"original\" checked> Original</label> <label><input type=\"radio\" name=\"urlType\" value=\"final\"> Final</label></fieldset><fieldset><legend>Headers: </legend> <label><input type=\"radio\" name=\"headerType\" value=\"original\" checked> Original</label> <label><input type=\"radio\" name=\"headerType\" value=\"final\"> Final</label></fieldset><fieldset><legend>Send To: </legend> <label><input type=\"radio\" name=\"sendTo\" value=\"domain\" checked> Domain</label> <label><input type=\"radio\" name=\"sendTo\" value=\"localhost\"> Localhost</label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"backend\"> Backend:<br><select id=\"transactionBackend\" name=\"transactionBackend\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></fieldset><br><fieldset><legend>Protocol: </legend> <label><input type=\"checkbox\" name=\"https\" checked> https</label></fieldset><fieldset><legend>URL: </legend> <label><input type=\"radio\" name=\"urlType\" value=\"original\" checked> Original</label> <label><input type=\"radio\" name=\"urlType\" value=\"final\"> Final</label></fieldset><fieldset><legend>Headers: </legend> <label><input type=\"radio\" name=\"headerType\" value=\"original\" checked> Original</label> <label><input type=\"radio\" name=\"headerType\" value=\"final\"> Final</label></fieldset><br><fieldset><legend>Send To: </legend> <label><input type=\"radio\" name=\"sendTo\" value=\"domain\" checked> Domain</label> <label><input type=\"radio\" name=\"sendTo\" value=\"localhost\"> Localhost</label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"backend\"> Backend:<br><select id=\"transactionBackend\" name=\"transactionBackend\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -104,7 +104,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(getBackend(tx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 87, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 89, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -117,7 +117,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 87, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 89, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -130,7 +130,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(getBackend(tx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 87, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 89, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -142,7 +142,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				}
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"custom\"> Custom: <input type=\"text\" name=\"customResolve\" pattern=\".*:.*\" placeholder=\"&lt;IP&gt;:&lt;PORT&gt;\"></label></fieldset><button class=\"btn loading\">Generate</button></form><br><div id=\"reqBuilderResults\"></div></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"custom\"> Custom: <input type=\"text\" name=\"customResolve\" pattern=\".*:.*\" placeholder=\"&lt;IP&gt;:&lt;PORT&gt;\"></label></fieldset><br><button class=\"btn loading\">Generate</button></form><br><div id=\"reqBuilderResults\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -171,7 +171,7 @@ func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) 
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<pre><code>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<pre class=\"fade-me-in\"><code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

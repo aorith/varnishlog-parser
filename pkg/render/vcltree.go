@@ -80,6 +80,6 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 		return ""
 	}
 
-	s.WriteString(fmt.Sprintf(`<span%s>%s</span>`, formatClass(classA), a))
-	s.WriteString(fmt.Sprintf(`<span%s>%s</span>`, formatClass(classB), b))
+	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classA), a))
+	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classB), b))
 }
