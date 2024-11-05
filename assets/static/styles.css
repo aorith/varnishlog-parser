@@ -343,7 +343,7 @@ input[type="text"] {
   font-size: calc(var(--code-font-size) * 0.9);
   padding: var(--space-0);
   color: var(--fg-0);
-  background: none;
+  background-color: var(--bg-1);
   border: 2px solid var(--fg-1);
   border-radius: 6px;
   outline: none;
