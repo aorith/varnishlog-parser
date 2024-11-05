@@ -237,7 +237,7 @@ func TestBackendOpenRecord(t *testing.T) {
 			remotePort:     80,
 			localAddr:      net.IPv4(192, 168, 50, 10),
 			localPort:      51778,
-			reason:         "unknown",
+			reason:         "-",
 		},
 	}
 
