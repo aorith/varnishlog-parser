@@ -107,11 +107,20 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 }
 
 templ ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) {
-	<pre class="fade-me-in">
-		<code>
-			@templ.Raw(curlHeaders(tx, f))
-		</code>
-	</pre>
+	<div class="fade-me-in">
+		<h3>Command</h3>
+		<pre>
+			<code>
+				@templ.Raw(curlHeaders(tx, f))
+			</code>
+		</pre>
+		<h3>{ tx.TXID() }</h3>
+		<pre>
+			<code>
+				@templ.Raw(tx.FullRawLog(false))
+			</code>
+		</pre>
+	</div>
 }
 
 func curlHeaders(t *vsl.Transaction, f ReqBuilderForm) string {

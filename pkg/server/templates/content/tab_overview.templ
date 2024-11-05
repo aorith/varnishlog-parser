@@ -20,7 +20,7 @@ templ OverviewTab(txsSet vsl.TransactionSet) {
 			<h3>VSL log</h3>
 			<pre>
 				<code>
-					@templ.Raw(tx.RawLogIncAllChildren())
+					@templ.Raw(tx.FullRawLog(true))
 				</code>
 			</pre>
 		}

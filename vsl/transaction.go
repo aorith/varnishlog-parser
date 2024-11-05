@@ -154,11 +154,14 @@ func (t *Transaction) Children() map[string]*Transaction {
 	return t.children
 }
 
-// RawLog returns the complete VSL raw log from this transaction and all its children (and their children)
-func (t *Transaction) RawLogIncAllChildren() string {
+// FullRawLog returns the complete VSL log from this transaction
+// if withChildren is true it also includes the log from all its children recursively
+func (t *Transaction) FullRawLog(withChildren bool) string {
 	var s strings.Builder
 	txs := []*Transaction{t}
-	txs = append(txs, collectAllChildren(t)...)
+	if withChildren {
+		txs = append(txs, collectAllChildren(t)...)
+	}
 
 	for i, tx := range txs {
 		if i != 0 && tx.Type() == TxTypeSession {
