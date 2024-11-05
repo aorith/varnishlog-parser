@@ -334,7 +334,7 @@ func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
 		return BackendOpenRecord{}, fmt.Errorf("Conversion to BackendOpenRecord failed, bad localPort on line %q", blr.RawLog())
 	}
 
-	reason := "unknown"
+	reason := "-"
 	if len(parts) >= 7 {
 		reason = parts[6]
 
