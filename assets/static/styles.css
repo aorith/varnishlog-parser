@@ -668,7 +668,7 @@ div.txtree ul {
   padding-bottom: 8px;
 
   display: grid;
-  grid-template-columns: minmax(min-content, 112px) max-content; /* max should be enough for all tags */
+  grid-template-columns: minmax(min-content, 112px) auto; /* max should be enough for all tags */
   column-gap: 4px;
   row-gap: 5px;
 
@@ -706,7 +706,8 @@ div.txtree ul div {
 }
 
 div.txtree ul div.tval {
-  inline-size: 1080px;
+  max-inline-size: 1080px;
+  min-inline-size: 620px;
   overflow-wrap: break-word;
 }
 
