@@ -312,7 +312,7 @@ pre:not(.mermaid) {
 :not(pre) > code {
   font-size: var(--code-font-size);
   background-color: var(--bg-2);
-  color: var(--fg-2);
+  color: var(--fg-1);
   padding: 1px 2px 1px 2px;
 }
 
@@ -703,6 +703,11 @@ div.txtree ul li {
 
 div.txtree ul div {
   display: block;
+}
+
+div.txtree ul div.tval {
+  inline-size: 1080px;
+  overflow-wrap: break-word;
 }
 
 div.txtree ul div.tx-header {

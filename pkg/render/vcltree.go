@@ -80,6 +80,12 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 		return ""
 	}
 
+	if classB == "" {
+		classB = "tval"
+	} else {
+		classB += classB + " tval"
+	}
+
 	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classA), a))
 	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classB), b))
 }
