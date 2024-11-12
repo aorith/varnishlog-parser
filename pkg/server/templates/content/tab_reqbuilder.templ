@@ -28,7 +28,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 	<div id="tabRequest" class="tabcontent">
 		<p>Here you can generate a <a href="https://curl.se/" target="_blank">curl</a> command based on parsed transactions VSL tags.</p>
 		<form
-			id="headerForm"
+			class="simple-form"
 			hx-post="/reqbuilder/"
 			hx-target="#reqBuilderResults"
 			hx-swap="innerHTML settle:0.3s"
@@ -95,7 +95,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 				<br/>
 				<label>
 					<input type="radio" name="sendTo" value="custom"/> Custom:
-					<input type="text" name="customResolve" pattern=".*:.*" placeholder="<IP>:<PORT>"/>
+					<input type="text" name="customResolve" pattern=".*:.*" placeholder="<IPADDR>:<PORT>"/>
 				</label>
 			</fieldset>
 			<br/>

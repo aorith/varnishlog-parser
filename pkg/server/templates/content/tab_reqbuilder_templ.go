@@ -53,7 +53,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate a <a href=\"https://curl.se/\" target=\"_blank\">curl</a> command based on parsed transactions VSL tags.</p><form id=\"headerForm\" hx-post=\"/reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name=&#39;logs&#39;]\"><fieldset><legend>Transaction: </legend> <select id=\"transactionSelect\" name=\"transaction\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate a <a href=\"https://curl.se/\" target=\"_blank\">curl</a> command based on parsed transactions VSL tags.</p><form class=\"simple-form\" hx-post=\"/reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name=&#39;logs&#39;]\"><fieldset><legend>Transaction: </legend> <select id=\"transactionSelect\" name=\"transaction\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -142,7 +142,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				}
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"custom\"> Custom: <input type=\"text\" name=\"customResolve\" pattern=\".*:.*\" placeholder=\"&lt;IP&gt;:&lt;PORT&gt;\"></label></fieldset><br><button class=\"btn loading\">Generate</button></form><br><div id=\"reqBuilderResults\"></div></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"custom\"> Custom: <input type=\"text\" name=\"customResolve\" pattern=\".*:.*\" placeholder=\"&lt;IPADDR&gt;:&lt;PORT&gt;\"></label></fieldset><br><button class=\"btn loading\">Generate</button></form><br><div id=\"reqBuilderResults\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
