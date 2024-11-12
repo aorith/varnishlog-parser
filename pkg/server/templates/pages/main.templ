@@ -19,6 +19,7 @@ templ page(title, version string) {
 			<meta name="robots" content="index, follow"/>
 			<meta name="language" content="English"/>
 			<script src="https://unpkg.com/htmx.org@2.0.3" integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq" crossorigin="anonymous"></script>
+			<script src="/static/vendored/echarts.min.js"></script>
 			<link rel="stylesheet" href="/static/styles.css"/>
 		</head>
 		<body hx-indicator=".loading">
@@ -52,12 +53,13 @@ templ Error(version string, err error) {
 
 templ Parsed(version string, txsSet vsl.TransactionSet) {
 	@page(fmt.Sprintf("Varnishlog Parser | %d transactions parsed", len(txsSet.Transactions())), version) {
-		@partials.SideBar([]string{"Overview", "Headers", "VCL Log Tree", "Request Builder"})
+		@partials.SideBar([]string{"Overview", "Headers", "VCL Log Tree", "Timestamps", "Request Builder"})
 		<div id="content">
 			@content.ParseTab(txsSet)
 			@content.OverviewTab(txsSet)
 			@content.HeadersTab(txsSet)
 			@content.VCLTreeTab(txsSet)
+			@content.TimestampsTab(txsSet)
 			@content.ReqBuilderTab(txsSet)
 		</div>
 	}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/aorith/varnishlog-parser/assets"
+	"github.com/aorith/varnishlog-parser/pkg/render"
 	"github.com/aorith/varnishlog-parser/pkg/server/templates/content"
 	"github.com/aorith/varnishlog-parser/pkg/server/templates/pages"
 	"github.com/aorith/varnishlog-parser/pkg/server/templates/partials"
@@ -110,6 +111,41 @@ func (s *vlogServer) registerRoutes() http.Handler {
 		}
 
 		err = content.ReqBuild(txsSet, tx, f).Render(context.Background(), w)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, err)
+			return
+		}
+	})
+
+	mux.HandleFunc("POST /timestamps/{$}", func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		p := vsl.NewTransactionParser(strings.NewReader(r.Form.Get("logs")))
+		txsSet, err := p.Parse()
+		if err != nil {
+			err = partials.ErrorMsg(err).Render(context.Background(), w)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintln(w, err)
+				return
+			}
+			return
+		}
+
+		f := render.TimestampsForm{
+			SinceLast:   r.Form.Get("timestampValue") == "last",
+			Timeline:    r.Form.Get("timeline") == "on",
+			Events:      r.Form["events"],
+			OtherEvents: r.Form.Get("other-events") == "on",
+		}
+
+		err = content.RenderTimestampsTab(txsSet, f).Render(context.Background(), w)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err)
