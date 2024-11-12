@@ -4,6 +4,7 @@ go 1.22.7
 
 require (
 	github.com/a-h/templ v0.2.793
+	github.com/go-echarts/go-echarts/v2 v2.4.4
 	github.com/spf13/cobra v1.8.1
 )
 

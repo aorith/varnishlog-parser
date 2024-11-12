@@ -86,7 +86,7 @@ func addTransactionLogs(s *CustomBuilder, tx *vsl.Transaction, visited map[strin
 		case vsl.BackendOpenRecord:
 			s.PadAdd(fmt.Sprintf(
 				"Note over B: %s %s<br>%s:%d",
-				record.Name(),
+				truncateStrMiddle(record.Name(), 65),
 				record.Reason(),
 				record.RemoteAddr().String(),
 				record.RemotePort(),
@@ -181,4 +181,24 @@ func truncateStr(s string, maxLen int) string {
 		maxLen = len(runes) // Cap maxLen if it's greater than the length of runes
 	}
 	return strings.TrimSpace(string(runes[:maxLen])) + "…"
+}
+
+// truncateStrMiddle trims the input string to a maximum length by keeping the start and end, appending "…" in the middle if it exceeds the length.
+func truncateStrMiddle(s string, maxLen int) string {
+	maxLen -= 2 // Account for extra spaces
+	if utf8.RuneCountInString(s) <= maxLen {
+		return s
+	}
+
+	runes := []rune(s)
+	if maxLen > len(runes) {
+		maxLen = len(runes) // Cap maxLen if it's greater than the length of runes
+	}
+
+	// Split maxLen between the start and end segments
+	halfLen := (maxLen - 1) / 2
+	start := runes[:halfLen]
+	end := runes[len(runes)-halfLen:]
+
+	return strings.TrimSpace(string(start)) + " … " + strings.TrimSpace(string(end))
 }
