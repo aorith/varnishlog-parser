@@ -48,6 +48,8 @@ const (
 	BackendClose = "BackendClose"
 	// Logged when a new backend connection is opened
 	BackendOpen = "BackendOpen"
+	// Logged when a backend connection is started
+	BackendStart = "BackendStart"
 	// Contains byte counters from backend request processing
 	BereqAcct = "BereqAcct"
 	// Backend request method

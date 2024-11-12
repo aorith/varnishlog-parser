@@ -15,6 +15,19 @@ const (
 	LinkTypeBereq   = "bereq"
 )
 
+const (
+	VCLCall_RECV             = "RECV"
+	VCLCall_HASH             = "HASH"
+	VCLCall_PASS             = "PASS"
+	VCLCall_MISS             = "MISS"
+	VCLCall_HIT              = "HIT"
+	VCLCall_SYNTH            = "SYNTH"
+	VCLCall_DELIVER          = "DELIVER"
+	VCLCall_BACKEND_RESPONSE = "BACKEND_RESPONSE"
+	VCLCall_BACKEND_FETCH    = "BACKEND_FETCH"
+	VCLCall_BACKEND_ERROR    = "BACKEND_ERROR"
+)
+
 // Record interface for all the VSL log records
 type Record interface {
 	Tag() string
@@ -275,6 +288,10 @@ type BackendOpenRecord struct {
 	reason         string // connect, reuse
 }
 
+func (r BackendOpenRecord) String() string {
+	return fmt.Sprintf("%s (%s:%d) %s", r.name, r.remoteAddr.String(), r.remotePort, r.reason)
+}
+
 func (r BackendOpenRecord) FileDescriptor() int {
 	return r.fileDescriptor
 }
@@ -352,6 +369,44 @@ func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
 	}, nil
 }
 
+// BackendStartRecord holds information about a new backend connection
+type BackendStartRecord struct {
+	BaseRecord
+	remoteAddr net.IP
+	remotePort int
+}
+
+func (r BackendStartRecord) RemoteAddr() net.IP {
+	return r.remoteAddr
+}
+
+func (r BackendStartRecord) RemotePort() int {
+	return r.remotePort
+}
+
+func NewBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
+	parts := strings.Fields(blr.Value())
+	if len(parts) < 2 {
+		return BackendStartRecord{}, fmt.Errorf("Conversion to BackendStartRecord failed, incorrect len on line %q", blr.RawLog())
+	}
+
+	remoteAddr := net.ParseIP(parts[0])
+	if remoteAddr == nil {
+		return BackendStartRecord{}, fmt.Errorf("Conversion to BackendStartRecord failed, bad remoteAddr on line %q", blr.RawLog())
+	}
+
+	remotePort, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return BackendStartRecord{}, fmt.Errorf("Conversion to BackendStartRecord failed, bad remotePort on line %q", blr.RawLog())
+	}
+
+	return BackendStartRecord{
+		BaseRecord: blr,
+		remoteAddr: remoteAddr,
+		remotePort: remotePort,
+	}, nil
+}
+
 // BackendCloseRecord holds information about a backend connection close
 type BackendCloseRecord struct {
 	BaseRecord
@@ -410,12 +465,12 @@ type AcctRecord struct {
 func (r AcctRecord) String() string {
 	return fmt.Sprintf(
 		"Tx(hdr %s, body %s, total %s) | Rx(hdr %s, body %s, total %s)",
-		r.HeaderTx().String(),
-		r.BodyTx().String(),
-		r.TotalTx().String(),
-		r.HeaderRx().String(),
-		r.BodyRx().String(),
-		r.TotalRx().String(),
+		r.headerTx.String(),
+		r.bodyTx.String(),
+		r.totalTx.String(),
+		r.headerRx.String(),
+		r.bodyRx.String(),
+		r.totalRx.String(),
 	)
 }
 
@@ -476,6 +531,13 @@ type TimestampRecord struct {
 	absolute   time.Time     // Absolute time of the timestamp
 	sinceStart time.Duration // Duration since the start of the tx
 	sinceLast  time.Duration // Duration since the last timestamp
+}
+
+func (r TimestampRecord) String() string {
+	return fmt.Sprintf(
+		"%s | Elapsed: %s | Total: %s",
+		r.eventLabel, r.sinceLast.String(), r.sinceStart.String(),
+	)
 }
 
 func (r TimestampRecord) EventLabel() string {
@@ -721,6 +783,16 @@ type HitRecord struct {
 	keep    time.Duration // keep period
 }
 
+func (r HitRecord) String() string {
+	return fmt.Sprintf(
+		"%d | TTL: %s | Grace: %s | Keep: %s",
+		r.objVXID,
+		r.ttl.String(),
+		r.grace.String(),
+		r.keep.String(),
+	)
+}
+
 func (r HitRecord) ObjVXID() VXID {
 	return r.objVXID
 }
@@ -785,16 +857,16 @@ func (r TTLRecord) String() string {
 	if r.Source() == "RFC" {
 		return fmt.Sprintf(
 			"%s | TTL %s, Grace %s, Keep %s, Reference %d, Age %d, Date %d, Expires %d, Max-Age %s | %s",
-			r.Source(),
-			r.TTL().String(),
-			r.Grace().String(),
-			r.Keep().String(),
-			r.Reference().Unix(),
-			r.Age().Unix(),
-			r.Date().Unix(),
-			r.Expires().Unix(),
-			r.MaxAge().String(),
-			r.CacheStatus(),
+			r.source,
+			r.ttl.String(),
+			r.grace.String(),
+			r.keep.String(),
+			r.reference.Unix(),
+			r.age.Unix(),
+			r.date.Unix(),
+			r.expires.Unix(),
+			r.maxAge.String(),
+			r.cacheStatus,
 		)
 	}
 
@@ -1031,6 +1103,19 @@ type SessOpenRecord struct {
 	fileDescriptor int
 }
 
+func (r SessOpenRecord) String() string {
+	return fmt.Sprintf(
+		"%s:%d %s %s:%d (%s) %d",
+		r.remoteAddr,
+		r.remotePort,
+		r.socketName,
+		r.localAddr,
+		r.localPort,
+		r.sessionStart.UTC(),
+		r.fileDescriptor,
+	)
+}
+
 func (r SessOpenRecord) RemoteAddr() net.IP {
 	return r.remoteAddr
 }
@@ -1114,6 +1199,10 @@ type SessCloseRecord struct {
 	duration time.Duration
 }
 
+func (r SessCloseRecord) String() string {
+	return r.reason + " " + r.duration.String()
+}
+
 func (r SessCloseRecord) Reason() string {
 	return r.reason
 }
@@ -1132,6 +1221,136 @@ func NewSessCloseRecord(blr BaseRecord) (SessCloseRecord, error) {
 		return SessCloseRecord{}, fmt.Errorf("Conversion to SessCloseRecord failed, bad field duration on line %q", blr.RawLog())
 	}
 	return SessCloseRecord{BaseRecord: blr, reason: parts[0], duration: d}, nil
+}
+
+// GzipRecord holds G(un)zip performed on object
+type GzipRecord struct {
+	BaseRecord
+	action                    string // G: Gzip, U: Gunzip, u: Gunzip-test
+	when                      string // F: Fetch, D: Deliver
+	object                    string // E: ESI, -: Plain object
+	inputBytes                SizeValue
+	outputBytes               SizeValue
+	bitLocFirst               int64
+	bitLocLast                int64
+	bitLengthOfCompressedData int64
+}
+
+func (r GzipRecord) String() string {
+	action := r.action
+	switch r.action {
+	case "G":
+		action = "Gzip"
+	case "U":
+		action = "Gunzip"
+	case "u":
+		action = "Gunzip-test"
+	}
+
+	when := r.when
+	switch r.when {
+	case "F":
+		when = "Fetch"
+	case "D":
+		when = "Deliver"
+	}
+
+	object := r.object
+	switch r.object {
+	case "E":
+		object = "ESI"
+	case "-":
+		object = "Plain"
+	}
+
+	return fmt.Sprintf(
+		"%s on %s for %s object | %s input | %s output | %d %d %d",
+		action,
+		when,
+		object,
+		r.inputBytes.String(),
+		r.outputBytes.String(),
+		r.bitLocFirst,
+		r.bitLocLast,
+		r.bitLengthOfCompressedData,
+	)
+}
+
+func (r GzipRecord) Action() string {
+	return r.action
+}
+
+func (r GzipRecord) When() string {
+	return r.when
+}
+
+func (r GzipRecord) Object() string {
+	return r.object
+}
+
+func (r GzipRecord) InputBytes() SizeValue {
+	return r.inputBytes
+}
+
+func (r GzipRecord) OutputBytes() SizeValue {
+	return r.outputBytes
+}
+
+func (r GzipRecord) BitLocFirst() int64 {
+	return r.bitLocFirst
+}
+
+func (r GzipRecord) BitLocLast() int64 {
+	return r.bitLocLast
+}
+
+func (r GzipRecord) BitLengthOfCompressedData() int64 {
+	return r.bitLengthOfCompressedData
+}
+
+func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
+	parts := strings.Fields(blr.Value())
+	if len(parts) != 8 {
+		return GzipRecord{}, fmt.Errorf("Conversion to GzipRecord failed, incorrect len on line %q", blr.RawLog())
+	}
+
+	record := GzipRecord{BaseRecord: blr}
+
+	record.action = parts[0]
+	record.when = parts[1]
+	record.object = parts[2]
+
+	inputBytes, err := strconv.Atoi(parts[3])
+	if err != nil {
+		return GzipRecord{}, fmt.Errorf("Conversion to GzipRecord failed, bad value for inputBytes on line %q", blr.RawLog())
+	}
+	record.inputBytes = SizeValue(inputBytes)
+
+	outputBytes, err := strconv.Atoi(parts[4])
+	if err != nil {
+		return GzipRecord{}, fmt.Errorf("Conversion to GzipRecord failed, bad value for outputBytes on line %q", blr.RawLog())
+	}
+	record.outputBytes = SizeValue(outputBytes)
+
+	bitLocFirst, err := strconv.ParseInt(parts[5], 10, 64)
+	if err != nil {
+		return GzipRecord{}, fmt.Errorf("Conversion to GzipRecord failed, bad value for bitLocFirst on line %q", blr.RawLog())
+	}
+	record.bitLocFirst = bitLocFirst
+
+	bitLocLast, err := strconv.ParseInt(parts[6], 10, 64)
+	if err != nil {
+		return GzipRecord{}, fmt.Errorf("Conversion to GzipRecord failed, bad value for bitLocLast on line %q", blr.RawLog())
+	}
+	record.bitLocLast = bitLocLast
+
+	bitLengthOfCompressedData, err := strconv.ParseInt(parts[7], 10, 64)
+	if err != nil {
+		return GzipRecord{}, fmt.Errorf("Conversion to GzipRecord failed, bad value for bitLengthOfCompressedData on line %q", blr.RawLog())
+	}
+	record.bitLengthOfCompressedData = bitLengthOfCompressedData
+
+	return record, nil
 }
 
 /* BaseRecord aliases */
@@ -1159,3 +1378,6 @@ type MethodRecord struct{ BaseRecord }
 
 // ProtocolRecord holds the protocol for the ReqProtocol, RespProtocol, BereqProtocol, ... tags
 type ProtocolRecord struct{ BaseRecord }
+
+// ErrorRecord holds error messages
+type ErrorRecord struct{ BaseRecord }

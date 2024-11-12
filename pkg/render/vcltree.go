@@ -33,18 +33,35 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 
 	for _, r := range tx.LogRecords() {
 		switch record := r.(type) {
+		case vsl.SessOpenRecord:
+			s.addRow(r.Tag(), "", record.String(), "")
+		case vsl.SessCloseRecord:
+			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.EndRecord:
 			s.addRow(r.Tag(), "", "", "")
 		case vsl.ReqUnsetRecord, vsl.BereqUnsetRecord, vsl.RespUnsetRecord, vsl.BerespUnsetRecord, vsl.ObjUnsetRecord:
 			s.addRow(r.Tag(), "", r.Value(), "strike")
+		case vsl.ErrorRecord:
+			s.addRow(r.Tag(), "errorRecord", r.Value(), "errorRecord")
+		case vsl.FetchErrorRecord:
+			s.addRow(r.Tag(), "errorRecord", r.Value(), "errorRecord")
 		case vsl.TimestampRecord:
-			s.addRow(r.Tag(), "", fmt.Sprintf("%s | Elapsed: %s | Total: %s", record.EventLabel(), record.SinceLast().String(), record.SinceStart().String()), "")
+			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.TTLRecord:
 			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.AcctRecord:
 			s.addRow(r.Tag(), "", record.String(), "")
+		case vsl.HitRecord:
+			s.addRow(r.Tag(), "", record.String(), "")
+		case vsl.GzipRecord:
+			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.BackendOpenRecord:
-			s.addRow(r.Tag(), "", fmt.Sprintf("%s (%s:%d) %s", record.Name(), record.RemoteAddr().String(), record.RemotePort(), record.Reason()), "")
+			s.addRow(r.Tag(), "", record.String(), "")
+		case vsl.LengthRecord:
+			s.addRow(r.Tag(), "", record.Size().String(), "")
+		case vsl.VCLLogRecord:
+			s.addRow(r.Tag(), "", record.Key()+": "+record.Value(), "")
+
 		case vsl.LinkRecord:
 			childTx := tx.Children()[record.TXID()]
 			if childTx == nil {
@@ -83,7 +100,7 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 	if classB == "" {
 		classB = "tval"
 	} else {
-		classB += classB + " tval"
+		classB = classB + " tval"
 	}
 
 	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classA), a))
