@@ -289,6 +289,8 @@ html {
   -webkit-animation: fadeEffect 1s;
   animation: fadeEffect 1s;
   padding: calc(var(--vertical-0) * 0.75);
+  margin: 0 auto;
+  max-width: 1260px;
 }
 
 pre:not(.mermaid) {
@@ -311,8 +313,7 @@ pre:not(.mermaid) {
 
 :not(pre) > code {
   font-size: var(--code-font-size);
-  background-color: var(--bg-2);
-  color: var(--fg-1);
+  color: var(--warm);
   padding: 1px 2px 1px 2px;
 }
 
@@ -345,13 +346,13 @@ input[type="text"] {
   padding: var(--space-0);
   color: var(--fg-0);
   background-color: var(--bg-1);
-  border: 2px solid var(--fg-1);
+  border: 1px solid var(--fg-1);
   border-radius: 6px;
   outline: none;
 }
 
 input[type="text"]:focus {
-  border: 2px solid var(--warm);
+  outline: 1px solid var(--warm);
 }
 
 .btn.parse-btn {
@@ -551,6 +552,16 @@ table.headers-table tbody tr.hdr-type th abbr {
   color: var(--red-0);
 }
 
+.errorRecord {
+  color: var(--red-0);
+}
+
+.errorMsg {
+  color: var(--red-0);
+  font-family: var(--font-family-mono);
+  font-size: var(--code-font-size);
+}
+
 table.headers-legend th {
   text-align: right;
   vertical-align: top;
@@ -561,22 +572,23 @@ summary {
   cursor: pointer;
 }
 
-/* Request builder form */
-form#headerForm {
+/* Simple form */
+form.simple-form {
   width: 600px;
   padding: var(--space-1);
   background-color: var(--bg-1);
-  border: 1px solid var(--bg-2);
+  border: 1px solid var(--warm);
+  outline: none;
   border-radius: 8px;
 }
 
-form#headerForm > label {
+form.simple-form > label {
   display: block;
   font-weight: bold;
 }
 
-form#headerForm select,
-form#headerForm > input[type="radio"] {
+form.simple-form select,
+form.simple-form > input[type="radio"] {
   cursor: pointer;
 }
 
@@ -594,7 +606,7 @@ fieldset label {
   padding-right: var(--space-1);
 }
 
-form#headerForm > label {
+form.simple-form > label {
   display: inline-block;
   margin-right: var(--space-1);
   margin-bottom: var(--space-0);
@@ -606,13 +618,13 @@ legend {
   font-weight: bold;
   color: var(--warm);
   font-size: var(--base-font-size);
-  margin-bottom: var(--space-0);
+  padding: calc(var(--space-0) * 0.5);
 }
 
-form#headerForm select {
+form.simple-form select {
   min-width: 80px;
   margin: 3px 0px 8px 0px;
-  padding: var(--space-0);
+  padding: calc(var(--space-0) * 0.8);
   font-size: var(--base-font-size);
   border-radius: 4px;
   border: 1px solid var(--fg-2);
@@ -629,12 +641,20 @@ input[type="radio"]:focus {
   outline: 1px solid var(--warm);
 }
 
-form#headerForm > input,
-form#headerForm select {
+form.simple-form > input,
+form.simple-form select {
   font-size: var(--code-font-size);
   color: var(--fg-1);
 }
 
+form.simple-form div.chkbox-grid {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  row-gap: 4px;
+  column-gap: 4px;
+}
+
+/* HTMX Loading */
 .htmx-request.loading {
   animation: spin 1s linear infinite;
 }
@@ -724,4 +744,9 @@ div.txtree ul div.tx-header {
 .fade-me-in {
   transform: translate(0);
   transition: all 0.3s ease;
+}
+
+/* E-Charts */
+#timestampResults canvas {
+  border-radius: 6px;
 }
