@@ -9,11 +9,20 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"context"
+	"io"
+	"log"
+
 	"github.com/aorith/varnishlog-parser/vsl"
 	"github.com/aorith/varnishlog-parser/vsl/header"
 )
 
 func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
+	visited := make(map[string]bool)
+	return headersTab(txsSet, visited)
+}
+
+func headersTab(txsSet vsl.TransactionSet, visited map[string]bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -46,7 +55,7 @@ func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(root.TXID())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 36, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 45, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -56,7 +65,7 @@ func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = wrapRenderHeaderTree(root).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = renderHeaderTree(root, visited).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -73,13 +82,21 @@ func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
 	})
 }
 
-func wrapRenderHeaderTree(t *vsl.Transaction) templ.Component {
-	reqHeadersState := header.NewHeaderState(t.LogRecords(), false)
-	respHeadersState := header.NewHeaderState(t.LogRecords(), true)
-	return renderHeaderTree(t, reqHeadersState, respHeadersState)
+func renderHeaderTree(tx *vsl.Transaction, visited map[string]bool) templ.Component {
+	if visited[tx.TXID()] {
+		log.Printf("renderHeaderTree(): loop detected at transaction %q\n", tx.TXID())
+		return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+			return nil
+		})
+	}
+	visited[tx.TXID()] = true
+
+	reqHeadersState := header.NewHeaderState(tx.LogRecords(), false)
+	respHeadersState := header.NewHeaderState(tx.LogRecords(), true)
+	return renderTxHeaderTree(tx, reqHeadersState, respHeadersState, visited)
 }
 
-func renderHeaderTree(t *vsl.Transaction, reqHeadersState, respHeadersState header.HeaderStates) templ.Component {
+func renderTxHeaderTree(tx *vsl.Transaction, reqHeadersState, respHeadersState header.HeaderStates, visited map[string]bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -100,15 +117,15 @@ func renderHeaderTree(t *vsl.Transaction, reqHeadersState, respHeadersState head
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if t.Type() != vsl.TxTypeSession {
+		if tx.Type() != vsl.TxTypeSession {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<details><summary>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(t.TXID())
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 53, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 70, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -195,9 +212,9 @@ func renderHeaderTree(t *vsl.Transaction, reqHeadersState, respHeadersState head
 				return templ_7745c5c3_Err
 			}
 		}
-		if len(t.ChildrenSortedByVXID()) > 0 {
-			for _, c := range t.ChildrenSortedByVXID() {
-				templ_7745c5c3_Err = wrapRenderHeaderTree(c).Render(ctx, templ_7745c5c3_Buffer)
+		if len(tx.ChildrenSortedByVXID()) > 0 {
+			for _, c := range tx.ChildrenSortedByVXID() {
+				templ_7745c5c3_Err = renderHeaderTree(c, visited).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -249,7 +266,7 @@ func renderHeaderDiff(hc header.HeaderState, original bool, attrs templ.Attribut
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(hc.Header())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 110, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 127, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -271,7 +288,7 @@ func renderHeaderDiff(hc header.HeaderState, original bool, attrs templ.Attribut
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(hc.OriginalValue())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 113, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 130, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -281,7 +298,7 @@ func renderHeaderDiff(hc header.HeaderState, original bool, attrs templ.Attribut
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(hc.FinalValue())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 115, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 132, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {

@@ -1,11 +1,20 @@
 package content
 
 import (
+	"io"
+	"log"
+	"context"
+
 	"github.com/aorith/varnishlog-parser/vsl"
 	"github.com/aorith/varnishlog-parser/vsl/header"
 )
 
-templ HeadersTab(txsSet vsl.TransactionSet) {
+func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
+	visited := make(map[string]bool)
+	return headersTab(txsSet, visited)
+}
+
+templ headersTab(txsSet vsl.TransactionSet, visited map[string]bool) {
 	<div id="tabHeaders" class="tabcontent">
 		<p>
 			This tab displays the state of HTTP headers, organized into transaction groups.
@@ -35,22 +44,30 @@ templ HeadersTab(txsSet vsl.TransactionSet) {
 		for _, root := range txsSet.UniqueRootParents() {
 			<h4>Headers for tx group "{ root.TXID() }"</h4>
 			<div class="headers">
-				@wrapRenderHeaderTree(root)
+				@renderHeaderTree(root, visited)
 			</div>
 		}
 	</div>
 }
 
-func wrapRenderHeaderTree(t *vsl.Transaction) templ.Component {
-	reqHeadersState := header.NewHeaderState(t.LogRecords(), false)
-	respHeadersState := header.NewHeaderState(t.LogRecords(), true)
-	return renderHeaderTree(t, reqHeadersState, respHeadersState)
+func renderHeaderTree(tx *vsl.Transaction, visited map[string]bool) templ.Component {
+	if visited[tx.TXID()] {
+		log.Printf("renderHeaderTree(): loop detected at transaction %q\n", tx.TXID())
+		return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+			return nil
+		})
+	}
+	visited[tx.TXID()] = true
+
+	reqHeadersState := header.NewHeaderState(tx.LogRecords(), false)
+	respHeadersState := header.NewHeaderState(tx.LogRecords(), true)
+	return renderTxHeaderTree(tx, reqHeadersState, respHeadersState, visited)
 }
 
-templ renderHeaderTree(t *vsl.Transaction, reqHeadersState, respHeadersState header.HeaderStates) {
-	if t.Type() != vsl.TxTypeSession {
+templ renderTxHeaderTree(tx *vsl.Transaction, reqHeadersState, respHeadersState header.HeaderStates, visited map[string]bool) {
+	if tx.Type() != vsl.TxTypeSession {
 		<details>
-			<summary>{ t.TXID() }</summary>
+			<summary>{ tx.TXID() }</summary>
 			<table class="headers-table">
 				<tr>
 					<tr class="hdr-type"><th colspan="2"><abbr title="Headers as initially sent by the client, before any VCL processing.">Original Headers</abbr></th></tr>
@@ -85,9 +102,9 @@ templ renderHeaderTree(t *vsl.Transaction, reqHeadersState, respHeadersState hea
 			</table>
 		</details>
 	}
-	if len(t.ChildrenSortedByVXID()) > 0 {
-		for _, c := range t.ChildrenSortedByVXID() {
-			@wrapRenderHeaderTree(c)
+	if len(tx.ChildrenSortedByVXID()) > 0 {
+		for _, c := range tx.ChildrenSortedByVXID() {
+			@renderHeaderTree(c, visited)
 		}
 	}
 }

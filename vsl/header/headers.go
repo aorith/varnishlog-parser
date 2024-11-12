@@ -134,12 +134,12 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 	seenHeaders := make(map[string]HeaderState)
 	foundCall := false
 
-	for _, record := range records {
-		switch headerRecord := record.(type) {
+	for _, r := range records {
+		switch record := r.(type) {
 		case vsl.VCLCallRecord:
 			if responseHdrs {
 				// After the following calls Resp/Beresp headers can be modified in VCL
-				if headerRecord.Value() == "DELIVER" || headerRecord.Value() == "BACKEND_RESPONSE" {
+				if record.Value() == vsl.VCLCall_DELIVER || record.Value() == vsl.VCLCall_BACKEND_RESPONSE {
 					foundCall = true
 				}
 			} else {
@@ -148,18 +148,18 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 
 		case vsl.ReqHeaderRecord, vsl.BereqHeaderRecord, vsl.RespHeaderRecord, vsl.BerespHeaderRecord:
 			if responseHdrs {
-				switch headerRecord.(type) {
+				switch record.(type) {
 				case vsl.ReqHeaderRecord, vsl.BereqHeaderRecord:
 					continue
 				}
 			} else {
-				switch headerRecord.(type) {
+				switch record.(type) {
 				case vsl.RespHeaderRecord, vsl.BerespHeaderRecord:
 					continue
 				}
 			}
 
-			hdr := headerRecord.(vsl.HeaderRecord)
+			hdr := record.(vsl.HeaderRecord)
 			originalState, wasSeen := seenHeaders[hdr.Header()]
 			originalValue := hdr.HeaderValue()
 			if wasSeen {
@@ -184,18 +184,18 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 
 		case vsl.ReqUnsetRecord, vsl.BereqUnsetRecord, vsl.RespUnsetRecord, vsl.BerespUnsetRecord:
 			if responseHdrs {
-				switch headerRecord.(type) {
+				switch record.(type) {
 				case vsl.ReqUnsetRecord, vsl.BereqUnsetRecord:
 					continue
 				}
 			} else {
-				switch headerRecord.(type) {
+				switch record.(type) {
 				case vsl.RespUnsetRecord, vsl.BerespUnsetRecord:
 					continue
 				}
 			}
 
-			hdr := headerRecord.(vsl.HeaderRecord)
+			hdr := record.(vsl.HeaderRecord)
 			originalState, wasSeen := seenHeaders[hdr.Header()]
 
 			if wasSeen {
