@@ -44,16 +44,19 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		// Expect a Begin tag after the start of the transaction, eg:
 		// --- Begin          req 2 esi 1
 		if !p.scanner.Scan() {
-			return txsSet, fmt.Errorf("Expected begin tag, found EOF")
+			return txsSet, fmt.Errorf("Expected %s tag, found EOF after %q", tag.Begin, tx.RawLog())
 		}
 		line = strings.TrimSpace(p.scanner.Text())
+		if line == "" {
+			return txsSet, fmt.Errorf("Expected %s tag, found empty line after %q", tag.Begin, tx.RawLog())
+		}
 
 		r, err := processRecord(line)
 		if err != nil {
 			return txsSet, err
 		}
 		if r.Tag() != tag.Begin {
-			return txsSet, fmt.Errorf("Expected begin tag, found %q on line %q", r.Tag(), line)
+			return txsSet, fmt.Errorf("Expected %s tag, found %q on line %q", tag.Begin, r.Tag(), line)
 		}
 		// Finish missing Tx field data obtained from the Begin tag
 		br := r.(BeginRecord)
@@ -174,6 +177,8 @@ func processRecord(line string) (Record, error) {
 		return ProtocolRecord{BaseRecord: blr}, nil
 	case tag.BackendOpen:
 		return NewBackendOpenRecord(blr)
+	case tag.BackendStart:
+		return NewBackendStartRecord(blr)
 	case tag.BackendClose:
 		return NewBackendCloseRecord(blr)
 	case tag.ReqAcct, tag.BereqAcct:
@@ -204,12 +209,16 @@ func processRecord(line string) (Record, error) {
 		return NewSessOpenRecord(blr)
 	case tag.SessClose:
 		return NewSessCloseRecord(blr)
+	case tag.Gzip:
+		return NewGzipRecord(blr)
 	case tag.VCL_call:
 		return VCLCallRecord{BaseRecord: blr}, nil
 	case tag.VCL_return:
 		return VCLReturnRecord{BaseRecord: blr}, nil
 	case tag.VCL_use:
 		return VCLUseRecord{BaseRecord: blr}, nil
+	case tag.Error:
+		return ErrorRecord{BaseRecord: blr}, nil
 	default:
 		log.Printf("Unknown tag %q", t)
 		return blr, nil
