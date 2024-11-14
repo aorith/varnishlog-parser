@@ -330,6 +330,8 @@ func pythonCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 		}
 		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, custom[0]+":"+custom[1], url.Value()))
 		includeHostHdr = true
+	default:
+		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, hostHdr.HeaderValue(), url.Value()))
 	}
 
 	// Add headers
