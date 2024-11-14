@@ -53,7 +53,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate a <a href=\"https://curl.se/\" target=\"_blank\">curl</a> command based on parsed transactions VSL tags.</p><form class=\"simple-form\" hx-post=\"/reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name=&#39;logs&#39;]\"><fieldset><legend>Transaction: </legend> <select id=\"transactionSelect\" name=\"transaction\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate commands with <a href=\"https://curl.se/\" target=\"_blank\">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, the <b>body is not available</b> in varnishlog and won’t be included.</p><form class=\"simple-form\" hx-post=\"/reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name=&#39;logs&#39;]\"><fieldset><legend>Transaction: </legend> <select id=\"transactionSelect\" name=\"transaction\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -171,32 +171,19 @@ func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) 
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"fade-me-in\"><h3>Command</h3><pre><code>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"fade-me-in\"><h3>curl</h3><pre><code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.Raw(curlHeaders(tx, f)).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templ.Raw(curlCommand(tx, f)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</code></pre><h3>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</code></pre><h3>python</h3><pre><code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 117, Col: 17}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</h3><pre><code>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.Raw(tx.FullRawLog(false)).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templ.Raw(pythonCommand(tx, f)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -208,7 +195,7 @@ func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) 
 	})
 }
 
-func curlHeaders(t *vsl.Transaction, f ReqBuilderForm) string {
+func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 	var s strings.Builder
 
 	hdrState := header.NewHeaderState(t.LogRecords(), false)
@@ -238,6 +225,22 @@ func curlHeaders(t *vsl.Transaction, f ReqBuilderForm) string {
 	}
 	s.WriteString(fmt.Sprintf(`curl "%s://%s%s"`+" \\\n", protocol, hostHdr.HeaderValue(), url.Value()))
 
+	// Method
+	method := t.FirstRecordOfType(vsl.MethodRecord{})
+	if method == nil {
+		return "Method not found!"
+	}
+
+	switch method.Value() {
+	case "GET":
+		// Nothing
+	case "POST", "PUT":
+		s.WriteString("    -X " + method.Value() + " \\\n")
+		s.WriteString("    -d '' \\\n")
+	default:
+		s.WriteString("    -X " + method.Value() + " \\\n")
+	}
+
 	// Add headers
 	var hdrVal string
 	for _, hc := range hdrState {
@@ -249,11 +252,12 @@ func curlHeaders(t *vsl.Transaction, f ReqBuilderForm) string {
 		} else {
 			hdrVal = hc.FinalValue()
 		}
+		hdrVal = strings.ReplaceAll(hdrVal, `"`, `\"`)
 		s.WriteString(fmt.Sprintf(`    -H "%s: %s" \`+"\n", hc.Header(), hdrVal))
 	}
 
 	// Fixed options
-	s.WriteString("    -s -v -o /dev/null")
+	s.WriteString("    -s -k -v -o /dev/null")
 
 	// Optional resolve
 	switch f.ResolveTo {
@@ -273,6 +277,96 @@ func curlHeaders(t *vsl.Transaction, f ReqBuilderForm) string {
 			s.WriteString("\n\n# Incorrect protocol selected?")
 		}
 	}
+
+	return s.String()
+}
+
+func pythonCommand(t *vsl.Transaction, f ReqBuilderForm) string {
+	var s strings.Builder
+
+	hdrState := header.NewHeaderState(t.LogRecords(), false)
+
+	// Find the host header
+	hostHdr := hdrState.FindHeader("host", f.OriginalHeaders, true)
+	if hostHdr == nil {
+		return "Host header not found!"
+	}
+
+	// Find the URL
+	var url vsl.Record
+	if f.OriginalURL {
+		url = t.FirstRecordOfType(vsl.URLRecord{})
+	} else {
+		url = t.LastRecordOfType(vsl.URLRecord{})
+	}
+	if url == nil {
+		return "URL not found!"
+	}
+
+	// Set the protocol and port
+	port := "80"
+	protocol := "http"
+	if f.HTTPS {
+		port = "443"
+		protocol = "https"
+	}
+
+	s.WriteString("import requests\n\n")
+
+	includeHostHdr := false
+
+	// Optional resolve
+	switch f.ResolveTo {
+	case SendToLocalhost:
+		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, "127.0.0.1:"+port, url.Value()))
+		includeHostHdr = true
+	case SendToBackend, SendToCustom:
+		custom := strings.SplitN(f.CustomResolve, ":", 2)
+		if custom[0] == "none" {
+			return "Backed address not found for selected transaction."
+		}
+		if len(custom) < 2 {
+			return "Incorrect backend address."
+		}
+		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, custom[0]+":"+custom[1], url.Value()))
+		includeHostHdr = true
+	}
+
+	// Add headers
+	s.WriteString("headers = {\n")
+	if includeHostHdr {
+		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", "Host", hostHdr.HeaderValue()))
+	}
+	for _, hc := range hdrState {
+		if hc.Header() == "host" || (f.OriginalHeaders && !hc.IsOriginalHeader()) {
+			continue
+		}
+		var hdrVal string
+		if f.OriginalHeaders {
+			hdrVal = hc.OriginalValue()
+		} else {
+			hdrVal = hc.FinalValue()
+		}
+		hdrVal = strings.ReplaceAll(hdrVal, `"`, `\"`)
+		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", hc.Header(), hdrVal))
+	}
+	s.WriteString("}\n\n")
+
+	// Method
+	method := t.FirstRecordOfType(vsl.MethodRecord{})
+	if method == nil {
+		return "Method not found!"
+	}
+	switch method.Value() {
+	case "GET":
+		s.WriteString("response = requests.get(url, headers=headers, verify=False)\n")
+	case "POST", "PUT":
+		s.WriteString("response = requests." + strings.ToLower(method.Value()) + "(url, headers=headers, verify=False, data={})\n")
+	default:
+		s.WriteString("response = requests." + strings.ToLower(method.Value()) + "(url, headers=headers, verify=False)\n")
+	}
+
+	s.WriteString("\nprint(response.status_code)\nprint(response.text)\n")
 
 	return s.String()
 }
