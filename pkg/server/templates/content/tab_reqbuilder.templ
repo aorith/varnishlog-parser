@@ -29,7 +29,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 		<p>Here you can generate commands with <a href="https://curl.se/" target="_blank">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, the <b>body is not available</b> in varnishlog and won’t be included.</p>
 		<form
 			class="simple-form"
-			hx-post="/reqbuilder/"
+			hx-post="reqbuilder/"
 			hx-target="#reqBuilderResults"
 			hx-swap="innerHTML settle:0.3s"
 			hx-include="[name='logs']"

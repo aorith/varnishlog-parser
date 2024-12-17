@@ -18,7 +18,7 @@ templ TimestampsTab(txsSet vsl.TransactionSet) {
 		<br/>
 		<form
 			class="simple-form"
-			hx-post="/timestamps/"
+			hx-post="timestamps/"
 			hx-target="#timestampResults"
 			hx-swap="innerHTML settle:0.3s"
 			hx-include="[name='logs']"
