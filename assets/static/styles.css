@@ -536,15 +536,18 @@ table.headers-table tbody tr.hdr-type th abbr {
   text-decoration: none;
 }
 
-.diffOriginal {
+.diffOriginal,
+.s3xx {
   color: var(--fg-1);
 }
 
-.diffAdded {
+.diffAdded,
+.s2xx {
   color: var(--green-0);
 }
 
-.diffModified {
+.diffModified,
+.s4xx {
   color: var(--yellow-0);
 }
 
@@ -552,7 +555,8 @@ table.headers-table tbody tr.hdr-type th abbr {
   color: var(--red-0);
 }
 
-.errorRecord {
+.errorRecord,
+.s5xx {
   color: var(--red-0);
 }
 
@@ -560,6 +564,13 @@ table.headers-table tbody tr.hdr-type th abbr {
   color: var(--red-0);
   font-family: var(--font-family-mono);
   font-size: var(--code-font-size);
+}
+
+.s2xx,
+.s3xx,
+.s4xx,
+.s5xx {
+  font-weight: bold;
 }
 
 table.headers-legend th {

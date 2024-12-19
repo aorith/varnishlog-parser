@@ -61,6 +61,8 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 			s.addRow(r.Tag(), "", record.Size().String(), "")
 		case vsl.VCLLogRecord:
 			s.addRow(r.Tag(), "", record.Key()+": "+record.Value(), "")
+		case vsl.StatusRecord:
+			s.addRow(r.Tag(), "", r.Value(), statusCSSClass(record.Status()))
 
 		case vsl.LinkRecord:
 			childTx := tx.Children()[record.TXID()]
@@ -105,4 +107,17 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 
 	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classA), a))
 	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classB), b))
+}
+
+func statusCSSClass(s int) string {
+	if s >= 500 {
+		return "s5xx"
+	} else if s >= 400 {
+		return "s4xx"
+	} else if s >= 300 {
+		return "s3xx"
+	} else if s >= 200 {
+		return "s2xx"
+	}
+	return ""
 }
