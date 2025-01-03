@@ -60,7 +60,7 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 		case vsl.LengthRecord:
 			s.addRow(r.Tag(), "", record.Size().String(), "")
 		case vsl.VCLLogRecord:
-			s.addRow(r.Tag(), "", record.Key()+": "+record.Value(), "")
+			s.addRow(r.Tag(), "", record.String(), "logMsg")
 		case vsl.StatusRecord:
 			s.addRow(r.Tag(), "", r.Value(), statusCSSClass(record.Status()))
 

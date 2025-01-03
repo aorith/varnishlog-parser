@@ -1005,6 +1005,13 @@ type VCLLogRecord struct {
 	value string
 }
 
+func (r VCLLogRecord) String() string {
+	if r.key != "" {
+		return r.key + ": " + r.value
+	}
+	return r.value
+}
+
 func (r VCLLogRecord) Key() string {
 	return r.key
 }

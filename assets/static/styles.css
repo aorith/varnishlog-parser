@@ -566,6 +566,11 @@ table.headers-table tbody tr.hdr-type th abbr {
   font-size: var(--code-font-size);
 }
 
+.logMsg {
+  color: var(--fg-1);
+  font-style: italic;
+}
+
 .s2xx,
 .s3xx,
 .s4xx,
