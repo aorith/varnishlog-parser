@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/a-h/templ v0.3.819
-	github.com/go-echarts/go-echarts/v2 v2.4.6
+	github.com/go-echarts/go-echarts/v2 v2.5.0
 	github.com/spf13/cobra v1.8.1
 )
 
