@@ -6,5 +6,6 @@ test:
 
 update_templ:
 	@go install github.com/a-h/templ/cmd/templ@latest
+	@go get -u github.com/a-h/templ
 
 PHONY: watch test update_templ
