@@ -26,7 +26,7 @@ type ReqBuilderForm struct {
 
 templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 	<div id="tabRequest" class="tabcontent">
-		<p>Here you can generate commands with <a href="https://curl.se/" target="_blank">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, the <b>body is not available</b> in varnishlog and won’t be included.</p>
+		<p>Here you can generate commands with <a href="https://curl.se/" target="_blank">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, <b>body is not available</b> in varnishlog and won’t be included.</p>
 		<form
 			class="simple-form"
 			hx-post="reqbuilder/"
@@ -57,7 +57,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 					<input type="radio" name="urlType" value="original" checked/> Original
 				</label>
 				<label>
-					<input type="radio" name="urlType" value="final"/> Final
+					<input type="radio" name="urlType" value="final"/> After VCL
 				</label>
 			</fieldset>
 			<fieldset>
@@ -66,7 +66,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 					<input type="radio" name="headerType" value="original" checked/> Original
 				</label>
 				<label>
-					<input type="radio" name="headerType" value="final"/> Final
+					<input type="radio" name="headerType" value="final"/> After VCL
 				</label>
 			</fieldset>
 			<br/>
