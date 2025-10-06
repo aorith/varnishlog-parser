@@ -17,7 +17,7 @@ const (
 	sizePB             = sizeTB * 1024
 )
 
-// In Varnish the vxid is "uint32_t"
+// VXID in Varnish the vxid is of type "uint32_t"
 type VXID uint32
 
 // SizeValue is a custom type based on int64 to handle sizes.
@@ -50,7 +50,7 @@ func (s SizeValue) String() string {
 func convertStrToDuration(s string, unit time.Duration) (time.Duration, error) {
 	sfl, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return time.Duration(0), fmt.Errorf("Could not parse the string %q as a duration", s)
+		return time.Duration(0), fmt.Errorf("could not parse the string %q as a duration", s)
 	}
 
 	return time.Duration(sfl * float64(unit)), nil
@@ -60,7 +60,7 @@ func convertStrToDuration(s string, unit time.Duration) (time.Duration, error) {
 func convertToUnixTimestamp(s string) (time.Time, error) {
 	unixnano, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("Timestamp with invalid float: %w", err)
+		return time.Time{}, fmt.Errorf("timestamp with invalid float: %w", err)
 	}
 
 	seconds := int64(unixnano)

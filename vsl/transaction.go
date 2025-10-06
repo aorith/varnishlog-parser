@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -19,12 +20,7 @@ const (
 var allTxTypes = []string{TxTypeSession, TxTypeRequest, TxTypeBereq}
 
 func isValidTxType(txType string) bool {
-	for _, validType := range allTxTypes {
-		if txType == validType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(allTxTypes, txType)
 }
 
 // TransactionSet groups multiple Varnish transaction logs together
@@ -212,7 +208,7 @@ func (t *Transaction) ChildrenSortedByVXID() []*Transaction {
 }
 
 // FirstRecordOfType returns the first record for the given type
-func (t *Transaction) FirstRecordOfType(target interface{}) Record {
+func (t *Transaction) FirstRecordOfType(target any) Record {
 	targetType := reflect.TypeOf(target)
 
 	for _, r := range t.LogRecords() {
@@ -225,7 +221,7 @@ func (t *Transaction) FirstRecordOfType(target interface{}) Record {
 }
 
 // LastRecordOfType returns the last record for the given type
-func (t *Transaction) LastRecordOfType(target interface{}) Record {
+func (t *Transaction) LastRecordOfType(target any) Record {
 	var record Record
 	targetType := reflect.TypeOf(target)
 
@@ -264,12 +260,12 @@ func NewTransaction(line string) (*Transaction, error) {
 	parts := strings.Fields(line)
 	txType := parts[2]
 	if !isValidTxType(txType) {
-		return nil, fmt.Errorf("Unknown transaction of type '%q' - known types: %q", txType, allTxTypes)
+		return nil, fmt.Errorf("unknown transaction of type '%q' - known types: %q", txType, allTxTypes)
 	}
 
 	vxid, err := parseVXID(parts[4])
 	if err != nil {
-		return nil, fmt.Errorf("Incorrect vxid found on line '%q', error: %s", parts, err)
+		return nil, fmt.Errorf("incorrect vxid found on line '%q', error: %s", parts, err)
 	}
 
 	level, err := parseLevel(parts[0])

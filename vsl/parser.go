@@ -44,11 +44,11 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		// Expect a Begin tag after the start of the transaction, eg:
 		// --- Begin          req 2 esi 1
 		if !p.scanner.Scan() {
-			return txsSet, fmt.Errorf("Expected %s tag, found EOF after %q", tag.Begin, tx.RawLog())
+			return txsSet, fmt.Errorf("expected %s tag, found EOF after %q", tag.Begin, tx.RawLog())
 		}
 		line = strings.TrimSpace(p.scanner.Text())
 		if line == "" {
-			return txsSet, fmt.Errorf("Expected %s tag, found empty line after %q", tag.Begin, tx.RawLog())
+			return txsSet, fmt.Errorf("expected %s tag, found empty line after %q", tag.Begin, tx.RawLog())
 		}
 
 		r, err := processRecord(line)
@@ -56,7 +56,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 			return txsSet, err
 		}
 		if r.Tag() != tag.Begin {
-			return txsSet, fmt.Errorf("Expected %s tag, found %q on line %q", tag.Begin, r.Tag(), line)
+			return txsSet, fmt.Errorf("expected %s tag, found %q on line %q", tag.Begin, r.Tag(), line)
 		}
 		// Finish missing Tx field data obtained from the Begin tag
 		br := r.(BeginRecord)
@@ -93,7 +93,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 				tx.children[childTXID] = &Transaction{level: -1}
 			} else if r.Tag() == tag.Begin {
 				// A Begin tag was found in the middle of a transaction
-				return txsSet, fmt.Errorf("Incorrect log: Another %q tag was found in the middle of the transaction %q", tag.Begin, tx.RawLog())
+				return txsSet, fmt.Errorf("incorrect log: Another %q tag was found in the middle of the transaction %q", tag.Begin, tx.RawLog())
 			}
 		}
 

@@ -139,7 +139,7 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 		case vsl.VCLCallRecord:
 			if responseHdrs {
 				// After the following calls Resp/Beresp headers can be modified in VCL
-				if record.Value() == vsl.VCLCall_DELIVER || record.Value() == vsl.VCLCall_BACKEND_RESPONSE {
+				if record.Value() == vsl.VCLCallDELIVER || record.Value() == vsl.VCLCallBACKENDRESPONSE {
 					foundCall = true
 				}
 			} else {
