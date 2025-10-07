@@ -3,13 +3,11 @@ package vsl
 import (
 	"fmt"
 	"net"
+	"net/textproto"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 const (
@@ -157,9 +155,8 @@ func newHeaderRecord(blr BaseRecord) (headerRecord, error) {
 	value := strings.TrimLeft(blr.Value()[firstIndex+len(header):], " \t")
 
 	header = strings.TrimRight(header, ": \t")
-	// Parse all headers with title casing
-	caser := cases.Title(language.English)
-	header = caser.String(header)
+	// Canonical format for the header key
+	header = textproto.CanonicalMIMEHeaderKey(header)
 
 	return headerRecord{
 		BaseRecord:  blr,
