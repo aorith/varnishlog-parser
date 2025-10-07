@@ -76,11 +76,11 @@ func TestHeaders(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion to HeaderRecord failed: %s", err)
 		}
-		if record.Header() != test.header {
-			t.Errorf("Expected header %q got %q", test.header, record.Header())
+		if record.Name() != test.header {
+			t.Errorf("Expected header %q got %q", test.header, record.Name())
 		}
-		if record.HeaderValue() != test.headerValue {
-			t.Errorf("Expected header value %q got %q", test.headerValue, record.HeaderValue())
+		if record.Value() != test.headerValue {
+			t.Errorf("Expected header value %q got %q", test.headerValue, record.Value())
 		}
 	}
 }

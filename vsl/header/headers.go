@@ -17,18 +17,18 @@ const (
 	DeletedHdr         // Original headers deleted
 )
 
-// Header is a simple header struct
+// Header represents the key-value pairs in an HTTP header
 type Header struct {
-	header      string
-	headerValue string
+	name  string
+	value string
 }
 
-func (h Header) Header() string {
-	return h.header
+func (h Header) Name() string {
+	return h.name
 }
 
-func (h Header) HeaderValue() string {
-	return h.headerValue
+func (h Header) Value() string {
+	return h.value
 }
 
 // HeaderStates is an alias for []HeaderState with useful methods
@@ -44,7 +44,7 @@ func (h HeaderStates) OriginalHeaders() []Header {
 
 		headers = append(
 			headers,
-			Header{header: hs.Header(), headerValue: hs.OriginalValue()},
+			Header{name: hs.Name(), value: hs.OriginalValue()},
 		)
 	}
 	return headers
@@ -61,7 +61,7 @@ func (h HeaderStates) FinalHeaders() []Header {
 
 		headers = append(
 			headers,
-			Header{header: hs.Header(), headerValue: hs.FinalValue()},
+			Header{name: hs.Name(), value: hs.FinalValue()},
 		)
 	}
 	return headers
@@ -90,7 +90,7 @@ func (h HeaderStates) FindHeader(header string, original, ignoreCase bool) *Head
 	}
 
 	for _, hdr := range hdrs {
-		if compare(header, hdr.Header()) {
+		if compare(header, hdr.Name()) {
 			foundHdr := hdr // Store a copy to avoid unexpected results when returning the pointer
 			return &foundHdr
 		}
@@ -100,7 +100,7 @@ func (h HeaderStates) FindHeader(header string, original, ignoreCase bool) *Head
 
 // HeaderState stores the state of a header
 type HeaderState struct {
-	header        string
+	name          string
 	originalValue string
 	finalValue    string
 	state         int
@@ -110,8 +110,8 @@ func (hs HeaderState) IsOriginalHeader() bool {
 	return hs.state != AddedHdr
 }
 
-func (hs HeaderState) Header() string {
-	return hs.header
+func (hs HeaderState) Name() string {
+	return hs.name
 }
 
 func (hs HeaderState) OriginalValue() string {
@@ -160,8 +160,8 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 			}
 
 			hdr := record.(vsl.HeaderRecord)
-			originalState, wasSeen := seenHeaders[hdr.Header()]
-			originalValue := hdr.HeaderValue()
+			originalState, wasSeen := seenHeaders[hdr.Name()]
+			originalValue := hdr.Value()
 			if wasSeen {
 				originalValue = originalState.OriginalValue()
 			}
@@ -169,18 +169,18 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 			if foundCall {
 				if wasSeen && originalState.IsOriginalHeader() {
 					// Modified header
-					currentState = newState(hdr.Header(), originalValue, hdr.HeaderValue(), ModifiedHdr)
+					currentState = newState(hdr.Name(), originalValue, hdr.Value(), ModifiedHdr)
 				} else {
 					// Added header
-					currentState = newState(hdr.Header(), originalValue, hdr.HeaderValue(), AddedHdr)
+					currentState = newState(hdr.Name(), originalValue, hdr.Value(), AddedHdr)
 				}
 			} else {
 				// Original client header before VCL processing
-				currentState = newState(hdr.Header(), originalValue, hdr.HeaderValue(), OriginalHdr)
+				currentState = newState(hdr.Name(), originalValue, hdr.Value(), OriginalHdr)
 			}
 
 			stateHistory = append(stateHistory, currentState)
-			seenHeaders[currentState.Header()] = currentState
+			seenHeaders[currentState.Name()] = currentState
 
 		case vsl.ReqUnsetRecord, vsl.BereqUnsetRecord, vsl.RespUnsetRecord, vsl.BerespUnsetRecord:
 			if responseHdrs {
@@ -196,17 +196,17 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 			}
 
 			hdr := record.(vsl.HeaderRecord)
-			originalState, wasSeen := seenHeaders[hdr.Header()]
+			originalState, wasSeen := seenHeaders[hdr.Name()]
 
 			if wasSeen {
 				if originalState.IsOriginalHeader() {
 					// Deleted header from original request
-					currentState = newState(originalState.Header(), originalState.OriginalValue(), hdr.HeaderValue(), DeletedHdr)
+					currentState = newState(originalState.Name(), originalState.OriginalValue(), hdr.Value(), DeletedHdr)
 					stateHistory = append(stateHistory, currentState)
-					seenHeaders[currentState.Header()] = currentState
+					seenHeaders[currentState.Name()] = currentState
 				} else {
 					// Discard non-original headers that were added and then removed
-					delete(seenHeaders, hdr.Header())
+					delete(seenHeaders, hdr.Name())
 				}
 			}
 		}
@@ -218,7 +218,7 @@ func NewHeaderState(records []vsl.Record, responseHdrs bool) HeaderStates {
 // Helper function to create a new HeaderState
 func newState(header, originalValue, finalValue string, state int) HeaderState {
 	return HeaderState{
-		header:        header,
+		name:          header,
 		originalValue: originalValue,
 		finalValue:    finalValue,
 		state:         state,
@@ -233,11 +233,11 @@ func consolidateHeaderStates(history []HeaderState, seen map[string]HeaderState)
 	// Traverse state changes in reverse to keep the last state encountered
 	for i := len(history) - 1; i >= 0; i-- {
 		hdrState := history[i]
-		_, existsInSeen := seen[hdrState.Header()]
-		_, alreadyIncluded := uniqueResults[hdrState.Header()]
+		_, existsInSeen := seen[hdrState.Name()]
+		_, alreadyIncluded := uniqueResults[hdrState.Name()]
 		if existsInSeen && !alreadyIncluded {
 			finalResults = append(finalResults, hdrState)
-			uniqueResults[hdrState.Header()] = struct{}{}
+			uniqueResults[hdrState.Name()] = struct{}{}
 		}
 	}
 

@@ -125,23 +125,23 @@ func NewBeginRecord(blr BaseRecord) (BeginRecord, error) {
 
 // HeaderRecord interface
 type HeaderRecord interface {
-	Header() string
-	HeaderValue() string
+	Name() string
+	Value() string
 }
 
 // headerRecord is a generic header record
 type headerRecord struct {
 	BaseRecord
-	header      string
-	headerValue string
+	name  string
+	value string
 }
 
-func (r headerRecord) Header() string {
-	return r.header
+func (r headerRecord) Name() string {
+	return r.name
 }
 
-func (r headerRecord) HeaderValue() string {
-	return r.headerValue
+func (r headerRecord) Value() string {
+	return r.value
 }
 
 func newHeaderRecord(blr BaseRecord) (headerRecord, error) {
@@ -159,9 +159,9 @@ func newHeaderRecord(blr BaseRecord) (headerRecord, error) {
 	header = textproto.CanonicalMIMEHeaderKey(header)
 
 	return headerRecord{
-		BaseRecord:  blr,
-		header:      header,
-		headerValue: value,
+		BaseRecord: blr,
+		name:       header,
+		value:      value,
 	}, nil
 }
 

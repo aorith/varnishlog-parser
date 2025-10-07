@@ -150,7 +150,7 @@ func requestSequence(tx *vsl.Transaction, final bool) string {
 	if hh == nil {
 		host = ""
 	} else {
-		host = hh.HeaderValue()
+		host = hh.Value()
 	}
 
 	return method + " " + truncateStr(url, 50) + "<br>" + host

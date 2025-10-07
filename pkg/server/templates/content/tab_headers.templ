@@ -124,7 +124,7 @@ func getHeaderDiffAttrs(state int) templ.Attributes {
 }
 
 templ renderHeaderDiff(hc header.HeaderState, original bool, attrs templ.Attributes) {
-	<th>{ hc.Header() }</th>
+	<th>{ hc.Name() }</th>
 	<td { attrs ... }>
 		if original {
 			{ hc.OriginalValue() }

@@ -45,37 +45,37 @@ func TestHeaderState(t *testing.T) {
 	headerState := NewHeaderState(tx.LogRecords(), false)
 	wanted := HeaderStates{
 		{
-			header:        "Accept",
+			name:        "Accept",
 			originalValue: "*/*",
 			finalValue:    "*/*",
 			state:         OriginalHdr,
 		},
 		{
-			header:        "Host",
+			name:        "Host",
 			originalValue: "www.example1.com",
 			finalValue:    "www.example2.com",
 			state:         ModifiedHdr,
 		},
 		{
-			header:        "Test-B",
+			name:        "Test-B",
 			originalValue: "x",
 			finalValue:    "x",
 			state:         DeletedHdr,
 		},
 		{
-			header:        "Test-A",
+			name:        "Test-A",
 			originalValue: "abc",
 			finalValue:    "cba",
 			state:         ModifiedHdr,
 		},
 		{
-			header:        "Test-Y",
+			name:        "Test-Y",
 			originalValue: "new",
 			finalValue:    "new",
 			state:         AddedHdr,
 		},
 		{
-			header:        "Test-X",
+			name:        "Test-X",
 			originalValue: "final", // non-client headers do not keep the original value
 			finalValue:    "final",
 			state:         AddedHdr,
@@ -128,20 +128,20 @@ func TestClientAndFinalHeaders(t *testing.T) {
 	clientHeaders := headerState.OriginalHeaders()
 	wantedClientHeaders := []Header{
 		{
-			header:      "Accept",
-			headerValue: "*/*",
+			name:      "Accept",
+			value: "*/*",
 		},
 		{
-			header:      "Host",
-			headerValue: "www.example1.com",
+			name:      "Host",
+			value: "www.example1.com",
 		},
 		{
-			header:      "Test-B",
-			headerValue: "x",
+			name:      "Test-B",
+			value: "x",
 		},
 		{
-			header:      "Test-A",
-			headerValue: "abc",
+			name:      "Test-A",
+			value: "abc",
 		},
 	}
 
@@ -153,24 +153,24 @@ func TestClientAndFinalHeaders(t *testing.T) {
 	finalHeaders := headerState.FinalHeaders()
 	wantedFinalHeaders := []Header{
 		{
-			header:      "Accept",
-			headerValue: "*/*",
+			name:      "Accept",
+			value: "*/*",
 		},
 		{
-			header:      "Host",
-			headerValue: "www.example2.com",
+			name:      "Host",
+			value: "www.example2.com",
 		},
 		{
-			header:      "Test-A",
-			headerValue: "cba",
+			name:      "Test-A",
+			value: "cba",
 		},
 		{
-			header:      "Test-Y",
-			headerValue: "new",
+			name:      "Test-Y",
+			value: "new",
 		},
 		{
-			header:      "Test-X",
-			headerValue: "final",
+			name:      "Test-X",
+			value: "final",
 		},
 	}
 

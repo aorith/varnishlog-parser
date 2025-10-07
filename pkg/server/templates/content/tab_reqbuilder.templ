@@ -151,7 +151,7 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 		port = "443"
 		protocol = "https"
 	}
-	s.WriteString(fmt.Sprintf(`curl "%s://%s%s"`+" \\\n", protocol, hostHdr.HeaderValue(), url.Value()))
+	s.WriteString(fmt.Sprintf(`curl "%s://%s%s"`+" \\\n", protocol, hostHdr.Value(), url.Value()))
 
 	// Method
 	method := t.FirstRecordOfType(vsl.MethodRecord{})
@@ -172,7 +172,7 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 	// Add headers
 	var hdrVal string
 	for _, hc := range hdrState {
-		if hc.Header() == "host" || (f.OriginalHeaders && !hc.IsOriginalHeader()) {
+		if hc.Name() == "Host" || (f.OriginalHeaders && !hc.IsOriginalHeader()) {
 			continue
 		}
 		if f.OriginalHeaders {
@@ -181,7 +181,7 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 			hdrVal = hc.FinalValue()
 		}
 		hdrVal = strings.ReplaceAll(hdrVal, `"`, `\"`)
-		s.WriteString(fmt.Sprintf(`    -H "%s: %s" \`+"\n", hc.Header(), hdrVal))
+		s.WriteString(fmt.Sprintf(`    -H "%s: %s" \`+"\n", hc.Name(), hdrVal))
 	}
 
 	// Fixed options
@@ -190,7 +190,7 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 	// Optional resolve
 	switch f.ResolveTo {
 	case SendToLocalhost:
-		s.WriteString(" \\\n    --resolve " + hostHdr.HeaderValue() + ":" + port + ":127.0.0.1")
+		s.WriteString(" \\\n    --resolve " + hostHdr.Value() + ":" + port + ":127.0.0.1")
 	case SendToBackend, SendToCustom:
 		custom := strings.SplitN(f.CustomResolve, ":", 2)
 		if custom[0] == "none" {
@@ -199,7 +199,7 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 		if len(custom) < 2 {
 			return "Incorrect backend address."
 		}
-		s.WriteString(" \\\n    --resolve " + hostHdr.HeaderValue() + ":" + custom[1] + ":" + custom[0])
+		s.WriteString(" \\\n    --resolve " + hostHdr.Value() + ":" + custom[1] + ":" + custom[0])
 
 		if (f.HTTPS && custom[1] == "80") || (!f.HTTPS && custom[1] == "443") {
 			s.WriteString("\n\n# Incorrect protocol selected?")
@@ -259,16 +259,16 @@ func pythonCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, custom[0]+":"+custom[1], url.Value()))
 		includeHostHdr = true
 	default:
-		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, hostHdr.HeaderValue(), url.Value()))
+		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, hostHdr.Value(), url.Value()))
 	}
 
 	// Add headers
 	s.WriteString("headers = {\n")
 	if includeHostHdr {
-		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", "Host", hostHdr.HeaderValue()))
+		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", "Host", hostHdr.Value()))
 	}
 	for _, hc := range hdrState {
-		if hc.Header() == "host" || (f.OriginalHeaders && !hc.IsOriginalHeader()) {
+		if hc.Name() == "Host" || (f.OriginalHeaders && !hc.IsOriginalHeader()) {
 			continue
 		}
 		var hdrVal string
@@ -278,7 +278,7 @@ func pythonCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 			hdrVal = hc.FinalValue()
 		}
 		hdrVal = strings.ReplaceAll(hdrVal, `"`, `\"`)
-		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", hc.Header(), hdrVal))
+		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", hc.Name(), hdrVal))
 	}
 	s.WriteString("}\n\n")
 
