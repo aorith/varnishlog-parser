@@ -51,31 +51,31 @@ func TestHeaderState(t *testing.T) {
 			state:         OriginalHdr,
 		},
 		{
-			header:        "host",
+			header:        "Host",
 			originalValue: "www.example1.com",
 			finalValue:    "www.example2.com",
 			state:         ModifiedHdr,
 		},
 		{
-			header:        "Test-b",
+			header:        "Test-B",
 			originalValue: "x",
 			finalValue:    "x",
 			state:         DeletedHdr,
 		},
 		{
-			header:        "Test-a",
+			header:        "Test-A",
 			originalValue: "abc",
 			finalValue:    "cba",
 			state:         ModifiedHdr,
 		},
 		{
-			header:        "test-y",
+			header:        "Test-Y",
 			originalValue: "new",
 			finalValue:    "new",
 			state:         AddedHdr,
 		},
 		{
-			header:        "test-x",
+			header:        "Test-X",
 			originalValue: "final", // non-client headers do not keep the original value
 			finalValue:    "final",
 			state:         AddedHdr,
@@ -132,15 +132,15 @@ func TestClientAndFinalHeaders(t *testing.T) {
 			headerValue: "*/*",
 		},
 		{
-			header:      "host", // Host header is always lowercase
+			header:      "Host",
 			headerValue: "www.example1.com",
 		},
 		{
-			header:      "Test-b",
+			header:      "Test-B",
 			headerValue: "x",
 		},
 		{
-			header:      "Test-a",
+			header:      "Test-A",
 			headerValue: "abc",
 		},
 	}
@@ -157,19 +157,19 @@ func TestClientAndFinalHeaders(t *testing.T) {
 			headerValue: "*/*",
 		},
 		{
-			header:      "host", // Host header is always lowercase
+			header:      "Host",
 			headerValue: "www.example2.com",
 		},
 		{
-			header:      "Test-a",
+			header:      "Test-A",
 			headerValue: "cba",
 		},
 		{
-			header:      "test-y",
+			header:      "Test-Y",
 			headerValue: "new",
 		},
 		{
-			header:      "test-x",
+			header:      "Test-X",
 			headerValue: "final",
 		},
 	}

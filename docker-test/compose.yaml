@@ -1,0 +1,27 @@
+services:
+  varnish:
+    image: varnish:7.5
+    volumes:
+      - ./main.vcl:/etc/varnish/default.vcl:ro
+    tmpfs:
+      - /var/lib/varnish/varnishd:exec
+    ports:
+      - "8001:80"
+    depends_on:
+      - whoami
+    networks:
+      varnish_network:
+        ipv4_address: 192.168.50.10
+
+  whoami:
+    image: traefik/whoami
+    networks:
+      varnish_network:
+        ipv4_address: 192.168.50.11
+
+networks:
+  varnish_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.50.0/24

@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -153,11 +156,10 @@ func newHeaderRecord(blr BaseRecord) (headerRecord, error) {
 	firstIndex := strings.Index(blr.Value(), header)
 	value := strings.TrimLeft(blr.Value()[firstIndex+len(header):], " \t")
 
-	// Lowercase "Host" and "Location" headers for standard compliance.
 	header = strings.TrimRight(header, ": \t")
-	if strings.EqualFold(header, "Host") || strings.EqualFold(header, "Location") {
-		header = strings.ToLower(header)
-	}
+	// Parse all headers with title casing
+	caser := cases.Title(language.English)
+	header = caser.String(header)
 
 	return headerRecord{
 		BaseRecord:  blr,

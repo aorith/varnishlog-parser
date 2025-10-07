@@ -15,7 +15,7 @@ func TestBaseRecord(t *testing.T) {
 		value     string
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord: "--  ReqHeader      Host: www.example1.com",
 			tag:       "ReqHeader",
@@ -33,7 +33,7 @@ func TestBaseRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		record, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -54,10 +54,10 @@ func TestHeaders(t *testing.T) {
 		headerValue string
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord:   "--  ReqHeader      Host: www.example1.com",
-			header:      "host", // Host is always lowercased
+			header:      "Host",
 			headerValue: "www.example1.com",
 		},
 		{
@@ -67,7 +67,7 @@ func TestHeaders(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -94,7 +94,7 @@ func TestBeginRecord(t *testing.T) {
 		esiLevel         int
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord:        "-4- Begin          req 32772 esi 2",
 			recordType:       "req",
@@ -118,7 +118,7 @@ func TestBeginRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -152,7 +152,7 @@ func TestLinkRecord(t *testing.T) {
 		esiLevel  int
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord: "-   Link           req 32770 rxreq",
 			txid:      "32770_req",
@@ -179,7 +179,7 @@ func TestLinkRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -218,7 +218,7 @@ func TestBackendOpenRecord(t *testing.T) {
 		reason         string
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord:      "--- BackendOpen    29 varnishb 192.168.50.11 80 192.168.50.10 51776 connect",
 			fileDescriptor: 29,
@@ -241,7 +241,7 @@ func TestBackendOpenRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -282,7 +282,7 @@ func TestBackendCloseRecord(t *testing.T) {
 		reason         string
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord:      "-5- BackendClose   29 varnishb recycle",
 			fileDescriptor: 29,
@@ -297,7 +297,7 @@ func TestBackendCloseRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -329,7 +329,7 @@ func TestAcctRecord(t *testing.T) {
 		totalRx   vsl.SizeValue
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord: "-4- BereqAcct      234 0 234 171 40 211",
 			headerTx:  vsl.SizeValue(234),
@@ -350,7 +350,7 @@ func TestAcctRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -389,7 +389,7 @@ func TestTimestampRecord(t *testing.T) {
 		sinceLast    time.Duration
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord:    "--  Timestamp      Process: 1728889150.269166 0.000768 0.000009",
 			eventLabel:   "Process",
@@ -415,7 +415,7 @@ func TestTimestampRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -446,7 +446,7 @@ func TestURLRecord(t *testing.T) {
 		query     string
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord: "-4- ReqURL         /last-content/media?a=1&b=2",
 			path:      "/last-content/media",
@@ -464,7 +464,7 @@ func TestURLRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
@@ -492,7 +492,7 @@ func TestHitRecord(t *testing.T) {
 		keep      time.Duration
 	}
 
-	test_list := []test{
+	testList := []test{
 		{
 			logRecord: "-4- Hit            32775 14.998964 10.000000 0.000000",
 			vxid:      vsl.VXID(32775),
@@ -509,7 +509,7 @@ func TestHitRecord(t *testing.T) {
 		},
 	}
 
-	for _, test := range test_list {
+	for _, test := range testList {
 		blr, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
