@@ -150,17 +150,17 @@ func newHeaderRecord(blr BaseRecord) (headerRecord, error) {
 		return headerRecord{}, fmt.Errorf("conversion to HeaderRecord failed on line %q", blr.RawLog())
 	}
 
-	header := fields[0]
-	firstIndex := strings.Index(blr.Value(), header)
-	value := strings.TrimLeft(blr.Value()[firstIndex+len(header):], " \t")
+	name := fields[0]
+	firstIndex := strings.Index(blr.Value(), name)
+	value := strings.TrimLeft(blr.Value()[firstIndex+len(name):], " \t")
 
-	header = strings.TrimRight(header, ": \t")
+	name = strings.TrimRight(name, ": \t")
 	// Canonical format for the header key
-	header = textproto.CanonicalMIMEHeaderKey(header)
+	name = textproto.CanonicalMIMEHeaderKey(name)
 
 	return headerRecord{
 		BaseRecord: blr,
-		name:       header,
+		name:       name,
 		value:      value,
 	}, nil
 }
