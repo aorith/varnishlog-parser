@@ -7,7 +7,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/aorith/varnishlog-parser/vsl"
-	"github.com/aorith/varnishlog-parser/vsl/header"
 	"github.com/aorith/varnishlog-parser/vsl/tag"
 )
 
@@ -117,52 +116,29 @@ func addTransactionLogs(s *CustomBuilder, tx *vsl.Transaction, visited map[strin
 
 func requestSequence(tx *vsl.Transaction, final bool) string {
 	var method, url, host string
-	var ur, mr vsl.Record
 
 	switch tx.Type() {
 	case vsl.TxTypeSession:
 		return ""
 	case vsl.TxTypeRequest:
-		if final {
-			ur = tx.LastRecordOfTag(tag.ReqURL)
-		} else {
-			ur = tx.FirstRecordOfTag(tag.ReqURL)
-		}
+		url = tx.RecordValueByTag(tag.ReqURL, !final)
+		method = tx.RecordValueByTag(tag.ReqMethod, !final)
 	case vsl.TxTypeBereq:
-		if final {
-			ur = tx.LastRecordOfTag(tag.BereqURL)
-		} else {
-			ur = tx.FirstRecordOfTag(tag.BereqURL)
-		}
+		url = tx.RecordValueByTag(tag.BereqURL, !final)
+		method = tx.RecordValueByTag(tag.BereqMethod, !final)
 	}
 
-	if final {
-		mr = tx.LastRecordOfType(vsl.MethodRecord{})
-	} else {
-		mr = tx.FirstRecordOfType(vsl.MethodRecord{})
-	}
-
-	method = mr.Value()
-	url = ur.Value()
-
-	hdrs := header.NewHeaderState(tx.LogRecords(), false)
-	hh := hdrs.FindHeader("host", !final, true)
-	if hh == nil {
-		host = ""
-	} else {
-		host = hh.Value()
-	}
+	// TODO: logic is inverted here, why?, getting the not final header when final is true
+	host = tx.ReqHeaders().Get("host", !final)
 
 	return method + " " + truncateStr(url, 50) + "<br>" + host
 }
 
 func statusSequence(tx *vsl.Transaction, status int, reasonTag string, acctTag string) string {
 	s := fmt.Sprintf("%d", status)
-	reason := tx.LastRecordOfTag(reasonTag)
-	if reason != nil {
-		s += " " + reason.Value()
-	}
-	a := tx.LastRecordOfTag(acctTag)
+	reason := tx.RecordValueByTag(reasonTag, false)
+	s += " " + reason
+	a := tx.RecordByTag(acctTag, false)
 	if a != nil {
 		acct := a.(vsl.AcctRecord)
 		s += fmt.Sprintf("<br>(Tx: %s | Rx: %s)", acct.TotalTx().String(), acct.TotalRx().String())

@@ -66,6 +66,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 		// Parse the remaining tags
 		complete := false
+		vclCallExecuted := false
 		for p.scanner.Scan() {
 			line := strings.TrimSpace(p.scanner.Text())
 			// Skip empty lines or invalid lines
@@ -79,21 +80,62 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 			}
 			tx.logRecords = append(tx.logRecords, r)
 
-			if r.Tag() == tag.End {
-				// The tx is complete
-				txsSet.txs = append(txsSet.txs, tx)
-				txsSet.txsMap[tx.TXID()] = tx
-				complete = true
-				break
-			} else if r.Tag() == tag.Link {
+			switch record := r.(type) {
+			case VCLCallRecord:
+				vclCallExecuted = true
+
+			case StatusRecord:
+				// When a status record is received, the state is on the initial Resp or Beresp before any VCL manipulation
+				vclCallExecuted = false
+
+			case LinkRecord:
 				// Add children to the transaction so they are updated later
 				// with the actual transaction (if found)
 				lr := r.(LinkRecord)
 				childTXID := parseTXID(lr.VXID(), lr.Type(), lr.ESILevel())
 				tx.children[childTXID] = &Transaction{level: -1}
-			} else if r.Tag() == tag.Begin {
+
+			case BeginRecord:
 				// A Begin tag was found in the middle of a transaction
 				return txsSet, fmt.Errorf("incorrect log: Another %q tag was found in the middle of the transaction %q", tag.Begin, tx.RawLog())
+
+			case HeaderRecord:
+				var headers Headers
+				if record.IsRespHeader() {
+					headers = tx.RespHeaders()
+				} else {
+					headers = tx.ReqHeaders()
+				}
+
+				if vclCallExecuted {
+					if headers.Get(record.Name(), false) == "" {
+						// Header does not exist, mark it as added
+						headers.Add(record.Name(), record.Value(), HdrStateAdded)
+					} else {
+						// Header exist, add it as modified, VCL 'set' and 'unset' remove
+						// all the previous values
+						headers.Add(record.Name(), record.Value(), HdrStateModified)
+					}
+				} else {
+					// Received headers
+					headers.Add(record.Name(), record.Value(), HdrStateReceived)
+				}
+
+			case HeaderUnsetRecord:
+				if record.IsRespHeader() {
+					tx.RespHeaders().Delete(record.Name())
+				} else {
+					tx.ReqHeaders().Delete(record.Name())
+				}
+
+			}
+
+			// Check if the tx is complete, this is outside of the switch case to be able to break the for loop
+			if r.Tag() == tag.End {
+				txsSet.txs = append(txsSet.txs, tx)
+				txsSet.txsMap[tx.TXID()] = tx
+				complete = true
+				break
 			}
 		}
 
@@ -151,26 +193,13 @@ func processRecord(line string) (Record, error) {
 		return NewBeginRecord(blr)
 	case tag.Link:
 		return NewLinkRecord(blr)
-	case tag.ReqHeader:
-		return NewReqHeaderRecord(blr)
-	case tag.RespHeader:
-		return NewRespHeaderRecord(blr)
-	case tag.BereqHeader:
-		return NewBereqHeaderRecord(blr)
-	case tag.BerespHeader:
-		return NewBerespHeaderRecord(blr)
-	case tag.ObjHeader:
-		return NewObjHeaderRecord(blr)
-	case tag.ObjUnset:
-		return NewObjUnsetRecord(blr)
-	case tag.ReqUnset:
-		return NewReqUnsetRecord(blr)
-	case tag.RespUnset:
-		return NewRespUnsetRecord(blr)
-	case tag.BereqUnset:
-		return NewBereqUnsetRecord(blr)
-	case tag.BerespUnset:
-		return NewBerespUnsetRecord(blr)
+
+		// Headers
+	case tag.ReqHeader, tag.RespHeader, tag.BereqHeader, tag.BerespHeader, tag.ObjHeader:
+		return NewHeaderRecord(blr)
+	case tag.ObjUnset, tag.ReqUnset, tag.RespUnset, tag.BereqUnset, tag.BerespUnset:
+		return NewHeaderUnsetRecord(blr)
+
 	case tag.ReqMethod, tag.BereqMethod:
 		return MethodRecord{BaseRecord: blr}, nil
 	case tag.ReqProtocol, tag.RespProtocol, tag.BereqProtocol, tag.BerespProtocol, tag.ObjProtocol:
@@ -197,13 +226,15 @@ func processRecord(line string) (Record, error) {
 		return NewLengthRecord(blr)
 	case tag.Hit:
 		return NewHitRecord(blr)
+	case tag.HitMiss:
+		return NewHitMissRecord(blr)
 	case tag.TTL:
 		return NewTTLRecord(blr)
-	case tag.VCL_Log:
+	case tag.VCLLog:
 		return NewVCLLogRecord(blr)
 	case tag.Storage:
 		return NewStorageRecord(blr)
-	case tag.Fetch_Body:
+	case tag.FetchBody:
 		return NewFetchBodyRecord(blr)
 	case tag.SessOpen:
 		return NewSessOpenRecord(blr)
@@ -211,11 +242,11 @@ func processRecord(line string) (Record, error) {
 		return NewSessCloseRecord(blr)
 	case tag.Gzip:
 		return NewGzipRecord(blr)
-	case tag.VCL_call:
+	case tag.VCLCall:
 		return VCLCallRecord{BaseRecord: blr}, nil
-	case tag.VCL_return:
+	case tag.VCLReturn:
 		return VCLReturnRecord{BaseRecord: blr}, nil
-	case tag.VCL_use:
+	case tag.VCLUse:
 		return VCLUseRecord{BaseRecord: blr}, nil
 	case tag.Error:
 		return ErrorRecord{BaseRecord: blr}, nil

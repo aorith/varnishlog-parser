@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
-	"github.com/aorith/varnishlog-parser/vsl/header"
+	"github.com/aorith/varnishlog-parser/vsl/tag"
 )
 
 const (
@@ -179,15 +179,7 @@ func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</code></pre><h3>python</h3><pre><code>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.Raw(pythonCommand(tx, f)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</code></pre></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</code></pre></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -198,23 +190,15 @@ func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) 
 func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 	var s strings.Builder
 
-	hdrState := header.NewHeaderState(t.LogRecords(), false)
-
-	// Find the host header
-	hostHdr := hdrState.FindHeader("host", f.OriginalHeaders, true)
-	if hostHdr == nil {
-		return "Host header not found!"
-	}
-
-	// Find the URL
-	var url vsl.Record
-	if f.OriginalURL {
-		url = t.FirstRecordOfType(vsl.URLRecord{})
+	hostHdr := t.ReqHeaders().Get("host", f.OriginalHeaders)
+	url := ""
+	method := ""
+	if t.Type() == vsl.TxTypeRequest {
+		url = t.RecordValueByTag(tag.ReqURL, f.OriginalURL)
+		method = t.RecordValueByTag(tag.ReqMethod, true)
 	} else {
-		url = t.LastRecordOfType(vsl.URLRecord{})
-	}
-	if url == nil {
-		return "URL not found!"
+		url = t.RecordValueByTag(tag.BereqURL, f.OriginalURL)
+		method = t.RecordValueByTag(tag.BereqMethod, true)
 	}
 
 	port := "80"
@@ -223,37 +207,29 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 		port = "443"
 		protocol = "https"
 	}
-	s.WriteString(fmt.Sprintf(`curl "%s://%s%s"`+" \\\n", protocol, hostHdr.Value(), url.Value()))
+	s.WriteString(fmt.Sprintf(`curl "%s://%s%s"`+" \\\n", protocol, hostHdr, url))
 
-	// Method
-	method := t.FirstRecordOfType(vsl.MethodRecord{})
-	if method == nil {
-		return "Method not found!"
-	}
-
-	switch method.Value() {
+	switch method {
 	case "GET":
 		// Nothing
 	case "POST", "PUT":
-		s.WriteString("    -X " + method.Value() + " \\\n")
+		s.WriteString("    -X " + method + " \\\n")
 		s.WriteString("    -d '' \\\n")
 	default:
-		s.WriteString("    -X " + method.Value() + " \\\n")
+		s.WriteString("    -X " + method + " \\\n")
 	}
 
 	// Add headers
-	var hdrVal string
-	for _, hc := range hdrState {
-		if hc.Name() == "Host" || (f.OriginalHeaders && !hc.IsOriginalHeader()) {
-			continue
+	var values []vsl.HdrValue
+	for _, header := range t.ReqHeaders() {
+		values = header.Values(f.OriginalHeaders)
+		for _, value := range values {
+			if header.Name() == vsl.HdrNameHost || (f.OriginalHeaders && value.State() != vsl.HdrStateReceived) {
+				continue
+			}
+			hdrVal := strings.ReplaceAll(value.Value(), `"`, `\"`)
+			s.WriteString(fmt.Sprintf(`    -H "%s: %s" \`+"\n", header.Name(), hdrVal))
 		}
-		if f.OriginalHeaders {
-			hdrVal = hc.OriginalValue()
-		} else {
-			hdrVal = hc.FinalValue()
-		}
-		hdrVal = strings.ReplaceAll(hdrVal, `"`, `\"`)
-		s.WriteString(fmt.Sprintf(`    -H "%s: %s" \`+"\n", hc.Name(), hdrVal))
 	}
 
 	// Fixed options
@@ -262,7 +238,7 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 	// Optional resolve
 	switch f.ResolveTo {
 	case SendToLocalhost:
-		s.WriteString(" \\\n    --resolve " + hostHdr.Value() + ":" + port + ":127.0.0.1")
+		s.WriteString(" \\\n    --resolve " + hostHdr + ":" + port + ":127.0.0.1")
 	case SendToBackend, SendToCustom:
 		custom := strings.SplitN(f.CustomResolve, ":", 2)
 		if custom[0] == "none" {
@@ -271,7 +247,7 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 		if len(custom) < 2 {
 			return "Incorrect backend address."
 		}
-		s.WriteString(" \\\n    --resolve " + hostHdr.Value() + ":" + custom[1] + ":" + custom[0])
+		s.WriteString(" \\\n    --resolve " + hostHdr + ":" + custom[1] + ":" + custom[0])
 
 		if (f.HTTPS && custom[1] == "80") || (!f.HTTPS && custom[1] == "443") {
 			s.WriteString("\n\n# Incorrect protocol selected?")
@@ -281,100 +257,8 @@ func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
 	return s.String()
 }
 
-func pythonCommand(t *vsl.Transaction, f ReqBuilderForm) string {
-	var s strings.Builder
-
-	hdrState := header.NewHeaderState(t.LogRecords(), false)
-
-	// Find the host header
-	hostHdr := hdrState.FindHeader("host", f.OriginalHeaders, true)
-	if hostHdr == nil {
-		return "Host header not found!"
-	}
-
-	// Find the URL
-	var url vsl.Record
-	if f.OriginalURL {
-		url = t.FirstRecordOfType(vsl.URLRecord{})
-	} else {
-		url = t.LastRecordOfType(vsl.URLRecord{})
-	}
-	if url == nil {
-		return "URL not found!"
-	}
-
-	// Set the protocol and port
-	port := "80"
-	protocol := "http"
-	if f.HTTPS {
-		port = "443"
-		protocol = "https"
-	}
-
-	s.WriteString("import requests\n\n")
-
-	includeHostHdr := false
-
-	// Optional resolve
-	switch f.ResolveTo {
-	case SendToLocalhost:
-		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, "127.0.0.1:"+port, url.Value()))
-		includeHostHdr = true
-	case SendToBackend, SendToCustom:
-		custom := strings.SplitN(f.CustomResolve, ":", 2)
-		if custom[0] == "none" {
-			return "Backed address not found for selected transaction."
-		}
-		if len(custom) < 2 {
-			return "Incorrect backend address."
-		}
-		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, custom[0]+":"+custom[1], url.Value()))
-		includeHostHdr = true
-	default:
-		s.WriteString(fmt.Sprintf("url = \"%s://%s%s\"\n\n", protocol, hostHdr.Value(), url.Value()))
-	}
-
-	// Add headers
-	s.WriteString("headers = {\n")
-	if includeHostHdr {
-		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", "Host", hostHdr.Value()))
-	}
-	for _, hc := range hdrState {
-		if hc.Name() == "Host" || (f.OriginalHeaders && !hc.IsOriginalHeader()) {
-			continue
-		}
-		var hdrVal string
-		if f.OriginalHeaders {
-			hdrVal = hc.OriginalValue()
-		} else {
-			hdrVal = hc.FinalValue()
-		}
-		hdrVal = strings.ReplaceAll(hdrVal, `"`, `\"`)
-		s.WriteString(fmt.Sprintf("    \"%s\": \"%s\",\n", hc.Name(), hdrVal))
-	}
-	s.WriteString("}\n\n")
-
-	// Method
-	method := t.FirstRecordOfType(vsl.MethodRecord{})
-	if method == nil {
-		return "Method not found!"
-	}
-	switch method.Value() {
-	case "GET":
-		s.WriteString("response = requests.get(url, headers=headers, verify=False)\n")
-	case "POST", "PUT":
-		s.WriteString("response = requests." + strings.ToLower(method.Value()) + "(url, headers=headers, verify=False, data={})\n")
-	default:
-		s.WriteString("response = requests." + strings.ToLower(method.Value()) + "(url, headers=headers, verify=False)\n")
-	}
-
-	s.WriteString("\nprint(response.status_code)\nprint(response.text)\n")
-
-	return s.String()
-}
-
 func getBackend(t *vsl.Transaction) string {
-	r := t.FirstRecordOfType(vsl.BackendOpenRecord{})
+	r := t.RecordByTag(tag.BackendOpen, true)
 	if r == nil {
 		return "none"
 	}

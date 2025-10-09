@@ -39,8 +39,10 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.EndRecord:
 			s.addRow(r.Tag(), "", "", "")
-		case vsl.ReqUnsetRecord, vsl.BereqUnsetRecord, vsl.RespUnsetRecord, vsl.BerespUnsetRecord, vsl.ObjUnsetRecord:
-			s.addRow(r.Tag(), "", r.Value(), "strike")
+		case vsl.HeaderRecord:
+			s.addRow(r.Tag(), "", record.Name()+": "+record.Value(), "")
+		case vsl.HeaderUnsetRecord:
+			s.addRow(r.Tag(), "", record.Name()+": "+record.Value(), "strike")
 		case vsl.ErrorRecord:
 			s.addRow(r.Tag(), "errorRecord", r.Value(), "errorRecord")
 		case vsl.FetchErrorRecord:
@@ -52,6 +54,8 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 		case vsl.AcctRecord:
 			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.HitRecord:
+			s.addRow(r.Tag(), "", record.String(), "")
+		case vsl.HitMissRecord:
 			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.GzipRecord:
 			s.addRow(r.Tag(), "", record.String(), "")
@@ -73,7 +77,10 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 				s.addRow(r.Tag(), "", r.Value(), "")
 			}
 
-			s.WriteString(fmt.Sprintf(`<ul class="color-%d">`, color))
+			_, err := fmt.Fprintf(s, `<ul class="color-%d">`, color)
+			if err != nil {
+				panic(err)
+			}
 			color++
 			if color > 3 {
 				color = 0
@@ -105,8 +112,14 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 		classB = classB + " tval"
 	}
 
-	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classA), a))
-	s.WriteString(fmt.Sprintf(`<div%s>%s</div>`, formatClass(classB), b))
+	_, err := fmt.Fprintf(s, `<div%s>%s</div>`, formatClass(classA), a)
+	if err != nil {
+		panic(err)
+	}
+	_, err = fmt.Fprintf(s, `<div%s>%s</div>`, formatClass(classB), b)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func statusCSSClass(s int) string {

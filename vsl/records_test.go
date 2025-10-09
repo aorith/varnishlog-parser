@@ -72,7 +72,7 @@ func TestHeaders(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
 		}
-		record, err := vsl.NewReqHeaderRecord(blr)
+		record, err := vsl.NewHeaderRecord(blr)
 		if err != nil {
 			t.Errorf("conversion to HeaderRecord failed: %s", err)
 		}

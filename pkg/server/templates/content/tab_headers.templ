@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/aorith/varnishlog-parser/vsl"
-	"github.com/aorith/varnishlog-parser/vsl/header"
 )
 
 func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
@@ -59,45 +58,43 @@ func renderHeaderTree(tx *vsl.Transaction, visited map[string]bool) templ.Compon
 	}
 	visited[tx.TXID()] = true
 
-	reqHeadersState := header.NewHeaderState(tx.LogRecords(), false)
-	respHeadersState := header.NewHeaderState(tx.LogRecords(), true)
-	return renderTxHeaderTree(tx, reqHeadersState, respHeadersState, visited)
+	return renderTxHeaderTree(tx, visited)
 }
 
-templ renderTxHeaderTree(tx *vsl.Transaction, reqHeadersState, respHeadersState header.HeaderStates, visited map[string]bool) {
+templ renderTxHeaderTree(tx *vsl.Transaction, visited map[string]bool) {
 	if tx.Type() != vsl.TxTypeSession {
 		<details>
 			<summary>{ tx.TXID() }</summary>
 			<table class="headers-table">
 				<tr>
 					<tr class="hdr-type"><th colspan="2"><abbr title="Headers as initially sent by the client, before any VCL processing.">Original Headers</abbr></th></tr>
-					for _, hc := range reqHeadersState {
-						if hc.IsOriginalHeader() {
-							<tr>
-								@renderHeaderDiff(hc, true, getHeaderDiffAttrs(header.OriginalHdr))
-							</tr>
-						}
-					}
+					// for _, hc := range reqHeadersState {
+					// 	if hc.IsOriginalHeader() {
+					// 		<tr>
+					// 			@renderHeaderDiff(hc, true, getHeaderDiffAttrs(header.OriginalHdr))
+					// 		</tr>
+					// 	}
+					// }
 					<tr class="hdr-type"><th colspan="2"><abbr title="State of the headers after VCL processing.">VCL Headers</abbr></th></tr>
-					for _, hc := range reqHeadersState {
-						<tr>
-							@renderHeaderDiff(hc, false, getHeaderDiffAttrs(hc.State()))
-						</tr>
-					}
+					// for _, hc := range reqHeadersState {
+					// 	<tr>
+					// 		@renderHeaderDiff(hc, false, getHeaderDiffAttrs(hc.State()))
+					// 	</tr>
+					// }
 					<tr class="hdr-type"><th colspan="2"><abbr title="Headers as initially sent by the client, before any VCL processing.">Original Response Headers</abbr></th></tr>
-					for _, hc := range respHeadersState {
-						if hc.IsOriginalHeader() {
-							<tr>
-								@renderHeaderDiff(hc, true, getHeaderDiffAttrs(header.OriginalHdr))
-							</tr>
-						}
-					}
+					// for _, hc := range respHeadersState {
+					// 	if hc.IsOriginalHeader() {
+					// 		<tr>
+					// 			@renderHeaderDiff(hc, true, getHeaderDiffAttrs(header.OriginalHdr))
+					// 		</tr>
+					// 	}
+					// }
 					<tr class="hdr-type"><th colspan="2"><abbr title="State of the response headers after VCL processing.">VCL Response Headers</abbr></th></tr>
-					for _, hc := range respHeadersState {
-						<tr>
-							@renderHeaderDiff(hc, false, getHeaderDiffAttrs(hc.State()))
-						</tr>
-					}
+					// for _, hc := range respHeadersState {
+					// 	<tr>
+					// 		@renderHeaderDiff(hc, false, getHeaderDiffAttrs(hc.State()))
+					// 	</tr>
+					// }
 				</tr>
 			</table>
 		</details>
@@ -109,27 +106,27 @@ templ renderTxHeaderTree(tx *vsl.Transaction, reqHeadersState, respHeadersState 
 	}
 }
 
-func getHeaderDiffAttrs(state int) templ.Attributes {
+func getHeaderDiffAttrs(state vsl.HdrState) templ.Attributes {
 	switch state {
-	case header.OriginalHdr:
+	case vsl.HdrStateReceived:
 		return templ.Attributes{"class": "diffOriginal"}
-	case header.AddedHdr:
+	case vsl.HdrStateAdded:
 		return templ.Attributes{"class": "diffAdded"}
-	case header.ModifiedHdr:
+	case vsl.HdrStateModified:
 		return templ.Attributes{"class": "diffModified"}
-	case header.DeletedHdr:
+	case vsl.HdrStateDeleted:
 		return templ.Attributes{"class": "diffDeleted"}
 	}
 	return templ.Attributes{"class": "diffOriginal"}
 }
 
-templ renderHeaderDiff(hc header.HeaderState, original bool, attrs templ.Attributes) {
-	<th>{ hc.Name() }</th>
-	<td { attrs ... }>
-		if original {
-			{ hc.OriginalValue() }
-		} else {
-			{ hc.FinalValue() }
-		}
-	</td>
-}
+// templ renderHeaderDiff(hc vsl.HdrState, original bool, attrs templ.Attributes) {
+// 	<th>{ hc.String() }</th>
+// 	<td { attrs ... }>
+// 		if original {
+// 			{ hc.OriginalValue() }
+// 		} else {
+// 			{ hc.FinalValue() }
+// 		}
+// 	</td>
+// }

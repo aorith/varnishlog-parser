@@ -1,25 +1,26 @@
+// Package vsl, reference: https://varnish-cache.org/docs/trunk/reference/vsl.html
 package vsl
 
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"slices"
 	"sort"
 	"strings"
 )
 
-// Reference: https://varnish-cache.org/docs/trunk/reference/vsl.html
+// TxType represents the type of a Varnish transaction.
+type TxType string
 
 const (
-	TxTypeSession = "Session"
-	TxTypeRequest = "Request"
-	TxTypeBereq   = "BeReq"
+	TxTypeSession TxType = "Session"
+	TxTypeRequest TxType = "Request"
+	TxTypeBereq   TxType = "BeReq"
 )
 
-var allTxTypes = []string{TxTypeSession, TxTypeRequest, TxTypeBereq}
+var allTxTypes = []TxType{TxTypeSession, TxTypeRequest, TxTypeBereq}
 
-func isValidTxType(txType string) bool {
+func isValidTxType(txType TxType) bool {
 	return slices.Contains(allTxTypes, txType)
 }
 
@@ -103,15 +104,17 @@ func (t TransactionSet) UniqueRootParents() []*Transaction {
 
 // Transaction represent a singular Varnish transaction log
 type Transaction struct {
-	txid       string // {vxid}_{type}[_{esiLevel}]
-	vxid       VXID
-	level      int
-	esiLevel   int    // 0 == no ESI
-	txType     string // Session, Request, BeReq
-	rawLog     string // Raw log string
-	logRecords []Record
-	parent     *Transaction
-	children   map[string]*Transaction // map[{txid}]*tx
+	txid        string // {vxid}_{type}[_{esiLevel}]
+	vxid        VXID
+	level       int
+	esiLevel    int    // 0 == no ESI
+	txType      TxType // Session, Request, BeReq
+	rawLog      string // Raw log string
+	logRecords  []Record
+	reqHeaders  Headers // Request Headers
+	respHeaders Headers // Response Headers
+	parent      *Transaction
+	children    map[string]*Transaction // map[{txid}]*tx
 }
 
 func (t *Transaction) TXID() string {
@@ -130,7 +133,7 @@ func (t *Transaction) ESILevel() int {
 	return t.esiLevel
 }
 
-func (t *Transaction) Type() string {
+func (t *Transaction) Type() TxType {
 	return t.txType
 }
 
@@ -140,6 +143,14 @@ func (t *Transaction) RawLog() string {
 
 func (t *Transaction) LogRecords() []Record {
 	return t.logRecords
+}
+
+func (t *Transaction) ReqHeaders() Headers {
+	return t.reqHeaders
+}
+
+func (t *Transaction) RespHeaders() Headers {
+	return t.respHeaders
 }
 
 func (t *Transaction) Parent() *Transaction {
@@ -207,58 +218,44 @@ func (t *Transaction) ChildrenSortedByVXID() []*Transaction {
 	return childrenSlice
 }
 
-// FirstRecordOfType returns the first record for the given type
-func (t *Transaction) FirstRecordOfType(target any) Record {
-	targetType := reflect.TypeOf(target)
-
-	for _, r := range t.LogRecords() {
-		if reflect.TypeOf(r) == targetType {
-			return r
-		}
-	}
-
-	return nil
-}
-
-// LastRecordOfType returns the last record for the given type
-func (t *Transaction) LastRecordOfType(target any) Record {
+// RecordByTag returns the the first or last record with the given tag.
+// If first is true, it returns the first occurrence; otherwise, it returns the last.
+// It returns nil if no record matches the tag.
+func (t *Transaction) RecordByTag(tag string, first bool) Record {
 	var record Record
-	targetType := reflect.TypeOf(target)
-
 	for _, r := range t.LogRecords() {
-		if reflect.TypeOf(r) == targetType {
-			record = r
+		if r.Tag() != tag {
+			continue
+		}
+		record = r
+		if first {
+			break
 		}
 	}
-
 	return record
 }
 
-// FirstRecordOfTag returns the first record for the given tag
-func (t *Transaction) FirstRecordOfTag(tag string) Record {
+// RecordValueByTag returns the value of the first or last record with the given tag.
+// If first is true, it returns the first occurrence; otherwise, it returns the last.
+// It returns an empty string if no record matches the tag.
+func (t *Transaction) RecordValueByTag(tag string, first bool) string {
+	var value string
 	for _, r := range t.LogRecords() {
-		if r.Tag() == tag {
-			return r
+		if r.Tag() != tag {
+			continue
+		}
+		value = r.Value()
+		if first {
+			break
 		}
 	}
-	return nil
-}
-
-// LastRecordOfTag returns the last record for the given tag
-func (t *Transaction) LastRecordOfTag(tag string) Record {
-	var record Record
-	for _, r := range t.LogRecords() {
-		if r.Tag() == tag {
-			record = r
-		}
-	}
-	return record
+	return value
 }
 
 // NewTransaction initializes a new transaction by parsing the first line of the log
 func NewTransaction(line string) (*Transaction, error) {
 	parts := strings.Fields(line)
-	txType := parts[2]
+	txType := TxType(parts[2])
 	if !isValidTxType(txType) {
 		return nil, fmt.Errorf("unknown transaction of type '%q' - known types: %q", txType, allTxTypes)
 	}
@@ -274,18 +271,20 @@ func NewTransaction(line string) (*Transaction, error) {
 	}
 
 	return &Transaction{
-		vxid:     vxid,
-		level:    level,
-		txType:   txType,
-		rawLog:   line,
-		children: make(map[string]*Transaction),
+		vxid:        vxid,
+		level:       level,
+		txType:      txType,
+		rawLog:      line,
+		reqHeaders:  make(map[string]Header),
+		respHeaders: make(map[string]Header),
+		children:    make(map[string]*Transaction),
 	}, nil
 }
 
 // NewMissingTransaction initializes a transaction that is missing in the VSL logs
 // from a Link tag record
 func NewMissingTransaction(r LinkRecord) *Transaction {
-	var txType string
+	var txType TxType
 	switch r.Type() {
 	case "sess":
 		txType = TxTypeSession

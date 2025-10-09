@@ -3,11 +3,12 @@ package vsl
 import (
 	"fmt"
 	"net"
-	"net/textproto"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aorith/varnishlog-parser/vsl/tag"
 )
 
 const (
@@ -123,31 +124,38 @@ func NewBeginRecord(blr BaseRecord) (BeginRecord, error) {
 	return BeginRecord{BaseRecord: blr, recordType: parts[0], parentVXID: parentVXID, esiLevel: 0, reasonOrProtocol: parts[2]}, nil
 }
 
-// HeaderRecord interface
-type HeaderRecord interface {
-	Name() string
-	Value() string
-}
-
-// headerRecord is a generic header record
-type headerRecord struct {
+// HeaderRecord represents an HTTP header log record
+type HeaderRecord struct {
 	BaseRecord
-	name  string
-	value string
+	name    string
+	value   string
+	hdrType string
 }
 
-func (r headerRecord) Name() string {
+func (r HeaderRecord) Name() string {
 	return r.name
 }
 
-func (r headerRecord) Value() string {
+func (r HeaderRecord) Value() string {
 	return r.value
 }
 
-func newHeaderRecord(blr BaseRecord) (headerRecord, error) {
+func (r HeaderRecord) HeaderType() string {
+	return r.hdrType
+}
+
+func (r HeaderRecord) IsRespHeader() bool {
+	switch r.hdrType {
+	case tag.RespHeader, tag.BerespHeader:
+		return true
+	}
+	return false
+}
+
+func NewHeaderRecord(blr BaseRecord) (HeaderRecord, error) {
 	fields := strings.SplitAfterN(blr.Value(), ":", 2)
 	if len(fields) < 2 {
-		return headerRecord{}, fmt.Errorf("conversion to HeaderRecord failed on line %q", blr.RawLog())
+		return HeaderRecord{}, fmt.Errorf("conversion to HeaderRecord failed on line %q", blr.RawLog())
 	}
 
 	name := fields[0]
@@ -156,123 +164,96 @@ func newHeaderRecord(blr BaseRecord) (headerRecord, error) {
 
 	name = strings.TrimRight(name, ": \t")
 	// Canonical format for the header key
-	name = textproto.CanonicalMIMEHeaderKey(name)
+	name = CanonicalHeaderName(name)
 
-	return headerRecord{
+	var hdrType string
+	switch blr.Tag() {
+	case tag.ReqHeader:
+		hdrType = tag.ReqHeader
+	case tag.RespHeader:
+		hdrType = tag.RespHeader
+	case tag.BereqHeader:
+		hdrType = tag.BereqHeader
+	case tag.BerespHeader:
+		hdrType = tag.BerespHeader
+	case tag.ObjHeader:
+		hdrType = tag.ObjHeader
+	default:
+		return HeaderRecord{}, fmt.Errorf("conversion to HeaderRecord failed (unknown header tag) on line %q", blr.RawLog())
+	}
+
+	return HeaderRecord{
 		BaseRecord: blr,
 		name:       name,
 		value:      value,
+		hdrType:    hdrType,
 	}, nil
 }
 
-// ReqHeaderRecord holds headers for the vsl tag ReqHeader
-type ReqHeaderRecord struct{ headerRecord }
-
-func NewReqHeaderRecord(blr BaseRecord) (ReqHeaderRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return ReqHeaderRecord{}, fmt.Errorf("conversion to ReqHeaderRecord failed on line %q", blr.RawLog())
-	}
-	return ReqHeaderRecord{headerRecord: hr}, nil
+// HeaderUnsetRecord represents an HTTP header log record which is being unset
+type HeaderUnsetRecord struct {
+	BaseRecord
+	name    string
+	value   string
+	hdrType string
 }
 
-// RespHeaderRecord holds headers for the vsl tag RespHeader
-type RespHeaderRecord struct{ headerRecord }
-
-func NewRespHeaderRecord(blr BaseRecord) (RespHeaderRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return RespHeaderRecord{}, fmt.Errorf("conversion to RespHeaderRecord failed on line %q", blr.RawLog())
-	}
-	return RespHeaderRecord{headerRecord: hr}, nil
+func (r HeaderUnsetRecord) Name() string {
+	return r.name
 }
 
-// BereqHeaderRecord holds headers for the vsl tag BereqHeader
-type BereqHeaderRecord struct{ headerRecord }
-
-func NewBereqHeaderRecord(blr BaseRecord) (BereqHeaderRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return BereqHeaderRecord{}, fmt.Errorf("conversion to BereqHeaderRecord failed on line %q", blr.RawLog())
-	}
-	return BereqHeaderRecord{headerRecord: hr}, nil
+func (r HeaderUnsetRecord) Value() string {
+	return r.value
 }
 
-// BerespHeaderRecord holds headers for the vsl tag BerespHeader
-type BerespHeaderRecord struct{ headerRecord }
-
-func NewBerespHeaderRecord(blr BaseRecord) (BerespHeaderRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return BerespHeaderRecord{}, fmt.Errorf("conversion to BerespHeaderRecord failed on line %q", blr.RawLog())
-	}
-	return BerespHeaderRecord{headerRecord: hr}, nil
+func (r HeaderUnsetRecord) HeaderType() string {
+	return r.hdrType
 }
 
-// ObjHeaderRecord holds headers for the vsl tag ObjHeader
-type ObjHeaderRecord struct{ headerRecord }
-
-func NewObjHeaderRecord(blr BaseRecord) (ObjHeaderRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return ObjHeaderRecord{}, fmt.Errorf("conversion to ObjHeaderRecord failed on line %q", blr.RawLog())
+func (r HeaderUnsetRecord) IsRespHeader() bool {
+	switch r.hdrType {
+	case tag.RespUnset, tag.BerespUnset:
+		return true
 	}
-	return ObjHeaderRecord{headerRecord: hr}, nil
+	return false
 }
 
-// ReqUnsetRecord holds a header name and value that is unset in VCL
-type ReqUnsetRecord struct{ headerRecord }
-
-func NewReqUnsetRecord(blr BaseRecord) (ReqUnsetRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return ReqUnsetRecord{}, fmt.Errorf("conversion to ReqUnsetRecord failed on line %q", blr.RawLog())
+func NewHeaderUnsetRecord(blr BaseRecord) (HeaderUnsetRecord, error) {
+	fields := strings.SplitAfterN(blr.Value(), ":", 2)
+	if len(fields) < 2 {
+		return HeaderUnsetRecord{}, fmt.Errorf("conversion to HeaderUnsetRecord failed on line %q", blr.RawLog())
 	}
-	return ReqUnsetRecord{headerRecord: hr}, nil
-}
 
-// BereqUnsetRecord holds a header name and value that is unset in VCL
-type BereqUnsetRecord struct{ headerRecord }
+	name := fields[0]
+	firstIndex := strings.Index(blr.Value(), name)
+	value := strings.TrimLeft(blr.Value()[firstIndex+len(name):], " \t")
 
-func NewBereqUnsetRecord(blr BaseRecord) (BereqUnsetRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return BereqUnsetRecord{}, fmt.Errorf("conversion to BereqUnsetRecord failed on line %q", blr.RawLog())
+	name = strings.TrimRight(name, ": \t")
+	// Canonical format for the header key
+	name = CanonicalHeaderName(name)
+
+	var hdrType string
+	switch blr.Tag() {
+	case tag.ReqUnset:
+		hdrType = tag.ReqUnset
+	case tag.RespUnset:
+		hdrType = tag.RespUnset
+	case tag.BereqUnset:
+		hdrType = tag.BereqUnset
+	case tag.BerespUnset:
+		hdrType = tag.BerespUnset
+	case tag.ObjUnset:
+		hdrType = tag.ObjUnset
+	default:
+		return HeaderUnsetRecord{}, fmt.Errorf("conversion to HeaderUnsetRecord failed (unknown header tag) on line %q", blr.RawLog())
 	}
-	return BereqUnsetRecord{headerRecord: hr}, nil
-}
 
-// RespUnsetRecord holds a header name and value that is unset in VCL
-type RespUnsetRecord struct{ headerRecord }
-
-func NewRespUnsetRecord(blr BaseRecord) (RespUnsetRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return RespUnsetRecord{}, fmt.Errorf("conversion to RespUnsetRecord failed on line %q", blr.RawLog())
-	}
-	return RespUnsetRecord{headerRecord: hr}, nil
-}
-
-// BerespUnsetRecord holds a header name and value that is unset in VCL
-type BerespUnsetRecord struct{ headerRecord }
-
-func NewBerespUnsetRecord(blr BaseRecord) (BerespUnsetRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return BerespUnsetRecord{}, fmt.Errorf("conversion to BerespUnsetRecord failed on line %q", blr.RawLog())
-	}
-	return BerespUnsetRecord{headerRecord: hr}, nil
-}
-
-// ObjUnsetRecord holds a header name and value that is unset in VCL
-type ObjUnsetRecord struct{ headerRecord }
-
-func NewObjUnsetRecord(blr BaseRecord) (ObjUnsetRecord, error) {
-	hr, err := newHeaderRecord(blr)
-	if err != nil {
-		return ObjUnsetRecord{}, fmt.Errorf("conversion to ObjUnsetRecord failed on line %q", blr.RawLog())
-	}
-	return ObjUnsetRecord{headerRecord: hr}, nil
+	return HeaderUnsetRecord{
+		BaseRecord: blr,
+		name:       name,
+		value:      value,
+		hdrType:    hdrType,
+	}, nil
 }
 
 // BackendOpenRecord holds information about a new backend connection
@@ -835,6 +816,48 @@ func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 	}
 
 	return HitRecord{BaseRecord: blr, objVXID: vxid, ttl: ttl, grace: grace, keep: keep}, nil
+}
+
+// HitMissRecord contains information about a hit for miss object in cache.
+type HitMissRecord struct {
+	BaseRecord
+	objVXID VXID          // object VXID
+	ttl     time.Duration // remaining TTL
+}
+
+func (r HitMissRecord) String() string {
+	return fmt.Sprintf(
+		"%d | TTL: %s",
+		r.objVXID,
+		r.ttl.String(),
+	)
+}
+
+func (r HitMissRecord) ObjVXID() VXID {
+	return r.objVXID
+}
+
+func (r HitMissRecord) TTL() time.Duration {
+	return r.ttl
+}
+
+func NewHitMissRecord(blr BaseRecord) (HitMissRecord, error) {
+	parts := strings.Fields(blr.Value())
+	if len(parts) < 2 {
+		return HitMissRecord{}, fmt.Errorf("conversion to HitMissRecord failed, incorrect len on line %q", blr.RawLog())
+	}
+
+	vxid, err := parseVXID(parts[0])
+	if err != nil {
+		return HitMissRecord{}, fmt.Errorf("conversion to HitMissRecord failed, bad VXID on line %q", blr.RawLog())
+	}
+
+	ttl, err := convertStrToDuration(parts[1], time.Second)
+	if err != nil {
+		return HitMissRecord{}, fmt.Errorf("conversion to HitMissRecord failed, bad field TTL on line %q", blr.RawLog())
+	}
+
+	return HitMissRecord{BaseRecord: blr, objVXID: vxid, ttl: ttl}, nil
 }
 
 // TTLRecord reprensets the ttl, grace, keep values for an object

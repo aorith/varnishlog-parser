@@ -1,3 +1,4 @@
+// Package tag contains all the known VSL tags
 package tag
 
 // Reference: https://varnish-cache.org/docs/6.0/reference/vsl.html
@@ -28,17 +29,6 @@ const (
 	ObjUnset = "ObjUnset"
 )
 
-// IsHeader check if the given tag represents an HTTP header
-func IsHeader(tag string) bool {
-	headers := []string{ReqHeader, RespHeader, BereqHeader, BerespHeader, ObjHeader}
-	for _, v := range headers {
-		if tag == v {
-			return true
-		}
-	}
-	return false
-}
-
 const (
 	// Marks the start of a VXID
 	Begin = "Begin"
@@ -67,7 +57,7 @@ const (
 	// Bogus HTTP received
 	BogoHeader = "BogoHeader"
 	// ESI parser error or warning message
-	ESI_xmlerror = "ESI_xmlerror"
+	ESIXMLError = "ESI_xmlerror"
 	// Error messages
 	Error = "Error"
 	// Object evicted due to ban
@@ -77,7 +67,7 @@ const (
 	// Error while fetching object
 	FetchError = "FetchError"
 	// Body fetched from backend
-	Fetch_Body = "Fetch_Body"
+	FetchBody = "Fetch_Body"
 	// Body filters
 	Filters = "Filters"
 	// G(un)zip performed on object
@@ -89,7 +79,7 @@ const (
 	// Hit for pass object in cache
 	HitPass = "HitPass"
 	// Unparsable HTTP request
-	HttpGarbage = "HttpGarbage"
+	HTTPGarbage = "HttpGarbage"
 	// Size of object body
 	Length = "Length"
 	// Links to a child VXID
@@ -139,19 +129,19 @@ const (
 	// Timing information
 	Timestamp = "Timestamp"
 	// VCL execution error message
-	VCL_Error = "VCL_Error"
+	VCLError = "VCL_Error"
 	// Log statement from VCL
-	VCL_Log = "VCL_Log"
+	VCLLog = "VCL_Log"
 	// VCL ACL check results
-	VCL_acl = "VCL_acl"
+	VCLAcl = "VCL_acl"
 	// VCL method called
-	VCL_call = "VCL_call"
+	VCLCall = "VCL_call"
 	// VCL method return value
-	VCL_return = "VCL_return"
+	VCLReturn = "VCL_return"
 	// VCL trace data
-	VCL_trace = "VCL_trace"
+	VCLTrace = "VCL_trace"
 	// VCL in use
-	VCL_use = "VCL_use"
+	VCLUse = "VCL_use"
 	// VSL API warnings and error message
 	VSL = "VSL"
 	// Fetch filter accounting
