@@ -10,26 +10,16 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/aorith/varnishlog-parser/pkg/render"
 	"github.com/aorith/varnishlog-parser/vsl"
 	"github.com/aorith/varnishlog-parser/vsl/tag"
 )
 
-const (
-	SendToDomain = iota
-	SendToBackend
-	SendToLocalhost
-	SendToCustom
-)
-
 type ReqBuilderForm struct {
-	TXID            string
-	HTTPS           bool
-	OriginalHeaders bool
-	OriginalURL     bool
-	ResolveTo       int
-	CustomResolve   string
+	Scheme    string
+	Received  bool
+	ConnectTo string
 }
 
 func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
@@ -53,20 +43,20 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate commands with <a href=\"https://curl.se/\" target=\"_blank\">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, <b>body is not available</b> in varnishlog and won’t be included.</p><form class=\"simple-form\" hx-post=\"reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name='logs']\"><fieldset><legend>Transaction: </legend> <select id=\"transactionSelect\" name=\"transaction\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate commands with <a href=\"https://curl.se/\" target=\"_blank\">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, <b>body is not available</b> in varnishlog and won’t be included.</p><form class=\"simple-form\" hx-post=\"reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name='logs']\"><fieldset><legend>Scheme:</legend> <label><input type=\"radio\" name=\"scheme\" value=\"auto\" checked> Auto</label> <label><input type=\"radio\" name=\"scheme\" value=\"http://\"> Http</label> <label><input type=\"radio\" name=\"scheme\" value=\"https://\"> Https</label></fieldset><fieldset><legend>Headers:</legend> <label title=\"Headers as originally sent by the client or backend\"><input type=\"radio\" name=\"headers\" value=\"received\" checked> Received</label> <label title=\"Headers after VCL processing (rewrites, additions, removals)\"><input type=\"radio\" name=\"headers\" value=\"processed\"> VCL Processed</label></fieldset><br><fieldset><legend>Connect To: </legend> <label><input type=\"radio\" name=\"connectTo\" value=\"auto\" checked> Auto</label> <label><input type=\"radio\" name=\"connectTo\" value=\"none\"> None</label><br><br><label><input type=\"radio\" name=\"connectTo\" value=\"backend\"> Backend:<br><select id=\"transactionBackend\" name=\"transactionBackend\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, tx := range txsSet.Transactions() {
-			if tx.Type() != vsl.TxTypeSession {
+			if tx.Type() == vsl.TxTypeBereq {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var2 string
-				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
+				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(getBackend(tx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 42, Col: 32}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 70, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -79,70 +69,32 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 42, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 70, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</option>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</select></fieldset><br><fieldset><legend>Protocol: </legend> <label><input type=\"checkbox\" name=\"https\" checked> https</label></fieldset><fieldset><legend>URL: </legend> <label><input type=\"radio\" name=\"urlType\" value=\"original\" checked> Original</label> <label><input type=\"radio\" name=\"urlType\" value=\"final\"> After VCL</label></fieldset><fieldset><legend>Headers: </legend> <label><input type=\"radio\" name=\"headerType\" value=\"original\" checked> Original</label> <label><input type=\"radio\" name=\"headerType\" value=\"final\"> After VCL</label></fieldset><br><fieldset><legend>Send To: </legend> <label><input type=\"radio\" name=\"sendTo\" value=\"domain\" checked> Domain</label> <label><input type=\"radio\" name=\"sendTo\" value=\"localhost\"> Localhost</label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"backend\"> Backend:<br><select id=\"transactionBackend\" name=\"transactionBackend\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, tx := range txsSet.Transactions() {
-			if tx.Type() == vsl.TxTypeBereq {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " (")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(getBackend(tx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 89, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 70, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 89, Col: 52}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " (")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(getBackend(tx))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 89, Col: 72}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, ")</option>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, ")</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</select></label><br><br><label><input type=\"radio\" name=\"sendTo\" value=\"custom\"> Custom: <input type=\"text\" name=\"customResolve\" pattern=\".*:.*\" placeholder=\"<IPADDR>:<PORT>\"></label></fieldset><br><button class=\"btn loading\">Generate</button></form><br><div id=\"reqBuilderResults\"></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</select></label><br><br><label><input type=\"radio\" name=\"connectTo\" value=\"custom\"> Custom: <input type=\"text\" name=\"custom\" pattern=\"^.+:[0-9]+$\" placeholder=\"<HOST/IP>:<PORT>\"></label></fieldset><br><button class=\"btn loading\">Generate</button></form><br><div id=\"reqBuilderResults\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -150,7 +102,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 	})
 }
 
-func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) templ.Component {
+func ReqBuild(txsSet vsl.TransactionSet, f ReqBuilderForm) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -166,20 +118,45 @@ func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) 
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"fade-me-in\"><h3>curl</h3><pre><code>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"fade-me-in\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.Raw(curlCommand(tx, f)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		for _, tx := range txsSet.Transactions() {
+			if tx.Type() != vsl.TxTypeSession {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<h3>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var6 string
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 94, Col: 19}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</h3><pre><code>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templ.Raw(curlCommand(tx, f)).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</code></pre>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</code></pre></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -187,74 +164,36 @@ func ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) 
 	})
 }
 
-func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
-	var s strings.Builder
+func curlCommand(tx *vsl.Transaction, f ReqBuilderForm) string {
+	var backend *render.Backend
 
-	hostHdr := t.ReqHeaders().Get("host", f.OriginalHeaders)
-	url := ""
-	method := ""
-	if t.Type() == vsl.TxTypeRequest {
-		url = t.RecordValueByTag(tag.ReqURL, f.OriginalURL)
-		method = t.RecordValueByTag(tag.ReqMethod, true)
-	} else {
-		url = t.RecordValueByTag(tag.BereqURL, f.OriginalURL)
-		method = t.RecordValueByTag(tag.BereqMethod, true)
-	}
-
-	port := "80"
-	protocol := "http"
-	if f.HTTPS {
-		port = "443"
-		protocol = "https"
-	}
-	s.WriteString(fmt.Sprintf(`curl "%s://%s%s"`+" \\\n", protocol, hostHdr, url))
-
-	switch method {
-	case "GET":
-		// Nothing
-	case "POST", "PUT":
-		s.WriteString("    -X " + method + " \\\n")
-		s.WriteString("    -d '' \\\n")
-	default:
-		s.WriteString("    -X " + method + " \\\n")
-	}
-
-	// Add headers
-	var values []vsl.HdrValue
-	for _, header := range t.ReqHeaders() {
-		values = header.Values(f.OriginalHeaders)
-		for _, value := range values {
-			if header.Name() == vsl.HdrNameHost || (f.OriginalHeaders && value.State() != vsl.HdrStateReceived) {
-				continue
+	switch f.ConnectTo {
+	case "none":
+		backend = nil
+	case "auto":
+		if tx.Type() == vsl.TxTypeBereq {
+			br := tx.RecordByTag(tag.BackendOpen, false)
+			bo := br.(vsl.BackendOpenRecord)
+			host, port, err := render.ParseBackend(fmt.Sprintf("%s:%d", bo.RemoteAddr().String(), bo.RemotePort()))
+			if err != nil {
+				return "error parsing backend: " + err.Error()
 			}
-			hdrVal := strings.ReplaceAll(value.Value(), `"`, `\"`)
-			s.WriteString(fmt.Sprintf(`    -H "%s: %s" \`+"\n", header.Name(), hdrVal))
+			backend = render.NewBackend(host, port)
 		}
+	default:
+		host, port, err := render.ParseBackend(f.ConnectTo)
+		if err != nil {
+			return "error parsing backend: " + err.Error()
+		}
+		backend = render.NewBackend(host, port)
 	}
 
-	// Fixed options
-	s.WriteString("    -s -k -v -o /dev/null")
-
-	// Optional resolve
-	switch f.ResolveTo {
-	case SendToLocalhost:
-		s.WriteString(" \\\n    --resolve " + hostHdr + ":" + port + ":127.0.0.1")
-	case SendToBackend, SendToCustom:
-		custom := strings.SplitN(f.CustomResolve, ":", 2)
-		if custom[0] == "none" {
-			return "Backed address not found for selected transaction."
-		}
-		if len(custom) < 2 {
-			return "Incorrect backend address."
-		}
-		s.WriteString(" \\\n    --resolve " + hostHdr + ":" + custom[1] + ":" + custom[0])
-
-		if (f.HTTPS && custom[1] == "80") || (!f.HTTPS && custom[1] == "443") {
-			s.WriteString("\n\n# Incorrect protocol selected?")
-		}
+	httpReq, err := render.NewHTTPRequest(tx, false, f.Received)
+	if err != nil {
+		return "error generating curl command: " + err.Error()
 	}
 
-	return s.String()
+	return httpReq.CurlCommand(f.Scheme, backend)
 }
 
 func getBackend(t *vsl.Transaction) string {

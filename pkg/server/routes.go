@@ -72,45 +72,21 @@ func (s *vlogServer) registerRoutes() http.Handler {
 			return
 		}
 
-		var rt int
-		rtValue := r.Form.Get("sendTo")
-		switch rtValue {
-		case "domain":
-			rt = content.SendToDomain
-		case "backend":
-			rt = content.SendToBackend
-		case "localhost":
-			rt = content.SendToLocalhost
+		connectTo := r.Form.Get("connectTo")
+		switch connectTo {
 		case "custom":
-			rt = content.SendToCustom
+			connectTo = r.Form.Get("custom")
+		case "backend":
+			connectTo = r.Form.Get("transactionBackend")
 		}
 
 		f := content.ReqBuilderForm{
-			TXID:            r.Form.Get("transaction"),
-			HTTPS:           r.Form.Get("https") == "on",
-			OriginalHeaders: r.Form.Get("headerType") == "original",
-			OriginalURL:     r.Form.Get("urlType") == "original",
-			ResolveTo:       rt,
-			CustomResolve:   r.Form.Get("customResolve"),
+			Scheme:    r.Form.Get("scheme"),
+			Received:  r.Form.Get("headers") == "received", // Use the received method/url and headers
+			ConnectTo: connectTo,
 		}
 
-		if f.ResolveTo == content.SendToBackend {
-			f.CustomResolve = r.Form.Get("transactionBackend")
-		}
-
-		// Find the tx which should still be present in the "New Parse" textarea
-		tx, ok := txsSet.TransactionsMap()[f.TXID]
-		if !ok {
-			err = partials.ErrorMsg(fmt.Errorf(`Transaction %q not found. Did you reset the "New Parse" textarea?`, f.TXID)).Render(context.Background(), w)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, err)
-				return
-			}
-			return
-		}
-
-		err = content.ReqBuild(txsSet, tx, f).Render(context.Background(), w)
+		err = content.ReqBuild(txsSet, f).Render(context.Background(), w)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err)

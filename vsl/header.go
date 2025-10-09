@@ -135,6 +135,9 @@ func (h Headers) Delete(name string) {
 	for i := range header.values {
 		header.values[i].state = HdrStateDeleted
 	}
+	for i := range header.receivedValues {
+		header.receivedValues[i].state = HdrStateDeleted
+	}
 
 	h[name] = header
 }

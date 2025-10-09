@@ -2,26 +2,16 @@ package content
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
 	"github.com/aorith/varnishlog-parser/vsl/tag"
-)
-
-const (
-	SendToDomain = iota
-	SendToBackend
-	SendToLocalhost
-	SendToCustom
+	"github.com/aorith/varnishlog-parser/pkg/render"
 )
 
 type ReqBuilderForm struct {
-	TXID            string
-	HTTPS           bool
-	OriginalHeaders bool
-	OriginalURL     bool
-	ResolveTo       int
-	CustomResolve   string
+	Scheme    string
+	Received  bool
+	ConnectTo string
 }
 
 templ ReqBuilderTab(txsSet vsl.TransactionSet) {
@@ -35,53 +25,44 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 			hx-include="[name='logs']"
 		>
 			<fieldset>
-				<legend>Transaction: </legend>
-				<select id="transactionSelect" name="transaction">
-					for _, tx := range txsSet.Transactions() {
-						if tx.Type() != vsl.TxTypeSession {
-							<option value={ tx.TXID() }>{ tx.TXID() }</option>
-						}
-					}
-				</select>
-			</fieldset>
-			<br/>
-			<fieldset>
-				<legend>Protocol: </legend>
+				<legend>Scheme:</legend>
 				<label>
-					<input type="checkbox" name="https" checked/> https
+					<input type="radio" name="scheme" value="auto" checked/>
+					Auto
+				</label>
+				<label>
+					<input type="radio" name="scheme" value="http://"/>
+					Http
+				</label>
+				<label>
+					<input type="radio" name="scheme" value="https://"/>
+					Https
 				</label>
 			</fieldset>
 			<fieldset>
-				<legend>URL: </legend>
-				<label>
-					<input type="radio" name="urlType" value="original" checked/> Original
+				<legend>Headers:</legend>
+				<label title="Headers as originally sent by the client or backend">
+					<input type="radio" name="headers" value="received" checked/>
+					Received
 				</label>
-				<label>
-					<input type="radio" name="urlType" value="final"/> After VCL
-				</label>
-			</fieldset>
-			<fieldset>
-				<legend>Headers: </legend>
-				<label>
-					<input type="radio" name="headerType" value="original" checked/> Original
-				</label>
-				<label>
-					<input type="radio" name="headerType" value="final"/> After VCL
+				<label title="Headers after VCL processing (rewrites, additions, removals)">
+					<input type="radio" name="headers" value="processed"/>
+					VCL Processed
 				</label>
 			</fieldset>
 			<br/>
 			<fieldset>
-				<legend>Send To: </legend>
+				<legend>Connect To: </legend>
 				<label>
-					<input type="radio" name="sendTo" value="domain" checked/> Domain
+					<input type="radio" name="connectTo" value="auto" checked/> Auto
 				</label>
 				<label>
-					<input type="radio" name="sendTo" value="localhost"/> Localhost
+					<input type="radio" name="connectTo" value="none"/> None
 				</label>
 				<br/>
 				<br/>
 				<label>
-					<input type="radio" name="sendTo" value="backend"/> Backend:
+					<input type="radio" name="connectTo" value="backend"/> Backend:
 					<br/>
 					<select id="transactionBackend" name="transactionBackend">
 						for _, tx := range txsSet.Transactions() {
@@ -94,8 +75,8 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 				<br/>
 				<br/>
 				<label>
-					<input type="radio" name="sendTo" value="custom"/> Custom:
-					<input type="text" name="customResolve" pattern=".*:.*" placeholder="<IPADDR>:<PORT>"/>
+					<input type="radio" name="connectTo" value="custom"/> Custom:
+					<input type="text" name="custom" pattern="^.+:[0-9]+$" placeholder="<HOST/IP>:<PORT>"/>
 				</label>
 			</fieldset>
 			<br/>
@@ -106,85 +87,51 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 	</div>
 }
 
-templ ReqBuild(txsSet vsl.TransactionSet, tx *vsl.Transaction, f ReqBuilderForm) {
+templ ReqBuild(txsSet vsl.TransactionSet, f ReqBuilderForm) {
 	<div class="fade-me-in">
-		<h3>curl</h3>
-		<pre>
-			<code>
-				@templ.Raw(curlCommand(tx, f))
-			</code>
-		</pre>
+		for _, tx := range txsSet.Transactions() {
+			if tx.Type() != vsl.TxTypeSession {
+				<h3>{ tx.TXID() }</h3>
+				<pre>
+					<code>
+						@templ.Raw(curlCommand(tx, f))
+					</code>
+				</pre>
+			}
+		}
 	</div>
 }
 
-func curlCommand(t *vsl.Transaction, f ReqBuilderForm) string {
-	var s strings.Builder
+func curlCommand(tx *vsl.Transaction, f ReqBuilderForm) string {
+	var backend *render.Backend
 
-	hostHdr := t.ReqHeaders().Get("host", f.OriginalHeaders)
-	url := ""
-	method := ""
-	if t.Type() == vsl.TxTypeRequest {
-		url = t.RecordValueByTag(tag.ReqURL, f.OriginalURL)
-		method = t.RecordValueByTag(tag.ReqMethod, true)
-	} else {
-		url = t.RecordValueByTag(tag.BereqURL, f.OriginalURL)
-		method = t.RecordValueByTag(tag.BereqMethod, true)
-	}
-
-	port := "80"
-	protocol := "http"
-	if f.HTTPS {
-		port = "443"
-		protocol = "https"
-	}
-	s.WriteString(fmt.Sprintf(`curl "%s://%s%s"`+" \\\n", protocol, hostHdr, url))
-
-	switch method {
-	case "GET":
-		// Nothing
-	case "POST", "PUT":
-		s.WriteString("    -X " + method + " \\\n")
-		s.WriteString("    -d '' \\\n")
-	default:
-		s.WriteString("    -X " + method + " \\\n")
-	}
-
-	// Add headers
-	var values []vsl.HdrValue
-	for _, header := range t.ReqHeaders() {
-		values = header.Values(f.OriginalHeaders)
-		for _, value := range values {
-			if header.Name() == vsl.HdrNameHost || (f.OriginalHeaders && value.State() != vsl.HdrStateReceived) {
-				continue
+	switch f.ConnectTo {
+	case "none":
+		backend = nil
+	case "auto":
+		if tx.Type() == vsl.TxTypeBereq {
+			br := tx.RecordByTag(tag.BackendOpen, false)
+			bo := br.(vsl.BackendOpenRecord)
+			host, port, err := render.ParseBackend(fmt.Sprintf("%s:%d", bo.RemoteAddr().String(), bo.RemotePort()))
+			if err != nil {
+				return "error parsing backend: " + err.Error()
 			}
-			hdrVal := strings.ReplaceAll(value.Value(), `"`, `\"`)
-			s.WriteString(fmt.Sprintf(`    -H "%s: %s" \`+"\n", header.Name(), hdrVal))
+			backend = render.NewBackend(host, port)
 		}
+	default:
+		host, port, err := render.ParseBackend(f.ConnectTo)
+		if err != nil {
+			return "error parsing backend: " + err.Error()
+		}
+		backend = render.NewBackend(host, port)
 	}
 
-	// Fixed options
-	s.WriteString("    -s -k -v -o /dev/null")
-
-	// Optional resolve
-	switch f.ResolveTo {
-	case SendToLocalhost:
-		s.WriteString(" \\\n    --resolve " + hostHdr + ":" + port + ":127.0.0.1")
-	case SendToBackend, SendToCustom:
-		custom := strings.SplitN(f.CustomResolve, ":", 2)
-		if custom[0] == "none" {
-			return "Backed address not found for selected transaction."
-		}
-		if len(custom) < 2 {
-			return "Incorrect backend address."
-		}
-		s.WriteString(" \\\n    --resolve " + hostHdr + ":" + custom[1] + ":" + custom[0])
-
-		if (f.HTTPS && custom[1] == "80") || (!f.HTTPS && custom[1] == "443") {
-			s.WriteString("\n\n# Incorrect protocol selected?")
-		}
+	httpReq, err := render.NewHTTPRequest(tx, false, f.Received)
+	if err != nil {
+		return "error generating curl command: " + err.Error()
 	}
 
-	return s.String()
+	return httpReq.CurlCommand(f.Scheme, backend)
 }
 
 func getBackend(t *vsl.Transaction) string {
