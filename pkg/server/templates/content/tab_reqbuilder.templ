@@ -2,6 +2,7 @@ package content
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
 	"github.com/aorith/varnishlog-parser/vsl/tag"
@@ -10,7 +11,8 @@ import (
 
 type ReqBuilderForm struct {
 	Scheme    string
-	Received  bool
+	Received  bool   // Use received headers
+	Excluded  string // Excluded headers, split by comma
 	ConnectTo string
 }
 
@@ -39,6 +41,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 					Https
 				</label>
 			</fieldset>
+			<br/>
 			<fieldset>
 				<legend>Headers:</legend>
 				<label title="Headers as originally sent by the client or backend">
@@ -48,6 +51,12 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 				<label title="Headers after VCL processing (rewrites, additions, removals)">
 					<input type="radio" name="headers" value="processed"/>
 					VCL Processed
+				</label>
+				<br/>
+				<br/>
+				<label>
+					Excluded headers:
+					<input type="text" name="excluded" placeholder="header1, header2, ..." value=""/>
 				</label>
 			</fieldset>
 			<br/>
@@ -126,7 +135,17 @@ func curlCommand(tx *vsl.Transaction, f ReqBuilderForm) string {
 		backend = render.NewBackend(host, port)
 	}
 
-	httpReq, err := render.NewHTTPRequest(tx, false, f.Received)
+	// Parse optional excluded headers
+	excluded := []string{}
+	if f.Excluded != "" {
+		parts := strings.Split(f.Excluded, ",")
+		for _, h := range parts {
+			name := vsl.CanonicalHeaderName(strings.TrimSpace(h))
+			excluded = append(excluded, name)
+		}
+	}
+
+	httpReq, err := render.NewHTTPRequest(tx, f.Received, excluded)
 	if err != nil {
 		return "error generating curl command: " + err.Error()
 	}

@@ -135,9 +135,10 @@ func (h Headers) Delete(name string) {
 	for i := range header.values {
 		header.values[i].state = HdrStateDeleted
 	}
-	for i := range header.receivedValues {
-		header.receivedValues[i].state = HdrStateDeleted
-	}
+	// Client send-headers cannot be deleted, if that happens it was inside of Varnish C code
+	// for i := range header.receivedValues {
+	// 	header.receivedValues[i].state = HdrStateDeleted
+	// }
 
 	h[name] = header
 }
@@ -175,6 +176,13 @@ func (h Headers) Get(name string, received bool) string {
 		return ""
 	}
 	return values[0].Value()
+}
+
+// Clear removes all entries from the Headers map.
+func (h *Headers) Clear() {
+	for k := range *h {
+		delete(*h, k)
+	}
 }
 
 // CanonicalHeaderName returns the canonical format of the

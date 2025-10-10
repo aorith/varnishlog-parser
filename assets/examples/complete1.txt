@@ -17,7 +17,10 @@
 --  ReqHeader      User-Agent: curl/8.7.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      secret:1234
---  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      X-Forwarded-For: 1.1.1.1
+--  ReqHeader      X-Forwarded-For: 2.2.2.2
+--  ReqUnset       X-Forwarded-For: 1.1.1.1, 2.2.2.2
+--  ReqHeader      X-Forwarded-For: 1.1.1.1, 2.2.2.2, 192.168.65.1
 --  ReqHeader      Via: 1.1 b736436225f7 (Varnish/7.5)
 --  VCL_call       RECV
 --  VCL_Log        custom VCL recv

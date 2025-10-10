@@ -84,6 +84,7 @@ func (s *vlogServer) registerRoutes() http.Handler {
 			Scheme:    r.Form.Get("scheme"),
 			Received:  r.Form.Get("headers") == "received", // Use the received method/url and headers
 			ConnectTo: connectTo,
+			Excluded:  r.Form.Get("excluded"),
 		}
 
 		err = content.ReqBuild(txsSet, f).Render(context.Background(), w)

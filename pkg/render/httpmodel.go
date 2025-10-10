@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 	"net"
+	"slices"
 	"sort"
 	"strings"
 
@@ -18,9 +19,21 @@ type HTTPRequest struct {
 	headers []Header
 }
 
+func (r HTTPRequest) Headers() []Header {
+	return r.headers
+}
+
 type Header struct {
 	name  string
 	value string
+}
+
+func (h Header) Name() string {
+	return h.name
+}
+
+func (h Header) Value() string {
+	return h.value
 }
 
 type Backend struct {
@@ -35,19 +48,14 @@ func NewBackend(host string, port string) *Backend {
 // NewHTTPRequest constructs an HTTPRequest from a Varnish transaction.
 // Returns nil if the transaction type is session.
 //
-// If fromResponse is true, fields are extracted from the response; otherwise, from the request.
 // If received is true, initial (received) headers are used; otherwise, headers after VCL processing.
-func NewHTTPRequest(tx *vsl.Transaction, fromResponse, received bool) (*HTTPRequest, error) {
+// excludeHeaders can contain an slice of strings, each one must be a header name in canonical format
+func NewHTTPRequest(tx *vsl.Transaction, received bool, excludeHeaders []string) (*HTTPRequest, error) {
 	if tx.Type() == vsl.TxTypeSession {
 		return nil, fmt.Errorf("cannot create an http request from a transaction of type session")
 	}
 
-	var headers vsl.Headers
-	if fromResponse {
-		headers = tx.RespHeaders()
-	} else {
-		headers = tx.ReqHeaders()
-	}
+	headers := tx.ReqHeaders()
 
 	host := headers.Get("host", received)
 	port := ""
@@ -61,7 +69,7 @@ func NewHTTPRequest(tx *vsl.Transaction, fromResponse, received bool) (*HTTPRequ
 
 	httpHeaders := []Header{}
 	for name, h := range headers {
-		if name == vsl.HdrNameHost {
+		if name == vsl.HdrNameHost || slices.Contains(excludeHeaders, name) {
 			continue
 		}
 		for _, v := range h.Values(received) {

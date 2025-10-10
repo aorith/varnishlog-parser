@@ -65,8 +65,10 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		tx.logRecords = append(tx.logRecords, br)
 
 		// Parse the remaining tags
-		complete := false
-		vclCallExecuted := false
+		complete := false                                 // to check at the end if the transaction finished (found End tag for example)
+		clientHeaders := true                             // keep track if we are still parsing client/received headers
+		var lastHeaderRecord *HeaderRecord                // required to track client/received headers
+		var tempHeaders Headers = make(map[string]Header) // required to track client/received headers
 		for p.scanner.Scan() {
 			line := strings.TrimSpace(p.scanner.Text())
 			// Skip empty lines or invalid lines
@@ -82,11 +84,24 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 			switch record := r.(type) {
 			case VCLCallRecord:
-				vclCallExecuted = true
+				if clientHeaders {
+					clientHeaders = false
+					// Check what was the last header to select either 'tx.ReqHeaders()' or 'tx.RespHeaders()'
+					// prefer this rather that checking if the call is for 'recv', 'miss', 'deliver', etc, as that could be more brittle
+					if lastHeaderRecord == nil {
+						tempHeaders.Clear() // should be empty already
+						continue
+					}
+					if lastHeaderRecord.IsRespHeader() {
+						mergeTempHeaders(tx.RespHeaders(), tempHeaders)
+					} else {
+						mergeTempHeaders(tx.ReqHeaders(), tempHeaders)
+					}
+				}
 
 			case StatusRecord:
 				// When a status record is received, the state is on the initial Resp or Beresp before any VCL manipulation
-				vclCallExecuted = false
+				clientHeaders = true
 
 			case LinkRecord:
 				// Add children to the transaction so they are updated later
@@ -99,7 +114,18 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 				// A Begin tag was found in the middle of a transaction
 				return txsSet, fmt.Errorf("incorrect log: Another %q tag was found in the middle of the transaction %q", tag.Begin, tx.RawLog())
 
+			// HEADERS: handle parsing of HTTP headers, transactions have two  Headers sets, one for Req and another for Resp requests
+			// Varnish also has some built-in VCL that executes after users VCL (if not overridden by a return), but most importantly
+			// it has 'core' code (in C) that modifies some headers like X-F-F before any VCL is called. So it is a bit tricky to know
+			// if a header comes from the client (eg: curl) or it was Varnish who did that.
+			// Ref: https://github.com/varnishcache/varnish-cache/blob/9f02342b455469349e24a88e49550f23c262baaf/bin/varnishd/cache/cache_req_fsm.c#L908-L909
+
+			// For simplicity let's consider that all 'unsets' of headers present at 'isVarnishModifiedHeader()' that
+			// happen before a VCL_call are client-sent/received headers.
 			case HeaderRecord:
+				recordCopy := record
+				lastHeaderRecord = &recordCopy
+
 				var headers Headers
 				if record.IsRespHeader() {
 					headers = tx.RespHeaders()
@@ -107,27 +133,41 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 					headers = tx.ReqHeaders()
 				}
 
-				if vclCallExecuted {
-					if headers.Get(record.Name(), false) == "" {
-						// Header does not exist, mark it as added
-						headers.Add(record.Name(), record.Value(), HdrStateAdded)
+				if clientHeaders {
+					if isVarnishModifiedHeader(record.Name()) {
+						// Store them to process them later
+						// since deletes only apply to processed headers we should at the end
+						// only have the processed headers, if instead this header is added directly to 'headers'
+						// it will contain duplicate headers for client/received and processed
+						addProcessedHeaders(tempHeaders, record.Name(), record.Value())
 					} else {
-						// Header exist, add it as modified, VCL 'set' and 'unset' remove
-						// all the previous values
-						headers.Add(record.Name(), record.Value(), HdrStateModified)
+						// Received headers
+						headers.Add(record.Name(), record.Value(), HdrStateReceived)
 					}
 				} else {
-					// Received headers
-					headers.Add(record.Name(), record.Value(), HdrStateReceived)
+					addProcessedHeaders(headers, record.Name(), record.Value())
 				}
 
 			case HeaderUnsetRecord:
+				var headers Headers
 				if record.IsRespHeader() {
-					tx.RespHeaders().Delete(record.Name())
+					headers = tx.RespHeaders()
 				} else {
-					tx.ReqHeaders().Delete(record.Name())
+					headers = tx.ReqHeaders()
 				}
 
+				// all headers going forward now are considered as processed by VCL
+				if clientHeaders {
+					if isVarnishModifiedHeader(record.Name()) {
+						// Unset found while expecting client headers, assume we're on Varnish C code
+						// add that header to a tempHeaders struct and parse it when the first VCL_call is encountered
+						tempHeaders.Add(record.Name(), record.Value(), HdrStateReceived)
+					} else {
+						fmt.Printf("WARNING: unset found for non-tracked Varnish C code modificable header: %s\n", record.Name())
+					}
+				}
+				headers.Delete(record.Name())
+				tempHeaders.Delete(record.Name()) // Received headers are not deleted
 			}
 
 			// Check if the tx is complete, this is outside of the switch case to be able to break the for loop
@@ -253,5 +293,80 @@ func processRecord(line string) (Record, error) {
 	default:
 		log.Printf("Unknown tag %q", t)
 		return blr, nil
+	}
+}
+
+// isVarnishModifiedHeader checks if a header is known to be modified
+// or managed internally by Varnish in its C code.
+//
+// This includes headers like X-Forwarded-For, Via, and others
+// that Varnish may add, remove, or alter during request/response handling.
+func isVarnishModifiedHeader(name string) bool {
+	if name == "" {
+		return false
+	}
+
+	switch CanonicalHeaderName(name) {
+	case "Via",
+		"X-Forwarded-For",
+		"X-Varnish",
+		"Age",
+		"Connection",
+		"Keep-Alive",
+		"Proxy-Authenticate",
+		"Proxy-Authorization",
+		"TE",
+		"Trailer",
+		"Transfer-Encoding",
+		"Upgrade":
+		return true
+	default:
+		return false
+	}
+}
+
+// mergeTempHeaders is a helper function that should be called the first time clientHeaders is set to true
+// it adds all the headers that have not been deleted, at the end it should only contain real client headers
+func mergeTempHeaders(headers, tempHeaders Headers) {
+	// Example: 'Via' header with value 'a' was sent by the client:
+	//
+	// -   ReqMethod      GET
+	// -   ReqURL         /
+	// -   ReqProtocol    HTTP/1.1
+	// -   ReqHeader      Host: localhost:8001
+	// -   ReqHeader      User-Agent: curl/8.7.1
+	// -   ReqHeader      Accept: */*
+	// -   ReqHeader      Via: a
+	// -   ReqHeader      X-Forwarded-For: 192.168.65.1
+	// -   ReqUnset       Via: a
+	// -   ReqHeader      Via: a, 1.1 53d4be3da396 (Varnish/7.5)
+	// -   VCL_call       RECV
+
+	for name, h := range tempHeaders {
+		for _, v := range h.Values(true) {
+			if v.State() == HdrStateReceived {
+				headers.Add(name, v.Value(), HdrStateReceived)
+			}
+		}
+		for _, v := range h.Values(false) {
+			if v.State() != HdrStateDeleted {
+				headers.Add(name, v.Value(), v.State())
+			} else {
+				headers.Delete(name)
+			}
+		}
+	}
+	tempHeaders.Clear()
+}
+
+// addProcessedHeaders is a helper function to add headers processed in VCL or C code in Varnish
+func addProcessedHeaders(headers Headers, name, value string) {
+	if headers.Get(name, false) == "" {
+		// Header does not exist, mark it as added
+		headers.Add(name, value, HdrStateAdded)
+	} else {
+		// Header exist, add it as modified, VCL 'set' and 'unset' remove
+		// all the previous values
+		headers.Add(name, value, HdrStateModified)
 	}
 }
