@@ -134,7 +134,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 				}
 
 				if clientHeaders {
-					if isVarnishModifiedHeader(record.Name()) {
+					if isVarnishModifiedHeader(record.Name(), record.Tag()) {
 						// Store them to process them later
 						// since deletes only apply to processed headers we should at the end
 						// only have the processed headers, if instead this header is added directly to 'headers'
@@ -158,7 +158,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 				// all headers going forward now are considered as processed by VCL
 				if clientHeaders {
-					if isVarnishModifiedHeader(record.Name()) {
+					if isVarnishModifiedHeader(record.Name(), record.Tag()) {
 						// Unset found while expecting client headers, assume we're on Varnish C code
 						// add that header to a tempHeaders struct and parse it when the first VCL_call is encountered
 						tempHeaders.Add(record.Name(), record.Value(), HdrStateReceived)
@@ -301,8 +301,15 @@ func processRecord(line string) (Record, error) {
 //
 // This includes headers like X-Forwarded-For, Via, and others
 // that Varnish may add, remove, or alter during request/response handling.
-func isVarnishModifiedHeader(name string) bool {
+func isVarnishModifiedHeader(name, tagName string) bool {
 	if name == "" {
+		return false
+	}
+
+	// Only consider Recv headers
+	switch tagName {
+	case tag.ReqHeader, tag.ReqUnset:
+	default:
 		return false
 	}
 

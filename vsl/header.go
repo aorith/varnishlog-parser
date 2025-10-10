@@ -2,6 +2,7 @@ package vsl
 
 import (
 	"net/textproto"
+	"sort"
 )
 
 // The RFCs allow multiple headers with the same name, and both set and unset
@@ -41,9 +42,14 @@ func (s HdrState) String() string {
 
 // Header represents an HTTP header within the VSL
 type Header struct {
+	id             int
 	name           string
 	values         []HdrValue // Keeps track of the headers after VCL code execution
 	receivedValues []HdrValue // Keeps track of the headers that were sent by the client
+}
+
+func (h Header) ID() int {
+	return h.id
 }
 
 func (h Header) Name() string {
@@ -89,7 +95,9 @@ func (h Headers) Add(name string, value string, state HdrState) {
 	// Check if header already exists
 	header, exists := h[name]
 	if !exists {
+		id := len(h) + 1
 		header = Header{
+			id:             id,
 			name:           name,
 			values:         []HdrValue{},
 			receivedValues: []HdrValue{},
@@ -183,6 +191,19 @@ func (h *Headers) Clear() {
 	for k := range *h {
 		delete(*h, k)
 	}
+}
+
+func (h Headers) GetSortedHeaders() []Header {
+	sorted := make([]Header, 0, len(h))
+	for _, hdr := range h {
+		sorted = append(sorted, hdr)
+	}
+
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].ID() < sorted[j].ID()
+	})
+
+	return sorted
 }
 
 // CanonicalHeaderName returns the canonical format of the

@@ -128,7 +128,55 @@ func renderTxHeaderTree(tx *vsl.Transaction, visited map[string]bool) templ.Comp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</summary><table class=\"headers-table\"><tr><tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"Headers as initially sent by the client, before any VCL processing.\">Original Headers</abbr></th></tr><tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"State of the headers after VCL processing.\">VCL Headers</abbr></th></tr><tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"Headers as initially sent by the client, before any VCL processing.\">Original Response Headers</abbr></th></tr><tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"State of the response headers after VCL processing.\">VCL Response Headers</abbr></th></tr></tr></table></details> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</summary><table class=\"headers-table\"><tr><tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"Headers as initially sent by the client, before any VCL processing.\">Original Headers</abbr></th></tr>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, h := range tx.ReqHeaders().GetSortedHeaders() {
+				for _, v := range h.Values(true) {
+					templ_7745c5c3_Err = renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State())).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"State of the headers after VCL processing.\">VCL Headers</abbr></th></tr>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, h := range tx.ReqHeaders().GetSortedHeaders() {
+				for _, v := range h.Values(false) {
+					templ_7745c5c3_Err = renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State())).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"Headers as initially sent by the client, before any VCL processing.\">Original Response Headers</abbr></th></tr>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, h := range tx.RespHeaders().GetSortedHeaders() {
+				for _, v := range h.Values(true) {
+					templ_7745c5c3_Err = renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State())).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<tr class=\"hdr-type\"><th colspan=\"2\"><abbr title=\"State of the response headers after VCL processing.\">VCL Response Headers</abbr></th></tr>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, h := range tx.RespHeaders().GetSortedHeaders() {
+				for _, v := range h.Values(false) {
+					templ_7745c5c3_Err = renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State())).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</tr></table></details> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -140,6 +188,69 @@ func renderTxHeaderTree(tx *vsl.Transaction, visited map[string]bool) templ.Comp
 					return templ_7745c5c3_Err
 				}
 			}
+		}
+		return nil
+	})
+}
+
+func renderHeader(name, value string, attrs templ.Attributes) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<tr><th>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 107, Col: 12}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</th><td")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, attrs)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, ">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_headers.templ`, Line: 109, Col: 10}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</td></tr>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		return nil
 	})
@@ -159,14 +270,4 @@ func getHeaderDiffAttrs(state vsl.HdrState) templ.Attributes {
 	return templ.Attributes{"class": "diffOriginal"}
 }
 
-//	templ renderHeaderDiff(hc vsl.HdrState, original bool, attrs templ.Attributes) {
-//		<th>{ hc.String() }</th>
-//		<td { attrs ... }>
-//			if original {
-//				{ hc.OriginalValue() }
-//			} else {
-//				{ hc.FinalValue() }
-//			}
-//		</td>
-//	}
 var _ = templruntime.GeneratedTemplate

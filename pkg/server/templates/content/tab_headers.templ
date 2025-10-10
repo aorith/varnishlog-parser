@@ -68,33 +68,29 @@ templ renderTxHeaderTree(tx *vsl.Transaction, visited map[string]bool) {
 			<table class="headers-table">
 				<tr>
 					<tr class="hdr-type"><th colspan="2"><abbr title="Headers as initially sent by the client, before any VCL processing.">Original Headers</abbr></th></tr>
-					// for _, hc := range reqHeadersState {
-					// 	if hc.IsOriginalHeader() {
-					// 		<tr>
-					// 			@renderHeaderDiff(hc, true, getHeaderDiffAttrs(header.OriginalHdr))
-					// 		</tr>
-					// 	}
-					// }
+					for _, h := range tx.ReqHeaders().GetSortedHeaders() {
+						for _, v := range h.Values(true) {
+							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
+						}
+					}
 					<tr class="hdr-type"><th colspan="2"><abbr title="State of the headers after VCL processing.">VCL Headers</abbr></th></tr>
-					// for _, hc := range reqHeadersState {
-					// 	<tr>
-					// 		@renderHeaderDiff(hc, false, getHeaderDiffAttrs(hc.State()))
-					// 	</tr>
-					// }
+					for _, h := range tx.ReqHeaders().GetSortedHeaders() {
+						for _, v := range h.Values(false) {
+							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
+						}
+					}
 					<tr class="hdr-type"><th colspan="2"><abbr title="Headers as initially sent by the client, before any VCL processing.">Original Response Headers</abbr></th></tr>
-					// for _, hc := range respHeadersState {
-					// 	if hc.IsOriginalHeader() {
-					// 		<tr>
-					// 			@renderHeaderDiff(hc, true, getHeaderDiffAttrs(header.OriginalHdr))
-					// 		</tr>
-					// 	}
-					// }
+					for _, h := range tx.RespHeaders().GetSortedHeaders() {
+						for _, v := range h.Values(true) {
+							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
+						}
+					}
 					<tr class="hdr-type"><th colspan="2"><abbr title="State of the response headers after VCL processing.">VCL Response Headers</abbr></th></tr>
-					// for _, hc := range respHeadersState {
-					// 	<tr>
-					// 		@renderHeaderDiff(hc, false, getHeaderDiffAttrs(hc.State()))
-					// 	</tr>
-					// }
+					for _, h := range tx.RespHeaders().GetSortedHeaders() {
+						for _, v := range h.Values(false) {
+							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
+						}
+					}
 				</tr>
 			</table>
 		</details>
@@ -104,6 +100,15 @@ templ renderTxHeaderTree(tx *vsl.Transaction, visited map[string]bool) {
 			@renderHeaderTree(c, visited)
 		}
 	}
+}
+
+templ renderHeader(name, value string, attrs templ.Attributes) {
+	<tr>
+		<th>{ name }</th>
+		<td { attrs ... }>
+			{ value }
+		</td>
+	</tr>
 }
 
 func getHeaderDiffAttrs(state vsl.HdrState) templ.Attributes {
@@ -119,14 +124,3 @@ func getHeaderDiffAttrs(state vsl.HdrState) templ.Attributes {
 	}
 	return templ.Attributes{"class": "diffOriginal"}
 }
-
-// templ renderHeaderDiff(hc vsl.HdrState, original bool, attrs templ.Attributes) {
-// 	<th>{ hc.String() }</th>
-// 	<td { attrs ... }>
-// 		if original {
-// 			{ hc.OriginalValue() }
-// 		} else {
-// 			{ hc.FinalValue() }
-// 		}
-// 	</td>
-// }
