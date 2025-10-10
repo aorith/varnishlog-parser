@@ -1,19 +1,15 @@
 package content
 
 import (
-	"io"
-	"log"
-	"context"
-
 	"github.com/aorith/varnishlog-parser/vsl"
+	"log"
 )
 
 func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
-	visited := make(map[string]bool)
-	return headersTab(txsSet, visited)
+	return headersTab(txsSet)
 }
 
-templ headersTab(txsSet vsl.TransactionSet, visited map[string]bool) {
+templ headersTab(txsSet vsl.TransactionSet) {
 	<div id="tabHeaders" class="tabcontent">
 		<p>
 			This tab displays the state of HTTP headers, organized into transaction groups.
@@ -40,75 +36,93 @@ templ headersTab(txsSet vsl.TransactionSet, visited map[string]bool) {
 		</table>
 		<br/>
 		<br/>
-		for _, root := range txsSet.UniqueRootParents() {
-			<h4>Headers for tx group "{ root.TXID() }"</h4>
-			<div class="headers">
-				@renderHeaderTree(root, visited)
-			</div>
-		}
+		{{ visited := make(map[string]bool) }}
+		<div class="headers">
+			for _, root := range txsSet.UniqueRootParents() {
+				<div class="headers-tbl-container">
+					<table class="headers-table">
+						<thead><tr><th colspan="3">Headers for tx group "{ root.TXID() }"</th></tr></thead>
+						for _, comp := range renderHeaderTree(root, visited) {
+							@comp
+						}
+					</table>
+				</div>
+			}
+		</div>
 	</div>
 }
 
-func renderHeaderTree(tx *vsl.Transaction, visited map[string]bool) templ.Component {
+func renderHeaderTree(tx *vsl.Transaction, visited map[string]bool) (comps []templ.Component) {
 	if visited[tx.TXID()] {
 		log.Printf("renderHeaderTree(): loop detected at transaction %q\n", tx.TXID())
-		return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-			return nil
-		})
+		return nil
 	}
 	visited[tx.TXID()] = true
 
-	return renderTxHeaderTree(tx, visited)
+	reqName := "ReqHeader"
+	respName := "RespHeader"
+	if tx.Type() == vsl.TxTypeBereq {
+		reqName = "BereqHeader"
+		respName = "BerespHeader"
+	}
+
+	for _, r := range tx.LogRecords() {
+		switch record := r.(type) {
+		case vsl.BeginRecord:
+			if tx.Type() != vsl.TxTypeSession {
+				comps = append(comps, renderTxHeaderTree(tx, tx.ReqHeaders(), reqName))
+			}
+
+		case vsl.LinkRecord:
+			childTx := tx.Children()[record.TXID()]
+			if childTx != nil {
+				comps = append(comps, renderHeaderTree(childTx, visited)...)
+			}
+
+		case vsl.EndRecord:
+			if tx.Type() != vsl.TxTypeSession {
+				comps = append(comps, renderTxHeaderTree(tx, tx.RespHeaders(), respName))
+			}
+		}
+	}
+
+	return comps
 }
 
-templ renderTxHeaderTree(tx *vsl.Transaction, visited map[string]bool) {
-	if tx.Type() != vsl.TxTypeSession {
-		<details>
-			<summary>{ tx.TXID() }</summary>
-			<table class="headers-table">
-				<tr>
-					<tr class="hdr-type"><th colspan="2"><abbr title="Headers as initially sent by the client, before any VCL processing.">Original Headers</abbr></th></tr>
-					for _, h := range tx.ReqHeaders().GetSortedHeaders() {
-						for _, v := range h.Values(true) {
-							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
-						}
-					}
-					<tr class="hdr-type"><th colspan="2"><abbr title="State of the headers after VCL processing.">VCL Headers</abbr></th></tr>
-					for _, h := range tx.ReqHeaders().GetSortedHeaders() {
-						for _, v := range h.Values(false) {
-							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
-						}
-					}
-					<tr class="hdr-type"><th colspan="2"><abbr title="Headers as initially sent by the client, before any VCL processing.">Original Response Headers</abbr></th></tr>
-					for _, h := range tx.RespHeaders().GetSortedHeaders() {
-						for _, v := range h.Values(true) {
-							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
-						}
-					}
-					<tr class="hdr-type"><th colspan="2"><abbr title="State of the response headers after VCL processing.">VCL Response Headers</abbr></th></tr>
-					for _, h := range tx.RespHeaders().GetSortedHeaders() {
-						for _, v := range h.Values(false) {
-							@renderHeader(h.Name(), v.Value(), getHeaderDiffAttrs(v.State()))
-						}
-					}
-				</tr>
-			</table>
-		</details>
-	}
-	if len(tx.ChildrenSortedByVXID()) > 0 {
-		for _, c := range tx.ChildrenSortedByVXID() {
-			@renderHeaderTree(c, visited)
+templ renderTxHeaderTree(tx *vsl.Transaction, headers vsl.Headers, hdrTitle string) {
+	<tr class="hdr-type">
+		<th>{ hdrTitle }</th>
+		<th>Received</th>
+		<th>Processed</th>
+	</tr>
+	for _, h := range headers.GetSortedHeaders() {
+		{{ received := h.Values(true) }}
+		{{ processed := h.Values(false) }}
+		{{ numValues := max(len(received), len(processed)) }}
+		for i := 0; i < numValues; i++ {
+			<tr>
+				if i == 0 {
+					<th class="hdrname" rowspan="{ maxRows }">{ h.Name() }</th>
+				}
+				if i < len(received) {
+					@renderHeader(received[i].Value(), getHeaderDiffAttrs(received[i].State()))
+				} else {
+					<td></td>
+				}
+				if i < len(processed) {
+					@renderHeader(processed[i].Value(), getHeaderDiffAttrs(processed[i].State()))
+				} else {
+					<td></td>
+				}
+			</tr>
 		}
 	}
 }
 
-templ renderHeader(name, value string, attrs templ.Attributes) {
-	<tr>
-		<th>{ name }</th>
-		<td { attrs ... }>
-			{ value }
-		</td>
-	</tr>
+templ renderHeader(value string, attrs templ.Attributes) {
+	<td>
+		<input { attrs ... } type="text" disabled value={ value }/>
+	</td>
 }
 
 func getHeaderDiffAttrs(state vsl.HdrState) templ.Attributes {
