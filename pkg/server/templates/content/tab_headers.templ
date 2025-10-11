@@ -1,8 +1,10 @@
 package content
 
 import (
-	"github.com/aorith/varnishlog-parser/vsl"
 	"log"
+	"fmt"
+
+	"github.com/aorith/varnishlog-parser/vsl"
 )
 
 func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
@@ -12,26 +14,27 @@ func HeadersTab(txsSet vsl.TransactionSet) templ.Component {
 templ headersTab(txsSet vsl.TransactionSet) {
 	<div id="tabHeaders" class="tabcontent">
 		<p>
-			This tab displays the state of HTTP headers, organized into transaction groups.
-			For each transaction of type "request" or "backend request," four tables show the state of the headers.
+			This tab displays the state of HTTP headers, grouped by transaction.
+			For each transaction of type <code>request</code> or <code>backend request</code>,
+			a table shows the headers as they were initially received and how they changed after VCL processing.
 		</p>
-		<p>Headers have four states:</p>
+		<p>Headers are categorized into four states:</p>
 		<table class="headers-legend">
 			<tr>
-				<th class="diffOriginal">Original:</th>
-				<td>Headers present before any VCL processing, as initially sent by the client.</td>
+				<th class="diffOriginal">Received</th>
+				<td>Headers present before any VCL processing, as originally received.</td>
 			</tr>
 			<tr>
-				<th class="diffModified">Modified:</th>
-				<td>Headers that originated from the client but were subsequently modified in VCL.</td>
+				<th class="diffAdded">Added</th>
+				<td>Headers introduced by VCL that were not part of the originally received set.</td>
 			</tr>
 			<tr>
-				<th class="diffDeleted">Deleted:</th>
-				<td>Original headers that have been removed during VCL processing.</td>
+				<th class="diffModified">Modified</th>
+				<td>Headers that were present in the received set but were later changed by VCL.</td>
 			</tr>
 			<tr>
-				<th class="diffAdded">Added:</th>
-				<td>New headers introduced by VCL that were not part of the original request.</td>
+				<th class="diffDeleted strike">Deleted</th>
+				<td>Headers that were removed at any point during processing.</td>
 			</tr>
 		</table>
 		<br/>
@@ -59,11 +62,16 @@ func renderHeaderTree(tx *vsl.Transaction, visited map[string]bool) (comps []tem
 	}
 	visited[tx.TXID()] = true
 
-	reqName := "ReqHeader"
-	respName := "RespHeader"
+	var (
+		reqName  string
+		respName string
+	)
 	if tx.Type() == vsl.TxTypeBereq {
-		reqName = "BereqHeader"
-		respName = "BerespHeader"
+		reqName = fmt.Sprintf("BereqHeader (%s)", tx.TXID())
+		respName = fmt.Sprintf("BerespHeader (%s)", tx.TXID())
+	} else if tx.Type() == vsl.TxTypeRequest {
+		reqName = fmt.Sprintf("ReqHeader (%s)", tx.TXID())
+		respName = fmt.Sprintf("RespHeader (%s)", tx.TXID())
 	}
 
 	for _, r := range tx.LogRecords() {
@@ -101,9 +109,7 @@ templ renderTxHeaderTree(tx *vsl.Transaction, headers vsl.Headers, hdrTitle stri
 		{{ numValues := max(len(received), len(processed)) }}
 		for i := 0; i < numValues; i++ {
 			<tr>
-				if i == 0 {
-					<th class="hdrname" rowspan="{ maxRows }">{ h.Name() }</th>
-				}
+				<th class="hdrname">{ h.Name() }</th>
 				if i < len(received) {
 					@renderHeader(received[i].Value(), getHeaderDiffAttrs(received[i].State()))
 				} else {
@@ -134,7 +140,7 @@ func getHeaderDiffAttrs(state vsl.HdrState) templ.Attributes {
 	case vsl.HdrStateModified:
 		return templ.Attributes{"class": "diffModified"}
 	case vsl.HdrStateDeleted:
-		return templ.Attributes{"class": "diffDeleted"}
+		return templ.Attributes{"class": "diffDeleted strike"}
 	}
 	return templ.Attributes{"class": "diffOriginal"}
 }

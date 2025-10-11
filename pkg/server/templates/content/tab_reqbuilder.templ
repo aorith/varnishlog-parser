@@ -18,7 +18,7 @@ type ReqBuilderForm struct {
 
 templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 	<div id="tabRequest" class="tabcontent">
-		<p>Here you can generate commands with <a href="https://curl.se/" target="_blank">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, <b>body is not available</b> in varnishlog and won’t be included.</p>
+		<p>Generate <a href="https://curl.se/" target="_blank">curl</a> commands directly from parsed VSL transaction data. Note that for POST and PUT requests, the request body is not recorded by <code>varnishlog</code> and therefore cannot be included.</p>
 		<form
 			class="simple-form"
 			hx-post="reqbuilder/"
@@ -76,7 +76,7 @@ templ ReqBuilderTab(txsSet vsl.TransactionSet) {
 					<select id="transactionBackend" name="transactionBackend">
 						for _, tx := range txsSet.Transactions() {
 							if tx.Type() == vsl.TxTypeBereq {
-								<option value={ getBackend(tx) }>{ tx.TXID() } ({ getBackend(tx) })</option>
+								<option value={ getBackendConnStr(tx) }>{ tx.TXID() } ({ getBackendConnStr(tx) })</option>
 							}
 						}
 					</select>
@@ -119,9 +119,8 @@ func curlCommand(tx *vsl.Transaction, f ReqBuilderForm) string {
 		backend = nil
 	case "auto":
 		if tx.Type() == vsl.TxTypeBereq {
-			br := tx.RecordByTag(tag.BackendOpen, false)
-			bo := br.(vsl.BackendOpenRecord)
-			host, port, err := render.ParseBackend(fmt.Sprintf("%s:%d", bo.RemoteAddr().String(), bo.RemotePort()))
+			backendConn := getBackendConnStr(tx)
+			host, port, err := render.ParseBackend(backendConn)
 			if err != nil {
 				return "error parsing backend: " + err.Error()
 			}
@@ -153,7 +152,7 @@ func curlCommand(tx *vsl.Transaction, f ReqBuilderForm) string {
 	return httpReq.CurlCommand(f.Scheme, backend)
 }
 
-func getBackend(t *vsl.Transaction) string {
+func getBackendConnStr(t *vsl.Transaction) string {
 	r := t.RecordByTag(tag.BackendOpen, true)
 	if r == nil {
 		return "none"

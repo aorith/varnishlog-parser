@@ -163,7 +163,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 						// add that header to a tempHeaders struct and parse it when the first VCL_call is encountered
 						tempHeaders.Add(record.Name(), record.Value(), HdrStateReceived)
 					} else {
-						fmt.Printf("WARNING: unset found for non-tracked Varnish C code modificable header: %s\n", record.Name())
+						log.Printf("WARNING: unset found for non-tracked Varnish C code modificable header: %s\n", record.Name())
 					}
 				}
 				headers.Delete(record.Name())

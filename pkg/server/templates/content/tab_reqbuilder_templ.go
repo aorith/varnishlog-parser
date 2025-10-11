@@ -45,7 +45,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"tabRequest\" class=\"tabcontent\"><p>Here you can generate commands with <a href=\"https://curl.se/\" target=\"_blank\">curl</a> and other tools based on parsed VSL transaction tags. For POST/PUT requests, <b>body is not available</b> in varnishlog and won’t be included.</p><form class=\"simple-form\" hx-post=\"reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name='logs']\"><fieldset><legend>Scheme:</legend> <label><input type=\"radio\" name=\"scheme\" value=\"auto\" checked> Auto</label> <label><input type=\"radio\" name=\"scheme\" value=\"http://\"> Http</label> <label><input type=\"radio\" name=\"scheme\" value=\"https://\"> Https</label></fieldset><br><fieldset><legend>Headers:</legend> <label title=\"Headers as originally sent by the client or backend\"><input type=\"radio\" name=\"headers\" value=\"received\" checked> Received</label> <label title=\"Headers after VCL processing (rewrites, additions, removals)\"><input type=\"radio\" name=\"headers\" value=\"processed\"> VCL Processed</label><br><br><label>Excluded headers: <input type=\"text\" name=\"excluded\" placeholder=\"header1, header2, ...\" value=\"\"></label></fieldset><br><fieldset><legend>Connect To: </legend> <label><input type=\"radio\" name=\"connectTo\" value=\"auto\" checked> Auto</label> <label><input type=\"radio\" name=\"connectTo\" value=\"none\"> None</label><br><br><label><input type=\"radio\" name=\"connectTo\" value=\"backend\"> Backend:<br><select id=\"transactionBackend\" name=\"transactionBackend\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"tabRequest\" class=\"tabcontent\"><p>Generate <a href=\"https://curl.se/\" target=\"_blank\">curl</a> commands directly from parsed VSL transaction data. Note that for POST and PUT requests, the request body is not recorded by <code>varnishlog</code> and therefore cannot be included.</p><form class=\"simple-form\" hx-post=\"reqbuilder/\" hx-target=\"#reqBuilderResults\" hx-swap=\"innerHTML settle:0.3s\" hx-include=\"[name='logs']\"><fieldset><legend>Scheme:</legend> <label><input type=\"radio\" name=\"scheme\" value=\"auto\" checked> Auto</label> <label><input type=\"radio\" name=\"scheme\" value=\"http://\"> Http</label> <label><input type=\"radio\" name=\"scheme\" value=\"https://\"> Https</label></fieldset><br><fieldset><legend>Headers:</legend> <label title=\"Headers as originally sent by the client or backend\"><input type=\"radio\" name=\"headers\" value=\"received\" checked> Received</label> <label title=\"Headers after VCL processing (rewrites, additions, removals)\"><input type=\"radio\" name=\"headers\" value=\"processed\"> VCL Processed</label><br><br><label>Excluded headers: <input type=\"text\" name=\"excluded\" placeholder=\"header1, header2, ...\" value=\"\"></label></fieldset><br><fieldset><legend>Connect To: </legend> <label><input type=\"radio\" name=\"connectTo\" value=\"auto\" checked> Auto</label> <label><input type=\"radio\" name=\"connectTo\" value=\"none\"> None</label><br><br><label><input type=\"radio\" name=\"connectTo\" value=\"backend\"> Backend:<br><select id=\"transactionBackend\" name=\"transactionBackend\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -56,9 +56,9 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var2 string
-				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(getBackend(tx))
+				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(getBackendConnStr(tx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 79, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 79, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -71,7 +71,7 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(tx.TXID())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 79, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 79, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -82,9 +82,9 @@ func ReqBuilderTab(txsSet vsl.TransactionSet) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(getBackend(tx))
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(getBackendConnStr(tx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 79, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pkg/server/templates/content/tab_reqbuilder.templ`, Line: 79, Col: 86}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -174,9 +174,8 @@ func curlCommand(tx *vsl.Transaction, f ReqBuilderForm) string {
 		backend = nil
 	case "auto":
 		if tx.Type() == vsl.TxTypeBereq {
-			br := tx.RecordByTag(tag.BackendOpen, false)
-			bo := br.(vsl.BackendOpenRecord)
-			host, port, err := render.ParseBackend(fmt.Sprintf("%s:%d", bo.RemoteAddr().String(), bo.RemotePort()))
+			backendConn := getBackendConnStr(tx)
+			host, port, err := render.ParseBackend(backendConn)
 			if err != nil {
 				return "error parsing backend: " + err.Error()
 			}
@@ -208,7 +207,7 @@ func curlCommand(tx *vsl.Transaction, f ReqBuilderForm) string {
 	return httpReq.CurlCommand(f.Scheme, backend)
 }
 
-func getBackend(t *vsl.Transaction) string {
+func getBackendConnStr(t *vsl.Transaction) string {
 	r := t.RecordByTag(tag.BackendOpen, true)
 	if r == nil {
 		return "none"
