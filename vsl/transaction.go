@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 // Package vsl, reference: https://varnish-cache.org/docs/trunk/reference/vsl.html
 package vsl
 

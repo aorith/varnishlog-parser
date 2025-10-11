@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 // Package tag contains all the known VSL tags
 package tag
 
