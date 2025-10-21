@@ -1,0 +1,23 @@
+<!-- templates/views/overview_view.html -->
+
+<div class="view" id="overview-view">
+	<div class="view-content">
+		<h1>Overview</h1>
+		{{ range .Transactions.Set.UniqueRootParents }}
+		<h3>{{ .TXID }}</h3>
+		<h4>Sequence Diagram</h4>
+		<pre class="mermaid">
+{{ . | mermaid }}
+	</pre>
+		<br>
+		{{ end }}
+	</div>
+</div>
+
+<script type="module">
+	import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+	mermaid.initialize({startOnLoad:false,sequence:{showSequenceNumbers:true}});
+	function loadMermaid() { mermaid.run(); };
+	const btn = document.getElementById('overview-btn');
+	btn.addEventListener('click', function() { setTimeout(loadMermaid, 150); }, { once: true });
+</script>

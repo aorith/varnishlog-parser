@@ -138,6 +138,8 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	case "POST", "PUT", "PATCH":
 		s.WriteString("    -X " + r.method + " \\\n")
 		s.WriteString("    -d '<body-unavailable>' \\\n")
+	case "HEAD":
+		s.WriteString("    --head \\\n")
 	default:
 		s.WriteString("    -X " + r.method + " \\\n")
 	}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- templates/layout/main_layout.html -->
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="color-scheme" content="light dark">
+		<meta name="robots" content="index, follow">
+		<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+		        integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
+		        crossorigin="anonymous"
+		></script>
+		<link rel="stylesheet" href="/static/style.css">
+		<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+		<title>{{ .Title }}</title>
+	</head>
+
+	<body>
+		<!-- Navigation -->
+		<nav>
+			<button id="parse-btn" class="active">Parse</button>
+			<div class="spacer"></div>
+			<button id="overview-btn">Overview</button>
+			<button id="headers-btn">Headers</button>
+			<button id="vcllogtree-btn">VCL&nbsp;Log&nbsp;Tree</button>
+		</nav>
+
+		{{ block "error" . }}
+		<!-- Errors -->
+		{{ end }}
+
+		<div class="content">
+			{{ block "content" . }}
+			<!-- Content -->
+			{{ end }}
+		</div>
+
+		<script src="/static/views.js"></script>
+	</body>
+</html>

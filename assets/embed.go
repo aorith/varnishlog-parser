@@ -7,6 +7,9 @@ import "embed"
 //go:embed all:static
 var Assets embed.FS
 
+//go:embed all:templates
+var Templates embed.FS
+
 //go:embed examples/complete1.txt
 var VCLComplete1 string
 

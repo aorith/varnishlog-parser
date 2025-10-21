@@ -19,9 +19,9 @@ func TestBaseRecord(t *testing.T) {
 
 	testList := []test{
 		{
-			logRecord: "--  ReqHeader      Host: www.example1.com",
+			logRecord: "--  ReqHeader      Host: www.example1.org",
 			tag:       "ReqHeader",
-			value:     "Host: www.example1.com",
+			value:     "Host: www.example1.org",
 		},
 		{
 			logRecord: "--  BereqHeader      User-Agent:curl/8.9.1 ---- as   012345.",
@@ -58,9 +58,9 @@ func TestHeaders(t *testing.T) {
 
 	testList := []test{
 		{
-			logRecord:   "--  ReqHeader      Host: www.example1.com",
+			logRecord:   "--  ReqHeader      Host: www.example1.org",
 			header:      "Host",
-			headerValue: "www.example1.com",
+			headerValue: "www.example1.org",
 		},
 		{
 			logRecord:   "--  ReqHeader      User-Agent:curl/8.9.1 ---- as   012345.",

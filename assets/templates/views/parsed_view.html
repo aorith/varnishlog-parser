@@ -1,0 +1,24 @@
+<!-- templates/views/parse_view.html -->
+
+<div class="view active" id="parse-view">
+	<div class="view-content">
+		{{ template "parse_logo_partial.html" . }}
+
+		{{if .Transactions.Count }}
+		<p class="green">
+			A total of
+			<b>{{ .Transactions.Count }}</b>
+			transactions have been parsed and organized
+			into
+			<b>{{ .Transactions.GroupCount }}</b>
+			<abbr title="Transactions are grouped into related sets, called transaction groups. This grouping occurs because individual transactions can have parent and child relationships. For example, a client request transaction often has a child transaction of type backend request if the object is not in cache. Varnishlog can group transactions using the '-g' flag.">transaction group(s)</abbr>.
+		</p>
+		<p class="green">
+			Use the navigation bar above to open different views.
+		</p>
+		{{ else }}
+		<p>No valid transactions found.</p>
+		{{ end }}
+		{{ template "parse_form_partial.html" . }}
+	</div>
+</div>

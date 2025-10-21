@@ -1,0 +1,32 @@
+<!-- templates/partials/parse_form_partial.html -->
+
+<form action="/" method="POST">
+	<fieldset>
+		<legend>Logs</legend>
+		{{if .Logs.Textinput -}}
+		<textarea rows="20" cols="100" name="logs">{{ .Logs.Textinput }}</textarea>
+		{{ else }}
+		<textarea rows="20" cols="100" name="logs"></textarea>
+		{{ end }}
+		<br>
+		<button id="parse-submit-btn" type="submit" name="action" value="parse">Parse Data</button>
+	</fieldset>
+	<br>
+	<br>
+	<fieldset>
+		<legend>Examples</legend>
+		<button type="submit" name="action" value="eg-simple">Simple</button>
+		<button type="submit" name="action" value="eg-complex">Complex</button>
+	</fieldset>
+</form>
+
+<br>
+<br>
+<br>
+<div class="version">
+	Version: {{ .Version }} |
+	<a rel="nofollow noopener"
+	   target="_blank"
+	   href="https://github.com/aorith/varnishlog-parser"
+	>Source code <svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_nPIU"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></a>
+</div>

@@ -14,15 +14,15 @@
 --  ReqMethod      GET
 --  ReqURL         /esi/
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example1.com
+--  ReqHeader      Host: www.example1.org
 --  ReqHeader      User-Agent: curl/8.9.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      X-Forwarded-For: 192.168.50.1
 --  ReqHeader      Via: 1.1 22f5ed6d0d3e (Varnish/7.5)
 --  VCL_call       RECV
 --  ReqURL         /esi/?test=1
---  ReqUnset       Host: www.example1.com
---  ReqHeader      host: www.example2.com
+--  ReqUnset       Host: www.example1.org
+--  ReqHeader      host: www.example2.org
 --  ReqHeader      xid: 2
 --  ReqHeader      X-Test-Header: Test Value
 --  VCL_return     hash
@@ -65,7 +65,7 @@
 --- BereqMethod    GET
 --- BereqURL       /esi/?test=1
 --- BereqProtocol  HTTP/1.1
---- BereqHeader    Host: www.example1.com
+--- BereqHeader    Host: www.example1.org
 --- BereqHeader    User-Agent: curl/8.9.1
 --- BereqHeader    Accept: */*
 --- BereqHeader    X-Forwarded-For: 192.168.50.1
@@ -76,8 +76,8 @@
 --- BereqHeader    X-Varnish: 3
 --- VCL_call       BACKEND_FETCH
 --- BereqURL       /esi/
---- BereqUnset     host: www.example2.com
---- BereqHeader    host: www.example1.com
+--- BereqUnset     host: www.example2.org
+--- BereqHeader    host: www.example1.org
 --- VCL_return     fetch
 --- Timestamp      Fetch: 1728889150.256740 0.000046 0.000046
 --- Timestamp      Connected: 1728889150.257328 0.000634 0.000588
@@ -114,7 +114,7 @@
 --- ReqMethod      GET
 --- ReqURL         /included-content
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example1.com
+--- ReqHeader      Host: www.example1.org
 --- ReqHeader      User-Agent: curl/8.9.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      X-Forwarded-For: 192.168.50.1

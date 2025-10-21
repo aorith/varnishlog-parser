@@ -5,12 +5,13 @@ package render
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 
-func TxTree(tx *vsl.Transaction) string {
+func TxTreeHTML(tx *vsl.Transaction) string {
 	var s rowBuilder
 
 	root := tx.RootParent()
@@ -50,7 +51,7 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, c
 		case vsl.FetchErrorRecord:
 			s.addRow(r.Tag(), "errorRecord", r.Value(), "errorRecord")
 		case vsl.TimestampRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.Tag(), "", wrapNumbers(record.String()), "")
 		case vsl.TTLRecord:
 			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.AcctRecord:
@@ -122,6 +123,13 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func wrapNumbers(s string) string {
+	re := regexp.MustCompile(`\d+`)
+	return re.ReplaceAllStringFunc(s, func(match string) string {
+		return fmt.Sprintf(`<span class="number">%s</span>`, match)
+	})
 }
 
 func statusCSSClass(s int) string {

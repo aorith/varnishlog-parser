@@ -84,7 +84,7 @@ func TestReceivedHeaders(t *testing.T) {
 	}
 
 	// --  ReqProtocol    HTTP/1.1
-	// --  ReqHeader      Host: www.example1.com                           <-- received (ignored)
+	// --  ReqHeader      Host: www.example1.org                           <-- received (ignored)
 	// --  ReqHeader      User-Agent: curl/8.7.1                           <-- received
 	// --  ReqHeader      Accept: */*                                      <-- received
 	// --  ReqHeader      secret:1234                                      <-- received
