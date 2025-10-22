@@ -39,7 +39,7 @@ func ParseBackend(s string) (host, port string, err error) {
 		}
 	}
 
-	// If it is an IPv6, surrond it with []
+	// If it is an IPv6, surround it with []
 	if strings.Contains(host, ":") && !strings.Contains(host, "[") && !strings.Contains(host, "]") {
 		host = fmt.Sprintf("[%s]", host)
 	}

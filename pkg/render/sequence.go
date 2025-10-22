@@ -13,7 +13,7 @@ import (
 )
 
 // SequenceDiagram returns an string representing a Mermaid's sequence diagram
-func SequenceDiagram(tx *vsl.Transaction) string {
+func SequenceDiagram(ts vsl.TransactionSet, tx *vsl.Transaction) string {
 	var s CustomBuilder
 	s.WriteString("sequenceDiagram\n")
 	s.PadAdd("participant C as Client")
@@ -21,15 +21,15 @@ func SequenceDiagram(tx *vsl.Transaction) string {
 	s.PadAdd("participant H as Cache")
 	s.PadAdd("participant B as Backend")
 
-	root := tx.RootParent()
+	root := ts.RootParent(tx)
 	visited := make(map[vsl.TXID]bool)
-	addTransactionLogs(&s, root, visited)
+	addTransactionLogs(&s, ts, root, visited)
 
 	return s.String()
 }
 
 // addTransactionLogs is a recursive function to process each transaction's log records
-func addTransactionLogs(s *CustomBuilder, tx *vsl.Transaction, visited map[vsl.TXID]bool) {
+func addTransactionLogs(s *CustomBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.TXID]bool) {
 	if visited[tx.TXID()] {
 		log.Printf("SequenceDiagram() -> addTransactionLogs: loop detected at transaction %q\n", tx.TXID())
 		return
@@ -95,7 +95,7 @@ func addTransactionLogs(s *CustomBuilder, tx *vsl.Transaction, visited map[vsl.T
 		case vsl.FetchErrorRecord:
 			s.PadAdd("Note over B: " + record.Value())
 		case vsl.LinkRecord:
-			childTx := tx.Children()[record.TXID()]
+			childTx := ts.GetTX(record.VXID())
 			if childTx == nil {
 				if record.Type() == vsl.LinkTypeRequest {
 					s.PadAdd(fmt.Sprintf("Note over V: %s<br>LINKED CHILD TX NOT FOUND IN THE LOG ", record.RawLog()))
@@ -103,7 +103,7 @@ func addTransactionLogs(s *CustomBuilder, tx *vsl.Transaction, visited map[vsl.T
 					s.PadAdd(fmt.Sprintf("Note over B: %s<br>LINKED CHILD TX NOT FOUND IN THE LOG ", record.RawLog()))
 				}
 			} else {
-				addTransactionLogs(s, childTx, visited)
+				addTransactionLogs(s, ts, childTx, visited)
 			}
 		case vsl.SessCloseRecord:
 			s.PadAdd(fmt.Sprintf(

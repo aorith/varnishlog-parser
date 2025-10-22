@@ -17,9 +17,11 @@ import (
 
 var funcMap = template.FuncMap{
 	"uniqueRootParents": func(ts vsl.TransactionSet) []*vsl.Transaction { return ts.UniqueRootParents() },
-	"mermaid":           func(tx *vsl.Transaction) string { return render.SequenceDiagram(tx) },
-	"headersTableHTML":  func(tx *vsl.Transaction) []render.TableRow { return render.HeadersTableHTML(tx) },
-	"renderTXLogTree":   func(tx *vsl.Transaction) string { return render.TxTreeHTML(tx) },
+	"mermaid":           func(ts vsl.TransactionSet, tx *vsl.Transaction) string { return render.SequenceDiagram(ts, tx) },
+	"headersTableHTML": func(ts vsl.TransactionSet, tx *vsl.Transaction) []render.TableRow {
+		return render.HeadersTableHTML(ts, tx)
+	},
+	"renderTXLogTree": func(ts vsl.TransactionSet, tx *vsl.Transaction) string { return render.TxTreeHTML(ts, tx) },
 }
 
 var (

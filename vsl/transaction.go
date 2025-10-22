@@ -5,7 +5,7 @@ package vsl
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"slices"
 	"sort"
 	"strings"
@@ -33,8 +33,8 @@ type Transaction struct {
 	logRecords  []Record
 	reqHeaders  Headers // Request Headers
 	respHeaders Headers // Response Headers
-	parent      *Transaction
-	children    map[TXID]*Transaction // map[{txid}]*tx
+	parent      VXID
+	children    []VXID
 }
 
 func (t *Transaction) TXID() TXID {
@@ -73,30 +73,12 @@ func (t *Transaction) RespHeaders() Headers {
 	return t.respHeaders
 }
 
-func (t *Transaction) Parent() *Transaction {
+func (t *Transaction) Parent() VXID {
 	return t.parent
 }
 
-func (t *Transaction) Children() map[TXID]*Transaction {
+func (t *Transaction) Children() []VXID {
 	return t.children
-}
-
-// RootParent returns the root transaction which has no parent
-func (t *Transaction) RootParent() *Transaction {
-	var rootParent func(tx *Transaction, maxDepth, depth int) *Transaction
-	rootParent = func(tx *Transaction, maxDepth, depth int) *Transaction {
-		if tx.parent == nil || tx.txid == tx.parent.txid {
-			return tx
-		}
-		depth += 1
-		if depth > maxDepth {
-			log.Printf("RootParent() possible loop detected at transaction %q - depth: %d\n", tx.TXID(), depth)
-			return tx
-		}
-		return rootParent(tx.parent, maxDepth, depth)
-	}
-
-	return rootParent(t, 100, 0)
 }
 
 // RecordByTag returns the the first or last record with the given tag.
@@ -158,12 +140,11 @@ func NewTransaction(line string) (*Transaction, error) {
 		rawLog:      line,
 		reqHeaders:  make(map[string]Header),
 		respHeaders: make(map[string]Header),
-		children:    make(map[TXID]*Transaction),
 	}, nil
 }
 
-// NewMissingTransaction initializes a transaction that is missing in the VSL logs
-// from a Link tag record
+// NewMissingTransaction initializes a dummy transaction that
+// is missing from the VSL logs using a Link tag record
 func NewMissingTransaction(r LinkRecord) *Transaction {
 	var txType TxType
 	switch r.Type() {
@@ -186,11 +167,11 @@ func NewMissingTransaction(r LinkRecord) *Transaction {
 
 // TransactionSet groups multiple Varnish transaction logs together
 type TransactionSet struct {
-	txs map[TXID]*Transaction // map[{txid}]*tx
+	txs map[VXID]*Transaction // map[{vxid}]*tx
 }
 
 // TransactionsMap returns the transactions map
-func (t TransactionSet) TransactionsMap() map[TXID]*Transaction {
+func (t TransactionSet) TransactionsMap() map[VXID]*Transaction {
 	return t.txs
 }
 
@@ -214,15 +195,35 @@ func (t *TransactionSet) Transactions() []*Transaction {
 	return txs
 }
 
+// GetTX returns the transaction by VXID or nil if not found
+func (t TransactionSet) GetTX(vxid VXID) *Transaction {
+	return t.txs[vxid]
+}
+
+// GetChildTX returns the transaction child by VXID or nil if not found
+func (t TransactionSet) GetChildTX(parent, child VXID) *Transaction {
+	p := t.txs[parent]
+	if p == nil {
+		return nil
+	}
+	if slices.Contains(p.children, child) {
+		return t.txs[child]
+	}
+	// Even if the tx is on the set, the given parent does not contain that children
+	return nil
+}
+
 // SortedChildren returns a sorted slice of all the tx children
-func (t TransactionSet) SortedChildren(txid TXID) []*Transaction {
-	tx := t.txs[txid]
+func (t TransactionSet) SortedChildren(tx *Transaction) []*Transaction {
 	if tx == nil {
 		return nil
 	}
-	txs := make(map[TXID]*Transaction)
-	for _, child := range tx.Children() {
-		txs[child.TXID()] = child
+	txs := make(map[VXID]*Transaction)
+	for _, c := range tx.Children() {
+		child := t.txs[c]
+		if child != nil {
+			txs[c] = child
+		}
 	}
 	ts := TransactionSet{txs: txs}
 	return ts.Transactions()
@@ -264,6 +265,29 @@ func (t TransactionSet) GroupRelatedTransactions() [][]*Transaction {
 	return txs
 }
 
+// RootParent returns the root transaction which has no parent
+func (t *TransactionSet) RootParent(tx *Transaction) *Transaction {
+	var rootParent func(tx *Transaction, maxDepth, depth int) *Transaction
+	rootParent = func(tx *Transaction, maxDepth, depth int) *Transaction {
+		if tx.Parent() == 0 {
+			return tx
+		}
+		depth += 1
+		if depth > maxDepth {
+			slog.Warn("RootParent() possible loop detected", "transaction", tx.TXID(), "depth", depth)
+			return tx
+		}
+		parent := t.txs[tx.Parent()]
+		if parent == nil {
+			slog.Debug("RootParent() parent linked but not present in tx map", "child", tx.TXID(), "parent", tx.Parent())
+			return tx
+		}
+		return rootParent(parent, maxDepth, depth)
+	}
+
+	return rootParent(tx, 100, 0)
+}
+
 // UniqueRootParents iterates over an array of transactions and returns an array with only the parent transactions.
 func (t TransactionSet) UniqueRootParents() []*Transaction {
 	uniqueParents := make(map[TXID]*Transaction)
@@ -273,7 +297,7 @@ func (t TransactionSet) UniqueRootParents() []*Transaction {
 			continue
 		}
 
-		rootParent := tx.RootParent()
+		rootParent := t.RootParent(tx)
 		if rootParent != nil {
 			uniqueParents[rootParent.TXID()] = rootParent
 		}
@@ -284,9 +308,8 @@ func (t TransactionSet) UniqueRootParents() []*Transaction {
 		parentTxs = append(parentTxs, parent)
 	}
 
-	// Sort the resulting slice by TXID
 	sort.Slice(parentTxs, func(i, j int) bool {
-		return parentTxs[i].TXID() < parentTxs[j].TXID()
+		return parentTxs[i].VXID() < parentTxs[j].VXID()
 	})
 
 	return parentTxs

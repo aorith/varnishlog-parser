@@ -130,7 +130,7 @@ func collectAllChildren(ts *TransactionSet, parent *Transaction) []*Transaction 
 		}
 		visited[tx.TXID()] = true
 
-		children := ts.SortedChildren(tx.TXID())
+		children := ts.SortedChildren(tx)
 		for _, child := range children {
 			allChildren = append(allChildren, child)
 			allChildren = append(allChildren, recursiveCollect(child)...)

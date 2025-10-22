@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl/tag"
@@ -24,7 +26,7 @@ func NewTransactionParser(r io.Reader) *transactionParser {
 
 func (p *transactionParser) Parse() (TransactionSet, error) {
 	ts := TransactionSet{
-		txs: make(map[TXID]*Transaction),
+		txs: make(map[VXID]*Transaction),
 	}
 
 	for p.scanner.Scan() {
@@ -60,8 +62,10 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		if r.Tag() != tag.Begin {
 			return ts, fmt.Errorf("expected %s tag, found %q on line %q", tag.Begin, r.Tag(), line)
 		}
-		// Finish missing Tx field data obtained from the Begin tag
+
+		// Add the data contained in the Begin tag to the new transaction
 		br := r.(BeginRecord)
+		tx.parent = br.ParentVXID()
 		tx.esiLevel = br.ESILevel()
 		tx.txid = parseTXID(tx.VXID(), br.Type(), br.ESILevel())
 		tx.logRecords = append(tx.logRecords, br)
@@ -106,11 +110,12 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 				clientHeaders = true
 
 			case LinkRecord:
-				// Add children to the transaction so they are updated later
-				// with the actual transaction (if found)
 				lr := r.(LinkRecord)
-				childTXID := parseTXID(lr.VXID(), lr.Type(), lr.ESILevel())
-				tx.children[childTXID] = &Transaction{level: -1}
+				if slices.Contains(tx.children, lr.VXID()) {
+					slog.Warn("Parse() duplicate children assignment", "txid", tx.TXID(), "linkTXID", lr.TXID())
+					continue
+				}
+				tx.children = append(tx.children, lr.VXID())
 
 			case BeginRecord:
 				// A Begin tag was found in the middle of a transaction
@@ -174,7 +179,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 			// Check if the tx is complete, this is outside of the switch case to be able to break the for loop
 			if r.Tag() == tag.End {
-				ts.txs[tx.TXID()] = tx
+				ts.txs[tx.VXID()] = tx
 				complete = true
 				break
 			}
@@ -191,26 +196,6 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 	if err := p.scanner.Err(); err != nil {
 		return ts, err
-	}
-
-	// Update parent and children relationships
-	for _, currTx := range ts.Transactions() {
-		for childTXID := range currTx.Children() {
-			child, childExists := ts.txs[childTXID]
-			if childExists {
-				child.parent = currTx
-				currTx.children[childTXID] = child
-			}
-		}
-	}
-
-	// Delete children not found in the complete varnishlog log
-	for _, currTx := range ts.Transactions() {
-		for childTXID, child := range currTx.Children() {
-			if child.Level() == -1 {
-				delete(currTx.Children(), childTXID)
-			}
-		}
 	}
 
 	return ts, nil

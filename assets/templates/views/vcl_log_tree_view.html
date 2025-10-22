@@ -13,10 +13,11 @@
 		<p>Some VSL tags are also enhanced for readability: for example, <code>Timestamp</code>
 			tags display elapsed time in a human-readable format, and unset headers are shown with strikethrough text.</p>
 
+		{{ $set := .Transactions.Set }}
 		{{ range .Transactions.Set.UniqueRootParents }}
 		<h2>Tree for {{ .TXID }}</h2>
 		<div class="txtree">
-			{{ . | renderTXLogTree }}
+			{{ renderTXLogTree $set . }}
 		</div>
 		<br>
 		<br>

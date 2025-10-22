@@ -40,27 +40,27 @@ func TestParse(t *testing.T) {
 
 	// Validate some specific transactions
 	tests := []struct {
-		txid   vsl.TXID
+		vxid   vsl.VXID
 		txType vsl.TxType
 		esi    int
 		level  int
 	}{
-		{vsl.TXID("261_sess"), vsl.TxTypeSession, 0, 1},
-		{vsl.TXID("33041_bereq"), vsl.TxTypeBereq, 0, 3},
-		{vsl.TXID("33032_req_esi_2"), vsl.TxTypeRequest, 2, 0},
+		{vsl.VXID(261), vsl.TxTypeSession, 0, 1},
+		{vsl.VXID(33041), vsl.TxTypeBereq, 0, 3},
+		{vsl.VXID(33032), vsl.TxTypeRequest, 2, 0},
 	}
 
 	tmap := ts.TransactionsMap()
 	for _, tt := range tests {
-		tx := tmap[tt.txid]
+		tx := tmap[tt.vxid]
 		if tx.Type() != tt.txType {
-			t.Errorf("tx[%s]: type wanted: %v, got: %v", tt.txid, tt.txType, tx.Type())
+			t.Errorf("tx[%d]: type wanted: %v, got: %v", tt.vxid, tt.txType, tx.Type())
 		}
 		if tx.ESILevel() != tt.esi {
-			t.Errorf("tx[%s]: ESILevel wanted: %v, got: %v", tt.txid, tt.esi, tx.ESILevel())
+			t.Errorf("tx[%d]: ESILevel wanted: %v, got: %v", tt.vxid, tt.esi, tx.ESILevel())
 		}
 		if tt.level != 0 && tx.Level() != tt.level {
-			t.Errorf("tx[%s]: Level wanted: %v, got: %v", tt.txid, tt.level, tx.Level())
+			t.Errorf("tx[%d]: Level wanted: %v, got: %v", tt.vxid, tt.level, tx.Level())
 		}
 	}
 }

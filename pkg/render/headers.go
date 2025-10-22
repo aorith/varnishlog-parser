@@ -46,17 +46,17 @@ func (t TableCol) ToHTML() string {
 	return fmt.Sprintf(`<%s class="%s">%s</%s>`, t.Tag, t.Class, t.Value, t.Tag)
 }
 
-func HeadersTableHTML(tx *vsl.Transaction) []TableRow {
-	visited := make(map[vsl.TXID]bool)
-	return headersTableHTML(tx, visited)
+func HeadersTableHTML(ts vsl.TransactionSet, tx *vsl.Transaction) []TableRow {
+	visited := make(map[vsl.VXID]bool)
+	return headersTableHTML(ts, tx, visited)
 }
 
-func headersTableHTML(tx *vsl.Transaction, visited map[vsl.TXID]bool) []TableRow {
-	if visited[tx.TXID()] {
+func headersTableHTML(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) []TableRow {
+	if visited[tx.VXID()] {
 		slog.Info("renderHeaderTree(): loop detected", "txid", tx.TXID())
 		return nil
 	}
-	visited[tx.TXID()] = true
+	visited[tx.VXID()] = true
 
 	var (
 		reqName  string
@@ -79,9 +79,9 @@ func headersTableHTML(tx *vsl.Transaction, visited map[vsl.TXID]bool) []TableRow
 			}
 
 		case vsl.LinkRecord:
-			childTx := tx.Children()[record.TXID()]
+			childTx := ts.GetTX(record.VXID())
 			if childTx != nil {
-				rows = append(rows, headersTableHTML(childTx, visited)...)
+				rows = append(rows, headersTableHTML(ts, childTx, visited)...)
 			}
 
 		case vsl.EndRecord:

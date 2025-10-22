@@ -11,26 +11,26 @@ import (
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 
-func TxTreeHTML(tx *vsl.Transaction) string {
+func TxTreeHTML(ts vsl.TransactionSet, tx *vsl.Transaction) string {
 	var s rowBuilder
 
-	root := tx.RootParent()
-	visited := make(map[vsl.TXID]bool)
+	root := ts.RootParent(tx)
+	visited := make(map[vsl.VXID]bool)
 
 	s.WriteString(`<ul class="root-ul">`)
 	color := 0
-	renderTxTree(&s, root, visited, color)
+	renderTxTree(&s, ts, root, visited, color)
 	s.WriteString("</ul>")
 
 	return s.String()
 }
 
-func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[vsl.TXID]bool, color int) {
-	if visited[tx.TXID()] {
+func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool, color int) {
+	if visited[tx.VXID()] {
 		log.Printf("renderTxTree(): loop detected at transaction %q\n", tx.TXID())
 		return
 	}
-	visited[tx.TXID()] = true
+	visited[tx.VXID()] = true
 
 	s.addRow(string(tx.TXID()), "tx-header", "", "")
 
@@ -72,7 +72,7 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[vsl.TXID]bool,
 			s.addRow(r.Tag(), "", r.Value(), statusCSSClass(record.Status()))
 
 		case vsl.LinkRecord:
-			childTx := tx.Children()[record.TXID()]
+			childTx := ts.GetTX(record.VXID())
 			if childTx == nil {
 				s.addRow(r.Tag(), "", r.Value(), "strike")
 				childTx = vsl.NewMissingTransaction(record)
@@ -88,7 +88,7 @@ func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[vsl.TXID]bool,
 			if color > 3 {
 				color = 0
 			}
-			renderTxTree(s, childTx, visited, color)
+			renderTxTree(s, ts, childTx, visited, color)
 			s.WriteString("</ul>")
 		default:
 			s.addRow(r.Tag(), "", r.Value(), "")

@@ -3,11 +3,12 @@
 <div class="view" id="overview-view">
 	<div class="view-content">
 		<h1>Overview</h1>
+		{{ $set := .Transactions.Set }}
 		{{ range .Transactions.Set.UniqueRootParents }}
 		<h3>{{ .TXID }}</h3>
 		<h4>Sequence Diagram</h4>
 		<pre class="mermaid">
-{{ . | mermaid }}
+{{ mermaid $set . }}
 	</pre>
 		<br>
 		{{ end }}

@@ -53,11 +53,10 @@ func TestTransactions(t *testing.T) {
 		t.Errorf("Parse() failed %s", err)
 	}
 	txs := ts.Transactions()
-	txsMap := ts.TransactionsMap()
 
-	tx := txsMap[vsl.TXID("33030_req_esi_1")]
+	tx := ts.GetTX(vsl.VXID(33030))
 	children := []vsl.TXID{}
-	for _, c := range ts.SortedChildren(tx.TXID()) {
+	for _, c := range ts.SortedChildren(tx) {
 		children = append(children, c.TXID())
 	}
 
@@ -66,9 +65,9 @@ func TestTransactions(t *testing.T) {
 		t.Errorf("Children len - wanted: %d, got: %d", wantedChildren, len(children))
 	}
 
-	txFromMap := txsMap[tx.TXID()]
+	txFromMap := ts.GetTX(tx.VXID())
 	childrenFromMap := []vsl.TXID{}
-	for _, c := range ts.SortedChildren(txFromMap.TXID()) {
+	for _, c := range ts.SortedChildren(txFromMap) {
 		childrenFromMap = append(childrenFromMap, c.TXID())
 	}
 
@@ -79,8 +78,8 @@ func TestTransactions(t *testing.T) {
 	// RootParent() check for VCLComplete1
 	rootTx := txs[0]  // << Session  >> 1
 	childTx := txs[4] // *4* << BeReq    >> 5
-	if childTx.RootParent().TXID() != rootTx.TXID() {
-		t.Errorf("RootParent(): wanted: %v, got: %v", rootTx.TXID(), childTx.RootParent().TXID())
+	if ts.RootParent(childTx).TXID() != rootTx.TXID() {
+		t.Errorf("RootParent(): wanted: %v, got: %v", rootTx.TXID(), ts.RootParent(childTx).TXID())
 	}
 
 	// GroupRelatedTransactions() check for VCLComplete1 which has 24 transactions
@@ -113,7 +112,7 @@ func TestTransactions2(t *testing.T) {
 		t.Errorf("Incorrect len, expected %d, got %d", wantedCount, len(txsSet.Transactions()))
 	}
 
-	tx := txsSet.TransactionsMap()["40000_req_esi_10"]
+	tx := txsSet.GetTX(vsl.VXID(40000))
 	if tx == nil {
 		t.Errorf("Transaction not found, got nil")
 		return
