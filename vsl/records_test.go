@@ -190,7 +190,7 @@ func TestLinkRecord(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion failed: %s", err)
 		}
-		if record.TXID() != test.txid {
+		if record.TXID() != vsl.TXID(test.txid) {
 			t.Errorf("TXID() want: %q got: %q", test.txid, record.TXID())
 		}
 		if record.Type() != test.txType {

@@ -32,7 +32,7 @@ const (
 `
 )
 
-func areSlicesEqual(a, b []string) bool {
+func areTXIDSlicesEqual(a, b []vsl.TXID) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -48,16 +48,16 @@ func areSlicesEqual(a, b []string) bool {
 
 func TestTransactions(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Errorf("Parse() failed %s", err)
 	}
-	txs := txsSet.Transactions()
-	txsMap := txsSet.TransactionsMap()
+	txs := ts.Transactions()
+	txsMap := ts.TransactionsMap()
 
-	tx := txs[9]
-	children := []string{}
-	for _, c := range tx.ChildrenSortedByVXID() {
+	tx := txsMap[vsl.TXID("33030_req_esi_1")]
+	children := []vsl.TXID{}
+	for _, c := range ts.SortedChildren(tx.TXID()) {
 		children = append(children, c.TXID())
 	}
 
@@ -67,12 +67,12 @@ func TestTransactions(t *testing.T) {
 	}
 
 	txFromMap := txsMap[tx.TXID()]
-	childrenFromMap := []string{}
-	for _, c := range txFromMap.ChildrenSortedByVXID() {
+	childrenFromMap := []vsl.TXID{}
+	for _, c := range ts.SortedChildren(txFromMap.TXID()) {
 		childrenFromMap = append(childrenFromMap, c.TXID())
 	}
 
-	if !areSlicesEqual(children, childrenFromMap) {
+	if !areTXIDSlicesEqual(children, childrenFromMap) {
 		t.Errorf("TransactionsMap: Transactions children are not equal between the slice and the map: %v != %v", children, childrenFromMap)
 	}
 
@@ -87,7 +87,7 @@ func TestTransactions(t *testing.T) {
 	// with 4 groups of related transactions
 	wantedTotal := 25
 	wantedGroups := 5
-	txsGroup := txsSet.GroupRelatedTransactions()
+	txsGroup := ts.GroupRelatedTransactions()
 	if len(txsGroup) != wantedGroups {
 		t.Errorf("GroupRelatedTransactions(): (group count) wanted: %d, got: %d", wantedGroups, len(txsGroup))
 	}

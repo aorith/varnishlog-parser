@@ -47,11 +47,11 @@ func (t TableCol) ToHTML() string {
 }
 
 func HeadersTableHTML(tx *vsl.Transaction) []TableRow {
-	visited := make(map[string]bool)
+	visited := make(map[vsl.TXID]bool)
 	return headersTableHTML(tx, visited)
 }
 
-func headersTableHTML(tx *vsl.Transaction, visited map[string]bool) []TableRow {
+func headersTableHTML(tx *vsl.Transaction, visited map[vsl.TXID]bool) []TableRow {
 	if visited[tx.TXID()] {
 		slog.Info("renderHeaderTree(): loop detected", "txid", tx.TXID())
 		return nil

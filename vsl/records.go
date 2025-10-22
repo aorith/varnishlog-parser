@@ -609,14 +609,14 @@ func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
 // LinkRecord Links to a child transaction
 type LinkRecord struct {
 	BaseRecord
-	txid     string // {vxid}_{type}[_{esiLevel}]
+	txid     TXID // {vxid}_{type}[_{esiLevel}]
 	txType   string // sess, req, bereq, ...
 	vxid     VXID
 	reason   string
 	esiLevel int
 }
 
-func (r LinkRecord) TXID() string {
+func (r LinkRecord) TXID() TXID {
 	return r.txid
 }
 

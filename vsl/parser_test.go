@@ -14,12 +14,12 @@ import (
 
 func TestParse(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
-	txs := txsSet.Transactions()
+	txs := ts.Transactions()
 	const expectedTxCount = 25
 	if len(txs) != expectedTxCount {
 		t.Fatalf("incorrect transaction count, wanted: %d, got: %d", expectedTxCount, len(txs))
@@ -40,38 +40,39 @@ func TestParse(t *testing.T) {
 
 	// Validate some specific transactions
 	tests := []struct {
-		txIndex int
-		txType  vsl.TxType
-		esi     int
-		level   int
+		txid   vsl.TXID
+		txType vsl.TxType
+		esi    int
+		level  int
 	}{
-		{0, vsl.TxTypeSession, 0, 1},
-		{len(txs) - 1, vsl.TxTypeBereq, 0, 3},
-		{12, vsl.TxTypeRequest, 2, 0},
+		{vsl.TXID("261_sess"), vsl.TxTypeSession, 0, 1},
+		{vsl.TXID("33041_bereq"), vsl.TxTypeBereq, 0, 3},
+		{vsl.TXID("33032_req_esi_2"), vsl.TxTypeRequest, 2, 0},
 	}
 
+	tmap := ts.TransactionsMap()
 	for _, tt := range tests {
-		tx := txs[tt.txIndex]
+		tx := tmap[tt.txid]
 		if tx.Type() != tt.txType {
-			t.Errorf("tx[%d]: type wanted: %v, got: %v", tt.txIndex, tt.txType, tx.Type())
+			t.Errorf("tx[%s]: type wanted: %v, got: %v", tt.txid, tt.txType, tx.Type())
 		}
 		if tx.ESILevel() != tt.esi {
-			t.Errorf("tx[%d]: ESILevel wanted: %v, got: %v", tt.txIndex, tt.esi, tx.ESILevel())
+			t.Errorf("tx[%s]: ESILevel wanted: %v, got: %v", tt.txid, tt.esi, tx.ESILevel())
 		}
 		if tt.level != 0 && tx.Level() != tt.level {
-			t.Errorf("tx[%d]: Level wanted: %v, got: %v", tt.txIndex, tt.level, tx.Level())
+			t.Errorf("tx[%s]: Level wanted: %v, got: %v", tt.txid, tt.level, tx.Level())
 		}
 	}
 }
 
 func TestReceivedHeaders(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
-	txs := txsSet.Transactions()
+	txs := ts.Transactions()
 	tx := txs[1]
 	if tx.Type() != vsl.TxTypeRequest {
 		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.Type())
@@ -133,12 +134,12 @@ func TestReceivedHeaders(t *testing.T) {
 
 func TestProcessedHeaders(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
-	txs := txsSet.Transactions()
+	txs := ts.Transactions()
 	tx := txs[1]
 	if tx.Type() != vsl.TxTypeRequest {
 		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.Type())

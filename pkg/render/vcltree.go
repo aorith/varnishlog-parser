@@ -15,7 +15,7 @@ func TxTreeHTML(tx *vsl.Transaction) string {
 	var s rowBuilder
 
 	root := tx.RootParent()
-	visited := make(map[string]bool)
+	visited := make(map[vsl.TXID]bool)
 
 	s.WriteString(`<ul class="root-ul">`)
 	color := 0
@@ -25,14 +25,14 @@ func TxTreeHTML(tx *vsl.Transaction) string {
 	return s.String()
 }
 
-func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, color int) {
+func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[vsl.TXID]bool, color int) {
 	if visited[tx.TXID()] {
 		log.Printf("renderTxTree(): loop detected at transaction %q\n", tx.TXID())
 		return
 	}
 	visited[tx.TXID()] = true
 
-	s.addRow(tx.TXID(), "tx-header", "", "")
+	s.addRow(string(tx.TXID()), "tx-header", "", "")
 
 	for _, r := range tx.LogRecords() {
 		switch record := r.(type) {

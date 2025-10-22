@@ -22,91 +22,9 @@ const (
 
 var allTxTypes = []TxType{TxTypeSession, TxTypeRequest, TxTypeBereq}
 
-func isValidTxType(txType TxType) bool {
-	return slices.Contains(allTxTypes, txType)
-}
-
-// TransactionSet groups multiple Varnish transaction logs together
-type TransactionSet struct {
-	txs    []*Transaction
-	txsMap map[string]*Transaction // map[{txid}]*tx
-}
-
-func (t TransactionSet) Transactions() []*Transaction {
-	return t.txs
-}
-
-func (t TransactionSet) TransactionsMap() map[string]*Transaction {
-	return t.txsMap
-}
-
-// RawLog returns the complete VSL raw log from all the transactions
-func (t TransactionSet) RawLog() string {
-	var s strings.Builder
-
-	for i, tx := range t.txs {
-		if i != 0 && tx.Type() == TxTypeSession {
-			s.WriteString("\n")
-		}
-
-		s.WriteString(fmt.Sprintf("%s\n", tx.RawLog()))
-
-		for _, r := range tx.LogRecords() {
-			s.WriteString(fmt.Sprintf("%s\n", r.RawLog()))
-		}
-		s.WriteString("\n")
-	}
-
-	return s.String()
-}
-
-func (t TransactionSet) GroupRelatedTransactions() [][]*Transaction {
-	roots := t.UniqueRootParents()
-
-	var txs [][]*Transaction
-	for _, r := range roots {
-		txsGroup := []*Transaction{r}
-		children := collectAllChildren(r)
-		if children != nil {
-			txsGroup = append(txsGroup, children...)
-		}
-		txs = append(txs, txsGroup)
-	}
-
-	return txs
-}
-
-// UniqueRootParents iterates over an array of transactions and returns an array with only the parent transactions.
-func (t TransactionSet) UniqueRootParents() []*Transaction {
-	uniqueParents := make(map[string]*Transaction)
-
-	for _, tx := range t.Transactions() {
-		if tx == nil {
-			continue
-		}
-
-		rootParent := tx.RootParent()
-		if rootParent != nil {
-			uniqueParents[rootParent.TXID()] = rootParent
-		}
-	}
-
-	parentTxs := make([]*Transaction, 0, len(uniqueParents))
-	for _, parent := range uniqueParents {
-		parentTxs = append(parentTxs, parent)
-	}
-
-	// Sort the resulting slice by TXID
-	sort.Slice(parentTxs, func(i, j int) bool {
-		return parentTxs[i].TXID() < parentTxs[j].TXID()
-	})
-
-	return parentTxs
-}
-
 // Transaction represent a singular Varnish transaction log
 type Transaction struct {
-	txid        string // {vxid}_{type}[_{esiLevel}]
+	txid        TXID // {vxid}_{type}[_esi_{esiLevel}] - eg: 33030_req_esi_1
 	vxid        VXID
 	level       int
 	esiLevel    int    // 0 == no ESI
@@ -116,10 +34,10 @@ type Transaction struct {
 	reqHeaders  Headers // Request Headers
 	respHeaders Headers // Response Headers
 	parent      *Transaction
-	children    map[string]*Transaction // map[{txid}]*tx
+	children    map[TXID]*Transaction // map[{txid}]*tx
 }
 
-func (t *Transaction) TXID() string {
+func (t *Transaction) TXID() TXID {
 	return t.txid
 }
 
@@ -159,33 +77,8 @@ func (t *Transaction) Parent() *Transaction {
 	return t.parent
 }
 
-func (t *Transaction) Children() map[string]*Transaction {
+func (t *Transaction) Children() map[TXID]*Transaction {
 	return t.children
-}
-
-// FullRawLog returns the complete VSL log from this transaction
-// if withChildren is true it also includes the log from all its children recursively
-func (t *Transaction) FullRawLog(withChildren bool) string {
-	var s strings.Builder
-	txs := []*Transaction{t}
-	if withChildren {
-		txs = append(txs, collectAllChildren(t)...)
-	}
-
-	for i, tx := range txs {
-		if i != 0 && tx.Type() == TxTypeSession {
-			s.WriteString("\n")
-		}
-
-		s.WriteString(fmt.Sprintf("%s\n", tx.RawLog()))
-
-		for _, r := range tx.LogRecords() {
-			s.WriteString(fmt.Sprintf("%s\n", r.RawLog()))
-		}
-		s.WriteString("\n")
-	}
-
-	return s.String()
 }
 
 // RootParent returns the root transaction which has no parent
@@ -204,20 +97,6 @@ func (t *Transaction) RootParent() *Transaction {
 	}
 
 	return rootParent(t, 100, 0)
-}
-
-// ChildrenSortedByVXID returns a slice with all the children sorted by VXID
-func (t *Transaction) ChildrenSortedByVXID() []*Transaction {
-	childrenSlice := make([]*Transaction, 0, len(t.Children()))
-	for _, child := range t.Children() {
-		childrenSlice = append(childrenSlice, child)
-	}
-
-	sort.Slice(childrenSlice, func(i, j int) bool {
-		return childrenSlice[i].VXID() < childrenSlice[j].VXID()
-	})
-
-	return childrenSlice
 }
 
 // RecordByTag returns the the first or last record with the given tag.
@@ -258,7 +137,7 @@ func (t *Transaction) RecordValueByTag(tag string, first bool) string {
 func NewTransaction(line string) (*Transaction, error) {
 	parts := strings.Fields(line)
 	txType := TxType(parts[2])
-	if !isValidTxType(txType) {
+	if !slices.Contains(allTxTypes, txType) {
 		return nil, fmt.Errorf("unknown transaction of type '%q' - known types: %q", txType, allTxTypes)
 	}
 
@@ -279,7 +158,7 @@ func NewTransaction(line string) (*Transaction, error) {
 		rawLog:      line,
 		reqHeaders:  make(map[string]Header),
 		respHeaders: make(map[string]Header),
-		children:    make(map[string]*Transaction),
+		children:    make(map[TXID]*Transaction),
 	}, nil
 }
 
@@ -303,4 +182,112 @@ func NewMissingTransaction(r LinkRecord) *Transaction {
 			BaseRecord{tag: "__MISSING", value: "This transaction is not present in the provided VSL logs"},
 		},
 	}
+}
+
+// TransactionSet groups multiple Varnish transaction logs together
+type TransactionSet struct {
+	txs map[TXID]*Transaction // map[{txid}]*tx
+}
+
+// TransactionsMap returns the transactions map
+func (t TransactionSet) TransactionsMap() map[TXID]*Transaction {
+	return t.txs
+}
+
+// Transactions returns a sorted slice with all the transactions
+func (t *TransactionSet) Transactions() []*Transaction {
+	txs := make([]*Transaction, 0, len(t.txs))
+	for _, tx := range t.txs {
+		txs = append(txs, tx)
+	}
+
+	sort.Slice(txs, func(i, j int) bool {
+		if txs[i].vxid != txs[j].vxid {
+			return txs[i].vxid < txs[j].vxid
+		}
+		if txs[i].level != txs[j].level {
+			return txs[i].level < txs[j].level
+		}
+		return txs[i].esiLevel < txs[j].esiLevel
+	})
+
+	return txs
+}
+
+// SortedChildren returns a sorted slice of all the tx children
+func (t TransactionSet) SortedChildren(txid TXID) []*Transaction {
+	tx := t.txs[txid]
+	if tx == nil {
+		return nil
+	}
+	txs := make(map[TXID]*Transaction)
+	for _, child := range tx.Children() {
+		txs[child.TXID()] = child
+	}
+	ts := TransactionSet{txs: txs}
+	return ts.Transactions()
+}
+
+// RawLog returns the complete VSL raw log from all the transactions
+func (t TransactionSet) RawLog() string {
+	var s strings.Builder
+
+	for i, tx := range t.Transactions() {
+		if i != 0 && tx.Type() == TxTypeSession {
+			s.WriteString("\n")
+		}
+
+		s.WriteString(fmt.Sprintf("%s\n", tx.RawLog()))
+
+		for _, r := range tx.LogRecords() {
+			s.WriteString(fmt.Sprintf("%s\n", r.RawLog()))
+		}
+		s.WriteString("\n")
+	}
+
+	return s.String()
+}
+
+func (t TransactionSet) GroupRelatedTransactions() [][]*Transaction {
+	roots := t.UniqueRootParents()
+
+	var txs [][]*Transaction
+	for _, r := range roots {
+		txsGroup := []*Transaction{r}
+		children := collectAllChildren(&t, r)
+		if children != nil {
+			txsGroup = append(txsGroup, children...)
+		}
+		txs = append(txs, txsGroup)
+	}
+
+	return txs
+}
+
+// UniqueRootParents iterates over an array of transactions and returns an array with only the parent transactions.
+func (t TransactionSet) UniqueRootParents() []*Transaction {
+	uniqueParents := make(map[TXID]*Transaction)
+
+	for _, tx := range t.Transactions() {
+		if tx == nil {
+			continue
+		}
+
+		rootParent := tx.RootParent()
+		if rootParent != nil {
+			uniqueParents[rootParent.TXID()] = rootParent
+		}
+	}
+
+	parentTxs := make([]*Transaction, 0, len(uniqueParents))
+	for _, parent := range uniqueParents {
+		parentTxs = append(parentTxs, parent)
+	}
+
+	// Sort the resulting slice by TXID
+	sort.Slice(parentTxs, func(i, j int) bool {
+		return parentTxs[i].TXID() < parentTxs[j].TXID()
+	})
+
+	return parentTxs
 }

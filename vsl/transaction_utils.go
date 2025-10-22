@@ -19,6 +19,9 @@ const (
 	sizePB             = sizeTB * 1024
 )
 
+// TXID is an unique identifier for a transaction
+type TXID string
+
 // VXID in Varnish the vxid is of type "uint32_t"
 type VXID uint32
 
@@ -73,11 +76,11 @@ func convertToUnixTimestamp(s string) (time.Time, error) {
 }
 
 // parseTXID returns an string that represents the transaction ID
-func parseTXID(vxid VXID, recordType string, esiLevel int) string {
+func parseTXID(vxid VXID, recordType string, esiLevel int) TXID {
 	if esiLevel > 0 {
-		return fmt.Sprintf("%d_%s_esi_%d", vxid, recordType, esiLevel)
+		return TXID(fmt.Sprintf("%d_%s_esi_%d", vxid, recordType, esiLevel))
 	}
-	return fmt.Sprintf("%d_%s", vxid, recordType)
+	return TXID(fmt.Sprintf("%d_%s", vxid, recordType))
 }
 
 // parseLevel returns the level of the transaction parsing the initial transaction header
@@ -115,8 +118,8 @@ func parseVXID(s string) (VXID, error) {
 }
 
 // collectAllChildren is a helper function to recursively collect all children and their descendants
-func collectAllChildren(parent *Transaction) []*Transaction {
-	visited := make(map[string]bool)
+func collectAllChildren(ts *TransactionSet, parent *Transaction) []*Transaction {
+	visited := make(map[TXID]bool)
 
 	var recursiveCollect func(tx *Transaction) []*Transaction
 	recursiveCollect = func(tx *Transaction) []*Transaction {
@@ -127,7 +130,7 @@ func collectAllChildren(parent *Transaction) []*Transaction {
 		}
 		visited[tx.TXID()] = true
 
-		children := tx.ChildrenSortedByVXID()
+		children := ts.SortedChildren(tx.TXID())
 		for _, child := range children {
 			allChildren = append(allChildren, child)
 			allChildren = append(allChildren, recursiveCollect(child)...)

@@ -22,14 +22,14 @@ func SequenceDiagram(tx *vsl.Transaction) string {
 	s.PadAdd("participant B as Backend")
 
 	root := tx.RootParent()
-	visited := make(map[string]bool)
+	visited := make(map[vsl.TXID]bool)
 	addTransactionLogs(&s, root, visited)
 
 	return s.String()
 }
 
 // addTransactionLogs is a recursive function to process each transaction's log records
-func addTransactionLogs(s *CustomBuilder, tx *vsl.Transaction, visited map[string]bool) {
+func addTransactionLogs(s *CustomBuilder, tx *vsl.Transaction, visited map[vsl.TXID]bool) {
 	if visited[tx.TXID()] {
 		log.Printf("SequenceDiagram() -> addTransactionLogs: loop detected at transaction %q\n", tx.TXID())
 		return

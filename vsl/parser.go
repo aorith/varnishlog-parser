@@ -23,8 +23,8 @@ func NewTransactionParser(r io.Reader) *transactionParser {
 }
 
 func (p *transactionParser) Parse() (TransactionSet, error) {
-	txsSet := TransactionSet{
-		txsMap: make(map[string]*Transaction),
+	ts := TransactionSet{
+		txs: make(map[TXID]*Transaction),
 	}
 
 	for p.scanner.Scan() {
@@ -40,25 +40,25 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 		tx, err := NewTransaction(line)
 		if err != nil {
-			return txsSet, err
+			return ts, err
 		}
 
 		// Expect a Begin tag after the start of the transaction, eg:
 		// --- Begin          req 2 esi 1
 		if !p.scanner.Scan() {
-			return txsSet, fmt.Errorf("expected %s tag, found EOF after %q", tag.Begin, tx.RawLog())
+			return ts, fmt.Errorf("expected %s tag, found EOF after %q", tag.Begin, tx.RawLog())
 		}
 		line = strings.TrimSpace(p.scanner.Text())
 		if line == "" {
-			return txsSet, fmt.Errorf("expected %s tag, found empty line after %q", tag.Begin, tx.RawLog())
+			return ts, fmt.Errorf("expected %s tag, found empty line after %q", tag.Begin, tx.RawLog())
 		}
 
 		r, err := processRecord(line)
 		if err != nil {
-			return txsSet, err
+			return ts, err
 		}
 		if r.Tag() != tag.Begin {
-			return txsSet, fmt.Errorf("expected %s tag, found %q on line %q", tag.Begin, r.Tag(), line)
+			return ts, fmt.Errorf("expected %s tag, found %q on line %q", tag.Begin, r.Tag(), line)
 		}
 		// Finish missing Tx field data obtained from the Begin tag
 		br := r.(BeginRecord)
@@ -80,7 +80,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 			r, err := processRecord(line)
 			if err != nil {
-				return txsSet, err
+				return ts, err
 			}
 			tx.logRecords = append(tx.logRecords, r)
 
@@ -114,7 +114,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 			case BeginRecord:
 				// A Begin tag was found in the middle of a transaction
-				return txsSet, fmt.Errorf("incorrect log: Another %q tag was found in the middle of the transaction %q", tag.Begin, tx.RawLog())
+				return ts, fmt.Errorf("incorrect log: Another %q tag was found in the middle of the transaction %q", tag.Begin, tx.RawLog())
 
 			// HEADERS: handle parsing of HTTP headers, transactions have two  Headers sets, one for Req and another for Resp requests
 			// Varnish also has some built-in VCL that executes after users VCL (if not overridden by a return), but most importantly
@@ -174,30 +174,29 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 			// Check if the tx is complete, this is outside of the switch case to be able to break the for loop
 			if r.Tag() == tag.End {
-				txsSet.txs = append(txsSet.txs, tx)
-				txsSet.txsMap[tx.TXID()] = tx
+				ts.txs[tx.TXID()] = tx
 				complete = true
 				break
 			}
 		}
 
 		if err := p.scanner.Err(); err != nil {
-			return txsSet, err
+			return ts, err
 		}
 
 		if !complete {
-			return txsSet, fmt.Errorf("Transaction %q finished without %s tag at EOL", tx.RawLog(), tag.End)
+			return ts, fmt.Errorf("Transaction %q finished without %s tag at EOL", tx.RawLog(), tag.End)
 		}
 	}
 
 	if err := p.scanner.Err(); err != nil {
-		return txsSet, err
+		return ts, err
 	}
 
 	// Update parent and children relationships
-	for _, currTx := range txsSet.Transactions() {
+	for _, currTx := range ts.Transactions() {
 		for childTXID := range currTx.Children() {
-			child, childExists := txsSet.txsMap[childTXID]
+			child, childExists := ts.txs[childTXID]
 			if childExists {
 				child.parent = currTx
 				currTx.children[childTXID] = child
@@ -206,7 +205,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 	}
 
 	// Delete children not found in the complete varnishlog log
-	for _, currTx := range txsSet.Transactions() {
+	for _, currTx := range ts.Transactions() {
 		for childTXID, child := range currTx.Children() {
 			if child.Level() == -1 {
 				delete(currTx.Children(), childTXID)
@@ -214,7 +213,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		}
 	}
 
-	return txsSet, nil
+	return ts, nil
 }
 
 func processRecord(line string) (Record, error) {
