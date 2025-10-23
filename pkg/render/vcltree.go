@@ -5,10 +5,10 @@ package render
 import (
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
+	"github.com/aorith/varnishlog-parser/vsl/tag"
 )
 
 func TxTreeHTML(ts vsl.TransactionSet, tx *vsl.Transaction) string {
@@ -51,7 +51,7 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 		case vsl.FetchErrorRecord:
 			s.addRow(r.Tag(), "errorRecord", r.Value(), "errorRecord")
 		case vsl.TimestampRecord:
-			s.addRow(r.Tag(), "", wrapNumbers(record.String()), "")
+			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.TTLRecord:
 			s.addRow(r.Tag(), "", record.String(), "")
 		case vsl.AcctRecord:
@@ -109,6 +109,10 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 		return ""
 	}
 
+	if classA == "" {
+		classA = keywordClass(a)
+	}
+
 	if classB == "" {
 		classB = "tval"
 	} else {
@@ -125,13 +129,6 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 	}
 }
 
-func wrapNumbers(s string) string {
-	re := regexp.MustCompile(`\d+`)
-	return re.ReplaceAllStringFunc(s, func(match string) string {
-		return fmt.Sprintf(`<span class="number">%s</span>`, match)
-	})
-}
-
 func statusCSSClass(s int) string {
 	if s >= 500 {
 		return "s5xx"
@@ -141,6 +138,16 @@ func statusCSSClass(s int) string {
 		return "s3xx"
 	} else if s >= 200 {
 		return "s2xx"
+	}
+	return ""
+}
+
+func keywordClass(s string) string {
+	switch s {
+	case tag.ReqURL, tag.BereqURL:
+		return "blue"
+	case tag.VCLCall:
+		return "yellow"
 	}
 	return ""
 }

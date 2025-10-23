@@ -6,8 +6,6 @@
 
   --nav-bg: #f1f1f1;
   --border: #e0e0e0;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
   --view-bg: #ffffff;
   --calm: #61284e;
   --cold: #093060;
@@ -17,7 +15,9 @@
   --gray-0: #666666;
   --red-0: #a60000;
   --green-0: #006800;
-  --yellow-0: #6f5500;
+  --yellow-0: #a37e05;
+  --purple-0: #2c0066;
+  --blue-0: #0543cb;
 
   --accent: var(--warm);
   --accent-hover: var(--calm);
@@ -260,6 +260,22 @@ pre:not(.mermaid) {
   color: var(--green-0);
 }
 
+.purple {
+  color: var(--purple-0);
+}
+
+.yellow {
+  color: var(--yellow-0);
+}
+
+.red {
+  color: var(--red-0);
+}
+
+.blue {
+  color: var(--blue-0);
+}
+
 .diff-received,
 .s3xx {
   color: var(--fg-1) !important;
@@ -273,6 +289,9 @@ pre:not(.mermaid) {
 .diff-modified,
 .s4xx {
   color: var(--yellow-0) !important;
+}
+.diff-modified {
+  font-style: italic !important;
 }
 
 .diff-deleted {
@@ -299,6 +318,10 @@ pre:not(.mermaid) {
 
 .strike {
   text-decoration: line-through !important;
+}
+
+.bold {
+  font-weight: 600;
 }
 
 table.headers-legend th {
@@ -380,6 +403,7 @@ table.headers-table th.hdrname {
 table.headers-table td {
   padding: 0.4rem 1rem 0.5rem 1rem;
   font-weight: normal;
+  font-family: var(--font-family-monospace);
   vertical-align: bottom;
 }
 
@@ -387,7 +411,7 @@ table.headers-table input[type="text"] {
   width: auto;
   min-width: 32ch !important;
   font-family: var(--font-family-monospace);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   padding: var(--space-0);
   background-color: inherit !important;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -403,7 +427,8 @@ table.headers-table abbr {
 div.txtree {
   display: inline-block;
   font-family: var(--font-family-monospace);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  line-height: 1.1;
 }
 
 div.txtree ul {
@@ -467,10 +492,6 @@ div.txtree ul div.tval {
 div.txtree ul div.tx-header {
   font-weight: bold;
   font-size: 1rem;
-}
-
-.number {
-  color: var(--red-0);
 }
 
 .version * {
