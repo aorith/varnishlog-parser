@@ -1,0 +1,36 @@
+:root {
+  --bg-0: #ffffff;
+  --bg-1: #f5f5f5;
+  --fg-0: #000000;
+  --fg-1: #333333;
+
+  --nav-bg: #f1f1f1;
+  --border: #e0e0e0;
+  --view-bg: #ffffff;
+  --calm: #61284e;
+  --cold: #093060;
+  --mild: #184033;
+  --warm: #5d3025;
+
+  --gray-0: #666666;
+  --red-0: #a60000;
+  --green-0: #006800;
+  --yellow-0: #936e05;
+  --brown-0: #7d5654;
+  --blue-0: #0543cb;
+
+  --accent: var(--warm);
+  --accent-hover: var(--calm);
+
+  --line-height: 1.32;
+
+  --vertical-0: calc(var(--line-height) * 0.9rem);
+  --vertical-1: calc(var(--line-height) * 1.2rem);
+  --space-0: 0.5rem;
+  --space-1: 1rem;
+
+  --font-text: Charter, "Bitstream Charter", Cambria, serif;
+  --font-head: Didot, "Noto Serif Display", P052, Sylfaen, serif;
+  --font-mono: SFMono-Regular, Consolas, Menlo, monospace;
+  --font-code: Menlo, Consolas, "Ubuntu Mono", monospace;
+}

@@ -54,6 +54,10 @@ func (s *vlogServer) registerRoutes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /static/", http.FileServerFS(assets.Assets))
+	mux.HandleFunc("GET /static/style.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/css; charset=utf-8")
+		w.Write(assets.CombinedCSS)
+	})
 
 	mux.HandleFunc("GET /{$}", indexHandler(s.version))
 	mux.HandleFunc("POST /{$}", parseHandler(s.version))

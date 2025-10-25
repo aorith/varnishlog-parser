@@ -1,65 +1,31 @@
-:root {
-  --bg-0: #ffffff;
-  --bg-1: #f5f5f5;
-  --fg-0: #000000;
-  --fg-1: #333333;
-
-  --nav-bg: #f1f1f1;
-  --border: #e0e0e0;
-  --view-bg: #ffffff;
-  --calm: #61284e;
-  --cold: #093060;
-  --mild: #184033;
-  --warm: #5d3025;
-
-  --gray-0: #666666;
-  --red-0: #a60000;
-  --green-0: #006800;
-  --yellow-0: #a37e05;
-  --purple-0: #2c0066;
-  --blue-0: #0543cb;
-
-  --accent: var(--warm);
-  --accent-hover: var(--calm);
-
-  --tree-color-0: #fbf5f4;
-  --tree-color-1: #f4e4e1;
-  --tree-color-2: #edd3cf;
-  --tree-color-3: #e6c2bc;
-  --tree-color-4: #dfb1a9;
-  --tree-border-color: var(--fg-1);
-
-  --line-height: 1.32;
-
-  --vertical-0: calc(var(--line-height) * 0.9rem);
-  --vertical-1: calc(var(--line-height) * 1.2rem);
-  --space-0: 0.5rem;
-  --space-1: 1rem;
-
-  --font-family-monospace:
-    Hack, "DejaVu Sans Mono", "Source Code Pro", monospace;
-
-  font-size: clamp(14px, 2vw, 16px);
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html {
-  font-family: sans-serif;
-}
-
 body {
-  font-family: "Noto Sans", sans-serif;
+  font-family: var(--font-text);
   background: var(--bg-0);
   color: var(--fg-0);
   font-size: 1rem;
   line-height: var(--line-height);
   text-rendering: optimizeLegibility;
-  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+h2 {
+  color: var(--warm);
+}
+h3 {
+  color: var(--cold);
+}
+h4 {
+  color: var(--mild);
+}
+h5 {
+  color: var(--calm);
+}
+h6 {
+  color: var(--fg-1);
+}
+
+p {
+  margin: 0 0 var(--vertical-0);
 }
 
 nav {
@@ -190,43 +156,43 @@ h3,
 h4,
 h5,
 h6 {
-  padding: 0;
+  text-wrap: balance;
   margin-bottom: 1rem;
   font-weight: 700;
 }
 
 h1 {
-  font-size: 1.5rem;
+  font-size: 2rem;
 }
 
 h2 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   color: var(--warm);
 }
 
 h3 {
-  font-size: 1.3rem;
+  font-size: 1.17rem;
   color: var(--cold);
 }
 
 h4 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: var(--mild);
 }
 
 h5 {
-  font-size: 1.1rem;
+  font-size: 0.83rem;
   color: var(--calm);
 }
 
 h6 {
-  font-size: 1rem;
+  font-size: 0.67rem;
   color: var(--fg-1);
 }
 
 p {
+  text-wrap: pretty;
   margin: 0 0 var(--vertical-0);
-  padding: 0;
 }
 
 pre.mermaid {
@@ -235,7 +201,7 @@ pre.mermaid {
 
 pre:not(.mermaid) {
   max-height: 45vh;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-code);
   font-size: 0.9rem;
   background-color: var(--view-bg);
   border: 2px solid var(--border);
@@ -260,20 +226,16 @@ pre:not(.mermaid) {
   color: var(--green-0);
 }
 
-.purple {
-  color: var(--purple-0);
-}
-
-.yellow {
-  color: var(--yellow-0);
-}
-
 .red {
   color: var(--red-0);
 }
 
 .blue {
   color: var(--blue-0);
+}
+
+.brown {
+  color: var(--brown-0);
 }
 
 .diff-received,
@@ -403,14 +365,14 @@ table.headers-table th.hdrname {
 table.headers-table td {
   padding: 0.4rem 1rem 0.5rem 1rem;
   font-weight: normal;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   vertical-align: bottom;
 }
 
 table.headers-table input[type="text"] {
   width: auto;
   min-width: 32ch !important;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 0.9rem;
   padding: var(--space-0);
   background-color: inherit !important;
@@ -423,79 +385,8 @@ table.headers-table abbr {
   text-decoration: none;
 }
 
-/* VCL Log Tree */
-div.txtree {
-  display: inline-block;
-  font-family: var(--font-family-monospace);
-  font-size: 0.8rem;
-  line-height: 1.1;
-}
-
-div.txtree ul {
-  list-style-type: none;
-  background-color: var(--tree-color-0);
-  color: var(--fg-0);
-  border: 1px solid var(--tree-border-color);
-  border-radius: 6px;
-
-  margin: 6px 1rem 6px 1.5rem;
-  padding: 10px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-
-  display: grid;
-  /* max should be enough for all tags */
-  grid-template-columns: minmax(min-content, 112px) auto;
-  column-gap: 4px;
-  row-gap: 5px;
-
-  /* when this element is a child, occupy 2 columns */
-  grid-column: span 2;
-}
-
-div.txtree ul.color-0 {
-  background-color: var(--tree-color-1);
-}
-
-div.txtree ul.color-1 {
-  background-color: var(--tree-color-2);
-}
-
-div.txtree ul.color-2 {
-  background-color: var(--tree-color-3);
-}
-
-div.txtree ul.color-3 {
-  background-color: var(--tree-color-4);
-}
-
-div.txtree ul.root-ul {
-  margin: 0px;
-}
-
-div.txtree ul li {
-  display: block;
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-div.txtree ul div {
-  display: block;
-}
-
-div.txtree ul div.tval {
-  max-inline-size: 1080px;
-  min-inline-size: 620px;
-  overflow-wrap: break-word;
-}
-
-div.txtree ul div.tx-header {
-  font-weight: bold;
-  font-size: 1rem;
-}
-
 .version * {
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 0.9rem;
 }
 

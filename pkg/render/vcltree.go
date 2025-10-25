@@ -17,22 +17,18 @@ func TxTreeHTML(ts vsl.TransactionSet, tx *vsl.Transaction) string {
 	root := ts.RootParent(tx)
 	visited := make(map[vsl.VXID]bool)
 
-	s.WriteString(`<ul class="root-ul">`)
-	color := 0
-	renderTxTree(&s, ts, root, visited, color)
-	s.WriteString("</ul>")
-
+	renderTxTree(&s, ts, root, visited)
 	return s.String()
 }
 
-func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool, color int) {
+func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) {
 	if visited[tx.VXID()] {
 		log.Printf("renderTxTree(): loop detected at transaction %q\n", tx.TXID())
 		return
 	}
 	visited[tx.VXID()] = true
 
-	s.addRow(string(tx.TXID()), "tx-header", "", "")
+	s.WriteString("<tx-logs>")
 
 	for _, r := range tx.LogRecords() {
 		switch record := r.(type) {
@@ -70,31 +66,22 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 			s.addRow(r.Tag(), "", record.String(), "logMsg")
 		case vsl.StatusRecord:
 			s.addRow(r.Tag(), "", r.Value(), statusCSSClass(record.Status()))
-
 		case vsl.LinkRecord:
 			childTx := ts.GetTX(record.VXID())
 			if childTx == nil {
-				s.addRow(r.Tag(), "", r.Value(), "strike")
 				childTx = vsl.NewMissingTransaction(record)
+				s.addRow(record.Tag(), "", fmt.Sprintf("%s (%s)", record.Value(), childTx.TXID()), "strike")
 			} else {
-				s.addRow(r.Tag(), "", r.Value(), "")
+				s.addRow(record.Tag(), "", fmt.Sprintf("%s (%s)", record.Value(), childTx.TXID()), "")
 			}
+			renderTxTree(s, ts, childTx, visited)
 
-			_, err := fmt.Fprintf(s, `<ul class="color-%d">`, color)
-			if err != nil {
-				panic(err)
-			}
-			color++
-			if color > 3 {
-				color = 0
-			}
-			renderTxTree(s, ts, childTx, visited, color)
-			s.WriteString("</ul>")
 		default:
 			s.addRow(r.Tag(), "", r.Value(), "")
 		}
 	}
 
+	s.WriteString("</tx-logs>")
 }
 
 type rowBuilder struct {
@@ -113,17 +100,8 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 		classA = keywordClass(a)
 	}
 
-	if classB == "" {
-		classB = "tval"
-	} else {
-		classB = classB + " tval"
-	}
-
-	_, err := fmt.Fprintf(s, `<div%s>%s</div>`, formatClass(classA), a)
-	if err != nil {
-		panic(err)
-	}
-	_, err = fmt.Fprintf(s, `<div%s>%s</div>`, formatClass(classB), b)
+	classA, classB = formatClass(classA), formatClass(classB)
+	_, err := fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, a, classB, b)
 	if err != nil {
 		panic(err)
 	}
@@ -147,7 +125,7 @@ func keywordClass(s string) string {
 	case tag.ReqURL, tag.BereqURL:
 		return "blue"
 	case tag.VCLCall:
-		return "yellow"
+		return "brown"
 	}
 	return ""
 }
