@@ -1,0 +1,54 @@
+div.txtree {
+  & * {
+    font-size: var(--fsize-xs);
+    font-family: var(--font-mono);
+  }
+
+  & tx-logs {
+    max-width: 100%;
+    color: var(--fg-0);
+    border: 1px solid var(--gray-0);
+    border-radius: 5px;
+    box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
+
+    margin: 8px 0 8px 32px;
+    padding: 3px 0 3px 0;
+
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 6px;
+    row-gap: 0;
+
+    /* when this element is a child, occupy 2 columns */
+    grid-column: span 2;
+
+    /* nested tx-logs */
+    & tx-logs {
+      max-width: 95%;
+    }
+
+    & tx-key,
+    & tx-val {
+      display: block;
+      padding: 2px 6px 2px 6px;
+    }
+
+    & tx-val {
+      overflow-wrap: break-word;
+    }
+
+    & tx-key {
+      text-align: right;
+      font-weight: 600;
+    }
+  }
+
+  & > tx-logs:first-of-type {
+    margin: 0;
+  }
+
+  & .tx-tree-tx {
+    font-weight: normal;
+    color: var(--gray-0);
+  }
+}

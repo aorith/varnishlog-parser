@@ -1,0 +1,78 @@
+<!-- templates/views/reqbuild_view.html -->
+
+<div class="view" id="reqbuild-view">
+	<div class="view-content">
+		<h1>Request Builder</h1>
+
+		<p>Generate <a href="https://curl.se/" target="_blank">curl</a>
+			commands directly from parsed VSL transaction data. Note that for POST and PUT requests, the request body is not recorded by <code>varnishlog</code>
+			and therefore cannot be included.</p>
+
+		<form class="reqbuild-form"
+		      hx-post="reqbuilder/"
+		      hx-target="#reqBuilderResults"
+		      hx-target-400="#reqBuilderResults"
+		      hx-swap="innerHTML settle:0.3s"
+		      hx-include="[name='logs']"
+		>
+			<fieldset>
+				<div class="form-row">
+					<label>
+						Scheme
+						<select name="scheme">
+							<option value="auto">-- Auto --</option>
+							<option value="http://">HTTP</option>
+							<option value="https://">HTTPS</option>
+						</select>
+					</label>
+
+					<label>
+						Headers
+						<select name="headers">
+							<option value="received">Received</option>
+							<option value="processed">After VCL Processing</option>
+						</select>
+					</label>
+				</div>
+
+				<div class="form-row">
+					<label>
+						Excluded headers
+						<input type="text" name="excluded" value="Via, X-Forwarded-For">
+					</label>
+				</div>
+
+				<fieldset>
+					<legend>Connect To</legend>
+					<div class="form-row">
+						<label>
+							<input type="radio" name="connectTo" value="backend" checked>
+							Backend
+							<select id="backend" name="backend">
+								<option value="auto">-- Auto --</option>
+								<option value="none">-- None --</option>
+								{{- range .Transactions.Set.Transactions }}
+								{{ $backend := .GetBackendConnStr }}
+								{{- if ne $backend "" }}
+								<option value="{{ $backend }}">{{ .TXID }} ({{ $backend }})</option>
+								{{- end }}
+								{{- end }}
+							</select>
+						</label>
+					</div>
+					<div class="form-row">
+						<label>
+							<input type="radio" name="connectTo" value="custom">
+							Custom backend
+							<input type="text" name="custom" pattern="^.+:[0-9]+$" placeholder="<HOST/IP>:<PORT>">
+						</label>
+					</div>
+				</fieldset>
+				<div class="form-row">
+					<button class="btn loading">Generate</button>
+				</div>
+			</fieldset>
+		</form>
+		<div id="reqBuilderResults"></div>
+	</div>
+</div>

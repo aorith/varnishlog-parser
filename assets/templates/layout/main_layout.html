@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- templates/layout/main_layout.html -->
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="color-scheme" content="light dark">
+		<meta name="robots" content="index, follow">
+		<script src="/static/vendor/htmx.min-2.0.8.js"></script>
+		<script src="/static/vendor/htmx-ext-response-targets-2.0.4.js"></script>
+		<script src="/static/history.js"></script>
+		<link rel="stylesheet" href="/static/style.css">
+		<link rel="stylesheet" href="/static/vendor/prism.css">
+		<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+		<title>{{ .Title }}</title>
+	</head>
+
+	<body hx-ext="response-targets">
+		<!-- Navigation -->
+		<input type="radio" class="nav" name="view" id="radio-parse" {{ .Views.Parse -}}>
+		<input type="radio" class="nav" name="view" id="radio-overview" {{ .Views.Overview -}}>
+		<input type="radio" class="nav" name="view" id="radio-vcllogtree">
+		<input type="radio" class="nav" name="view" id="radio-headers">
+		<input type="radio" class="nav" name="view" id="radio-timings">
+		<input type="radio" class="nav" name="view" id="radio-reqbuild">
+		<nav>
+			<fieldset>
+				<legend>Menu</legend>
+				<label for="radio-parse">PARSE</label>
+				<label for="radio-overview">Overview</label>
+				<label for="radio-vcllogtree">LogTree</label>
+				<label for="radio-headers">Headers</label>
+				<label for="radio-timings">Timings</label>
+				<label for="radio-reqbuild">ReqBuild</label>
+			</fieldset>
+		</nav>
+
+		<div id="content">
+			{{ block "error" . }}
+			<!-- Errors -->
+			{{ end }}
+			{{ block "content" . }}
+			<!-- Content -->
+			{{ end }}
+		</div>
+	</body>
+</html>

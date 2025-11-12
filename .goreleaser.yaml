@@ -6,11 +6,12 @@ before:
 builds:
 - env:
   - CGO_ENABLED=0
+  main: ./cmd/server
   goos:
   - linux
   - darwin
   ldflags:
-  - -X github.com/aorith/varnishlog-parser/cmd.Version={{.Version}}
+  - -X main.version={{.Version}}
 archives:
 - format: tar.gz
   id: varnishlog_parser

@@ -1,0 +1,46 @@
+<!-- templates/views/timings_view.html -->
+
+<div class="view" id="timings-view">
+	<div class="view-content">
+		<h1>Timings</h1>
+
+		<h3>Timestamp Events</h3>
+		<table>
+			<thead>
+				<tr>
+					<th>TxType</th>
+					<th>Event</th>
+					<th>Count</th>
+					<th>Min</th>
+					<th>Max</th>
+					<th>Avg</th>
+					<th>P90</th>
+					<th>P99</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{- range $i, $counter := timestampEventsSummary .Transactions.Set }}
+				<tr>
+					<td>{{$counter.TxType}}</td>
+					<td>{{$counter.Label}}</td>
+					<td>{{$counter.Count}}</td>
+					<td>{{$counter.Min}}</td>
+					<td>{{$counter.Max}}</td>
+					<td>{{$counter.Average}}</td>
+					<td>{{$counter.Percentile 90.0}}</td>
+					<td>{{$counter.Percentile 99.0}}</td>
+				</tr>
+				{{- end}}
+			</tbody>
+		</table>
+
+		{{ $set := .Transactions.Set }}
+		{{ $precision := .Timeline.Precision }}
+		{{ $ticks := .Timeline.Ticks }}
+		{{- range .Transactions.Set.UniqueRootParents .Timeline.Sessions }}
+		<h3>{{ .TXID }}</h3>
+		<h4>Timeline</h4>
+		<div class="timeline">{{ timeline $set . $precision $ticks }}</div>
+		{{- end }}
+	</div>
+</div>

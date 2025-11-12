@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: MIT
+
 package server
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -16,7 +19,8 @@ type vlogServer struct {
 func StartServer(bind string, port int, version string) {
 	srv := newServer(bind, port, version)
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("Server error: %v\n", err)
+		slog.Error("Server error", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -35,7 +39,7 @@ func newServer(bind string, port int, version string) *http.Server {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	log.Printf("Listening on %s:%d\n", srv.bind, srv.port)
+	slog.Info("Listening", "address", srv.bind, "port", srv.port)
 
 	return server
 }

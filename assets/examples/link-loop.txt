@@ -14,15 +14,15 @@
 --  ReqMethod      GET
 --  ReqURL         /esi/
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example1.com
+--  ReqHeader      Host: www.example1.org
 --  ReqHeader      User-Agent: curl/8.9.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      X-Forwarded-For: 192.168.50.1
 --  ReqHeader      Via: 1.1 22f5ed6d0d3e (Varnish/7.5)
 --  VCL_call       RECV
 --  ReqURL         /esi/?test=1
---  ReqUnset       Host: www.example1.com
---  ReqHeader      host: www.example2.com
+--  ReqUnset       Host: www.example1.org
+--  ReqHeader      host: www.example2.org
 --  ReqHeader      xid: 2
 --  ReqHeader      X-Test-Header: Test Value
 --  VCL_return     hash

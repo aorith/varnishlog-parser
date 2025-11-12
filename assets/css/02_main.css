@@ -1,0 +1,216 @@
+body {
+  font-family: var(--font-text);
+  background: var(--bg-0);
+  color: var(--fg-0);
+  line-height: var(--line-height);
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+  height: 100dvh;
+}
+
+h2 {
+  color: var(--warm);
+}
+h3 {
+  color: var(--cold);
+}
+h4 {
+  color: var(--mild);
+}
+h5 {
+  color: var(--calm);
+}
+h6 {
+  color: var(--fg-1);
+}
+
+p {
+  margin: 0 0 var(--vertical-0);
+}
+
+button {
+  padding: 0.3rem 1.1rem;
+  border: 1px solid var(--fg-1);
+  border-radius: 3px;
+  background: var(--bg-1);
+  color: var(--fg-1);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
+button:hover {
+  color: var(--accent-hover);
+  border-color: var(--accent-hover);
+  background: var(--bg-0);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+h1 {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  width: 100%;
+}
+
+h2 {
+  color: var(--warm);
+}
+
+h3 {
+  color: var(--cold);
+}
+
+h4 {
+  color: var(--mild);
+}
+
+h5 {
+  color: var(--calm);
+}
+
+h6 {
+  color: var(--fg-1);
+}
+
+p {
+  text-wrap: pretty;
+  margin: 0 0 var(--vertical-0);
+}
+
+abbr {
+  cursor: help;
+}
+
+pre {
+  max-height: 45dvh;
+  font-family: var(--font-mono);
+  font-size: var(--fsize-s);
+  margin: 4px 0;
+  padding: 4px;
+  padding-left: 2px;
+  white-space: pre-wrap;
+  white-space-collapse: preserve;
+  overflow: auto;
+  overflow-wrap: break-word;
+  word-break: normal;
+  word-wrap: inherit;
+
+  background-color: var(--bg-1);
+  color: var(--fg-0);
+  padding: 16px 20px;
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+:not(pre) > code {
+  color: var(--warm);
+  background: var(--bg-1);
+  padding: 1px 2px 1px 2px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+.green {
+  color: var(--green-0);
+}
+
+.red {
+  color: var(--red-0);
+}
+
+.blue {
+  color: var(--blue-0);
+}
+
+.brown {
+  color: var(--brown-0);
+}
+
+.yellow {
+  color: var(--yellow-0);
+}
+
+.s3xx {
+  color: var(--fg-1) !important;
+}
+
+.s2xx {
+  color: var(--green-0) !important;
+}
+
+.s4xx {
+  color: var(--yellow-0) !important;
+}
+
+.s2xx,
+.s3xx,
+.s4xx,
+.s5xx {
+  font-weight: bold;
+}
+
+.errorRecord,
+.s5xx {
+  color: var(--red-0) !important;
+}
+
+.logMsg {
+  color: var(--fg-1) !important;
+  font-style: italic;
+}
+
+.strike {
+  text-decoration: line-through !important;
+}
+
+.bold {
+  font-weight: 600;
+}
+
+.inline-block {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.version {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: stretch;
+  gap: 0 20px;
+  & * {
+    font-size: var(--fsize-xs);
+    font-style: italic;
+  }
+  & #logo {
+    fill: var(--warm);
+  }
+}
+
+/* HTMX animation after element creation */
+.fade-me-in.htmx-added {
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+}
+
+/* Final state */
+.fade-me-in {
+  opacity: 1;
+  transform: translateX(0) translateY(0) scale(1);
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
+}

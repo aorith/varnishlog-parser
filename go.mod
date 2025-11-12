@@ -1,16 +1,8 @@
 module github.com/aorith/varnishlog-parser
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.25.3
 
 require (
-	github.com/a-h/templ v0.3.943
-	github.com/go-echarts/go-echarts/v2 v2.6.3
-	github.com/spf13/cobra v1.10.1
-)
-
-require (
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/aorith/svg-sequence v0.0.11
+	github.com/aorith/svg-timeline v0.2.1
 )

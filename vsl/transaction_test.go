@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package vsl_test
 
 import (
@@ -30,7 +32,7 @@ const (
 `
 )
 
-func areSlicesEqual(a, b []string) bool {
+func areTXIDSlicesEqual(a, b []vsl.TXID) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -46,17 +48,16 @@ func areSlicesEqual(a, b []string) bool {
 
 func TestTransactions(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Errorf("Parse() failed %s", err)
 	}
-	txs := txsSet.Transactions()
-	txsMap := txsSet.TransactionsMap()
+	txs := ts.Transactions()
 
-	tx := txs[9]
-	children := []string{}
-	for _, c := range tx.ChildrenSortedByVXID() {
-		children = append(children, c.TXID())
+	tx := ts.GetTX(vsl.VXID(33030))
+	children := []vsl.TXID{}
+	for _, c := range ts.SortedChildren(tx) {
+		children = append(children, c.TXID)
 	}
 
 	wantedChildren := 3
@@ -64,28 +65,28 @@ func TestTransactions(t *testing.T) {
 		t.Errorf("Children len - wanted: %d, got: %d", wantedChildren, len(children))
 	}
 
-	txFromMap := txsMap[tx.TXID()]
-	childrenFromMap := []string{}
-	for _, c := range txFromMap.ChildrenSortedByVXID() {
-		childrenFromMap = append(childrenFromMap, c.TXID())
+	txFromMap := ts.GetTX(tx.VXID)
+	childrenFromMap := []vsl.TXID{}
+	for _, c := range ts.SortedChildren(txFromMap) {
+		childrenFromMap = append(childrenFromMap, c.TXID)
 	}
 
-	if !areSlicesEqual(children, childrenFromMap) {
+	if !areTXIDSlicesEqual(children, childrenFromMap) {
 		t.Errorf("TransactionsMap: Transactions children are not equal between the slice and the map: %v != %v", children, childrenFromMap)
 	}
 
 	// RootParent() check for VCLComplete1
 	rootTx := txs[0]  // << Session  >> 1
 	childTx := txs[4] // *4* << BeReq    >> 5
-	if childTx.RootParent().TXID() != rootTx.TXID() {
-		t.Errorf("RootParent(): wanted: %v, got: %v", rootTx.TXID(), childTx.RootParent().TXID())
+	if ts.RootParent(childTx, true).TXID != rootTx.TXID {
+		t.Errorf("RootParent(): wanted: %v, got: %v", rootTx.TXID, ts.RootParent(childTx, true).TXID)
 	}
 
 	// GroupRelatedTransactions() check for VCLComplete1 which has 24 transactions
 	// with 4 groups of related transactions
 	wantedTotal := 25
 	wantedGroups := 5
-	txsGroup := txsSet.GroupRelatedTransactions()
+	txsGroup := ts.GroupRelatedTransactions()
 	if len(txsGroup) != wantedGroups {
 		t.Errorf("GroupRelatedTransactions(): (group count) wanted: %d, got: %d", wantedGroups, len(txsGroup))
 	}
@@ -111,15 +112,15 @@ func TestTransactions2(t *testing.T) {
 		t.Errorf("Incorrect len, expected %d, got %d", wantedCount, len(txsSet.Transactions()))
 	}
 
-	tx := txsSet.TransactionsMap()["40000_req_esi_10"]
+	tx := txsSet.GetTX(vsl.VXID(40000))
 	if tx == nil {
 		t.Errorf("Transaction not found, got nil")
 		return
 	}
 
 	wantedLevel := 12
-	if tx.Level() != wantedLevel {
-		t.Errorf("Level() wanted: %d, got: %d", wantedLevel, tx.Level())
+	if tx.Level != wantedLevel {
+		t.Errorf("Level() wanted: %d, got: %d", wantedLevel, tx.Level)
 	}
 }
 

@@ -1,0 +1,13 @@
+<!-- templates/views/parsed_view.html -->
+
+<div class="view active" id="parse-view">
+	<div class="view-content">
+		<h1>Parse</h1>
+		{{if .Transactions.Count }}
+		<p>Use the menu to navigate to the different views.</p>
+		{{ else }}
+		<p>No valid transactions found.</p>
+		{{ end }}
+		{{ template "parse_form_partial.html" . }}
+	</div>
+</div>

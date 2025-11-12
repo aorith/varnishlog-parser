@@ -1,0 +1,14 @@
+{{ define "error" }}
+<!-- templates/error.html -->
+
+<div class="error">
+	<div class="view-content">
+		<h2>Something went wrong</h2>
+		<p>There was an error while parsing or rendering this page.</p>
+		<pre>{{ .Error }}</pre>
+		<br>
+		<p><a href="/" role="button">Go back home</a></p>
+	</div>
+</div>
+
+{{ end }}

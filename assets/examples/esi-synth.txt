@@ -1,0 +1,96 @@
+*   << Session  >> 1
+-   Begin          sess 0 HTTP/1
+-   SessOpen       192.168.50.10 44084 http 192.168.50.11 80 1762960152.362832 21
+-   Link           req 2 rxreq
+-   Link           req 3 rxreq
+-   SessClose      RX_CLOSE_IDLE 5.011
+-   End
+**  << Request  >> 2
+--  Begin          req 1 rxreq
+--  Timestamp      Start: 1762960152.362846 0.000000 0.000000
+--  Timestamp      Req: 1762960152.362846 0.000000 0.000000
+--  VCL_use        boot
+--  ReqStart       192.168.50.10 44084 http
+--  ReqMethod      GET
+--  ReqURL         /ec1
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: varnishlog.iou.re
+--  ReqHeader      Accept: */*
+--  ReqHeader      User-Agent: hurl/7.0.0
+--  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      Via: 1.1 a88efbb7a4fc (Varnish/7.7)
+--  ReqHeader      whoami: 1
+--  ReqHeader      x-do-esi: 1
+--  ReqHeader      Accept-Encoding: gzip
+--  ReqHeader      X-Varnish: 3
+--  ReqUnset       X-Forwarded-For: 192.168.65.1
+--  ReqHeader      X-Forwarded-For: 192.168.65.1, 192.168.50.10
+--  ReqUnset       Via: 1.1 a88efbb7a4fc (Varnish/7.7)
+--  ReqHeader      Via: 1.1 a88efbb7a4fc (Varnish/7.7), 1.1 8b5d6fd7a64b (Varnish/7.7)
+--  VCL_call       RECV
+--  VCL_return     synth
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  RespProtocol   HTTP/1.1
+--  RespStatus     700
+--  RespReason     Level 1 ESI
+--  RespHeader     Date: Wed, 12 Nov 2025 15:09:12 GMT
+--  RespHeader     Server: Varnish
+--  RespHeader     X-Varnish: 2
+--  VCL_call       SYNTH
+--  RespStatus     200
+--  RespReason     OK
+--  RespHeader     Content-Type: text/html; charset=utf-8
+--  VCL_return     deliver
+--  Timestamp      Process: 1762960152.362866 0.000019 0.000019
+--  RespHeader     Content-Length: 84
+--  Storage        malloc Transient
+--  Filters
+--  RespHeader     Connection: keep-alive
+--  Timestamp      Resp: 1762960152.362891 0.000044 0.000025
+--  ReqAcct        212 0 212 171 84 255
+--  End
+**  << Request  >> 3
+--  Begin          req 1 rxreq
+--  Timestamp      Start: 1762960152.363041 0.000000 0.000000
+--  Timestamp      Req: 1762960152.363041 0.000000 0.000000
+--  VCL_use        boot
+--  ReqStart       192.168.50.10 44084 http
+--  ReqMethod      GET
+--  ReqURL         /esi1
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: varnishlog.iou.re
+--  ReqHeader      Accept: */*
+--  ReqHeader      User-Agent: hurl/7.0.0
+--  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      Via: 1.1 a88efbb7a4fc (Varnish/7.7)
+--  ReqHeader      whoami: 1
+--  ReqHeader      Accept-Encoding: gzip
+--  ReqHeader      X-Varnish: 5
+--  ReqUnset       X-Forwarded-For: 192.168.65.1
+--  ReqHeader      X-Forwarded-For: 192.168.65.1, 192.168.50.10
+--  ReqUnset       Via: 1.1 a88efbb7a4fc (Varnish/7.7)
+--  ReqHeader      Via: 1.1 a88efbb7a4fc (Varnish/7.7), 1.1 8b5d6fd7a64b (Varnish/7.7)
+--  VCL_call       RECV
+--  VCL_return     synth
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  RespProtocol   HTTP/1.1
+--  RespStatus     708
+--  RespReason     ESI 1
+--  RespHeader     Date: Wed, 12 Nov 2025 15:09:12 GMT
+--  RespHeader     Server: Varnish
+--  RespHeader     X-Varnish: 3
+--  VCL_call       SYNTH
+--  RespStatus     200
+--  RespReason     OK
+--  RespHeader     Content-Type: text/html; charset=utf-8
+--  VCL_return     deliver
+--  Timestamp      Process: 1762960152.363050 0.000009 0.000009
+--  RespHeader     Content-Length: 40
+--  Storage        malloc Transient
+--  Filters
+--  RespHeader     Connection: keep-alive
+--  Timestamp      Resp: 1762960152.363063 0.000022 0.000013
+--  ReqAcct        200 0 200 171 40 211
+--  End

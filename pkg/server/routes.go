@@ -1,134 +1,153 @@
+// SPDX-License-Identifier: MIT
+
 package server
 
 import (
-	"context"
-	"fmt"
+	"log/slog"
 	"net/http"
-	"strings"
+	"strconv"
 
-	"github.com/a-h/templ"
 	"github.com/aorith/varnishlog-parser/assets"
-	"github.com/aorith/varnishlog-parser/pkg/render"
-	"github.com/aorith/varnishlog-parser/pkg/server/templates/content"
-	"github.com/aorith/varnishlog-parser/pkg/server/templates/pages"
-	"github.com/aorith/varnishlog-parser/pkg/server/templates/partials"
-	"github.com/aorith/varnishlog-parser/vsl"
+	"github.com/aorith/varnishlog-parser/pkg/server/html"
 )
+
+func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
+	data := html.PageData{Version: version}
+
+	// Default values
+	data.Sequence.Distance = 200
+	data.Sequence.StepHeight = 40
+	data.Sequence.IncludeCalls = false
+	data.Sequence.IncludeReturns = false
+
+	data.Timeline.Sessions = false
+	data.Timeline.Precision = 1200
+	data.Timeline.Ticks = 10
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := html.Index(w, data); err != nil {
+			slog.Warn("failed to render template", "error", err)
+			html.Error(w, err)
+		}
+	}
+}
+
+func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
+	data := html.PageData{Version: version}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			slog.Warn("failed to parse form", "error", err)
+			html.Error(w, err)
+			return
+		}
+
+		switch r.Form.Get("action") {
+		// Check if an example btn was pressed or it was the regular parse btn
+		case "eg-simple":
+			data.Logs.Textinput = assets.VCLSimplePOST
+		case "eg-cached":
+			data.Logs.Textinput = assets.VCLCached
+		case "eg-esi1":
+			data.Logs.Textinput = assets.VCLESI1
+		case "eg-req-restart":
+			data.Logs.Textinput = assets.VCLRestart
+		case "eg-esi-synth":
+			data.Logs.Textinput = assets.VCLESISynth
+		default:
+			data.Logs.Textinput = r.Form.Get("logs")
+		}
+
+		// Sequence settings
+		distance, err := strconv.Atoi(r.Form.Get("distance"))
+		if err != nil {
+			slog.Warn("failed to parse form", "error", err)
+			html.PartialError(w, err)
+			return
+		}
+		data.Sequence.Distance = distance
+
+		stepHeight, err := strconv.Atoi(r.Form.Get("stepHeight"))
+		if err != nil {
+			slog.Warn("failed to parse form", "error", err)
+			html.PartialError(w, err)
+			return
+		}
+		data.Sequence.StepHeight = stepHeight
+
+		data.Sequence.IncludeCalls = r.Form.Get("includeCalls") == "yes"
+		data.Sequence.IncludeReturns = r.Form.Get("includeReturns") == "yes"
+
+		// Timeline settings
+		data.Timeline.Sessions = r.Form.Get("sessions") == "yes"
+		precision, err := strconv.Atoi(r.Form.Get("precision"))
+		if err != nil {
+			slog.Warn("failed to parse form", "error", err)
+			html.PartialError(w, err)
+			return
+		}
+		data.Timeline.Precision = precision
+		numTicks, err := strconv.Atoi(r.Form.Get("ticks"))
+		if err != nil {
+			slog.Warn("failed to parse form", "error", err)
+			html.PartialError(w, err)
+			return
+		}
+		data.Timeline.Ticks = numTicks
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := html.Parsed(w, data); err != nil {
+			slog.Warn("failed to render template", "error", err)
+			html.Error(w, err)
+		}
+	}
+}
+
+func reqBuilderHandler(version string) func(http.ResponseWriter, *http.Request) {
+	data := html.PageData{Version: version}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			slog.Warn("failed to parse form", "error", err)
+			html.PartialError(w, err)
+			return
+		}
+
+		data.Logs.Textinput = r.Form.Get("logs")
+		data.ReqBuild.Scheme = r.Form.Get("scheme")
+		data.ReqBuild.ReceivedHeaders = r.Form.Get("headers") == "received"
+		data.ReqBuild.ExcludedHeaders = r.Form.Get("excluded")
+		data.ReqBuild.ConnectTo = r.Form.Get("connectTo")
+		data.ReqBuild.Backend = r.Form.Get("backend")
+		data.ReqBuild.ConnectCustom = r.Form.Get("custom")
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := html.ReqBuild(w, data); err != nil {
+			slog.Warn("failed to render template", "error", err)
+			html.PartialError(w, err)
+			return
+		}
+	}
+}
 
 func (s *vlogServer) registerRoutes() http.Handler {
 	mux := http.NewServeMux()
 
-	// Static
 	mux.Handle("GET /static/", http.FileServerFS(assets.Assets))
-
-	// Full pages
-	mux.Handle("GET /{$}", templ.Handler(pages.Initial(s.version)))
-	mux.HandleFunc("POST /{$}", func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+	mux.HandleFunc("GET /static/style.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/css; charset=utf-8")
+		_, err := w.Write(assets.CombinedCSS)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		p := vsl.NewTransactionParser(strings.NewReader(r.Form.Get("logs")))
-		txsSet, err := p.Parse()
-		if err != nil {
-			err = pages.Error(s.version, err).Render(context.Background(), w)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, err)
-				return
-			}
-			return
-		}
-
-		err = pages.Parsed(s.version, txsSet).Render(context.Background(), w)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
+			panic(err)
 		}
 	})
 
-	// HTMX Partials
-	mux.HandleFunc("POST /reqbuilder/{$}", func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		p := vsl.NewTransactionParser(strings.NewReader(r.Form.Get("logs")))
-		txsSet, err := p.Parse()
-		if err != nil {
-			err = partials.ErrorMsg(err).Render(context.Background(), w)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, err)
-				return
-			}
-			return
-		}
-
-		connectTo := r.Form.Get("connectTo")
-		switch connectTo {
-		case "custom":
-			connectTo = r.Form.Get("custom")
-		case "backend":
-			connectTo = r.Form.Get("transactionBackend")
-		}
-
-		f := content.ReqBuilderForm{
-			Scheme:    r.Form.Get("scheme"),
-			Received:  r.Form.Get("headers") == "received", // Use the received method/url and headers
-			ConnectTo: connectTo,
-			Excluded:  r.Form.Get("excluded"),
-		}
-
-		err = content.ReqBuild(txsSet, f).Render(context.Background(), w)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
-		}
-	})
-
-	mux.HandleFunc("POST /timestamps/{$}", func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		p := vsl.NewTransactionParser(strings.NewReader(r.Form.Get("logs")))
-		txsSet, err := p.Parse()
-		if err != nil {
-			err = partials.ErrorMsg(err).Render(context.Background(), w)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, err)
-				return
-			}
-			return
-		}
-
-		f := render.TimestampsForm{
-			SinceLast:   r.Form.Get("timestampValue") == "last",
-			Timeline:    r.Form.Get("timeline") == "on",
-			Events:      r.Form["events"],
-			OtherEvents: r.Form.Get("other-events") == "on",
-		}
-
-		err = content.RenderTimestampsTab(txsSet, f).Render(context.Background(), w)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
-		}
-	})
+	mux.HandleFunc("GET /{$}", indexHandler(s.version))
+	mux.HandleFunc("POST /{$}", parseHandler(s.version))
+	mux.HandleFunc("POST /reqbuilder/{$}", reqBuilderHandler(s.version))
 
 	return mux
 }

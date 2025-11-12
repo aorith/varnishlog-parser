@@ -1,0 +1,77 @@
+#currentNumOfTxsParsed,
+#firstParsedHostname {
+  display: none;
+}
+
+#history {
+  margin-top: 20px;
+
+  & table {
+    margin-top: 10px;
+  }
+
+  & th,
+  & td {
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  & .btn-small {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: var(--fsize-xxs);
+    margin-right: 2px 4px;
+  }
+
+  & .btn-load {
+    background-color: #90caf9;
+  }
+
+  & .btn-load:hover {
+    background-color: #c5e3fc;
+  }
+
+  & .btn-delete {
+    background-color: #f99790;
+  }
+
+  & .btn-delete:hover {
+    background-color: #fcc9c5;
+  }
+
+  & .name-cell {
+    cursor: pointer;
+    color: var(--accent);
+  }
+
+  & .name-cell:hover {
+    text-decoration: underline;
+    color: var(--accent-hover);
+  }
+
+  & .name-input {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+  }
+
+  & .hash-cell {
+    font-family: monospace;
+    font-size: var(--fsize-xxs);
+    color: #606060;
+  }
+
+  & .empty-state {
+    text-align: left;
+    color: #909090;
+  }
+
+  & .note {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: var(--fsize-xxxs);
+    font-style: italic;
+  }
+}

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package vsl_test
 
 import (
@@ -17,9 +19,9 @@ func TestBaseRecord(t *testing.T) {
 
 	testList := []test{
 		{
-			logRecord: "--  ReqHeader      Host: www.example1.com",
+			logRecord: "--  ReqHeader      Host: www.example1.org",
 			tag:       "ReqHeader",
-			value:     "Host: www.example1.com",
+			value:     "Host: www.example1.org",
 		},
 		{
 			logRecord: "--  BereqHeader      User-Agent:curl/8.9.1 ---- as   012345.",
@@ -34,15 +36,15 @@ func TestBaseRecord(t *testing.T) {
 	}
 
 	for _, test := range testList {
-		record, err := vsl.NewBaseRecord(test.logRecord)
+		r, err := vsl.NewBaseRecord(test.logRecord)
 		if err != nil {
 			t.Errorf("conversion to BaseRecord failed: %s", err)
 		}
-		if record.Tag() != test.tag {
-			t.Errorf("Expected tag %q got %q", test.tag, record.Tag())
+		if r.GetTag() != test.tag {
+			t.Errorf("Expected tag %q got %q", test.tag, r.GetTag())
 		}
-		if record.Value() != test.value {
-			t.Errorf("Expected value %q got %q", test.value, record.Value())
+		if r.GetRawValue() != test.value {
+			t.Errorf("Expected value %q got %q", test.value, r.GetRawValue())
 		}
 	}
 }
@@ -56,9 +58,9 @@ func TestHeaders(t *testing.T) {
 
 	testList := []test{
 		{
-			logRecord:   "--  ReqHeader      Host: www.example1.com",
+			logRecord:   "--  ReqHeader      Host: www.example1.org",
 			header:      "Host",
-			headerValue: "www.example1.com",
+			headerValue: "www.example1.org",
 		},
 		{
 			logRecord:   "--  ReqHeader      User-Agent:curl/8.9.1 ---- as   012345.",
@@ -76,11 +78,11 @@ func TestHeaders(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion to HeaderRecord failed: %s", err)
 		}
-		if record.Name() != test.header {
-			t.Errorf("Expected header %q got %q", test.header, record.Name())
+		if record.Name != test.header {
+			t.Errorf("Expected header %q got %q", test.header, record.Name)
 		}
-		if record.Value() != test.headerValue {
-			t.Errorf("Expected header value %q got %q", test.headerValue, record.Value())
+		if record.Value != test.headerValue {
+			t.Errorf("Expected header value %q got %q", test.headerValue, record.GetRawValue())
 		}
 	}
 }
@@ -127,17 +129,17 @@ func TestBeginRecord(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion failed: %s", err)
 		}
-		if record.Type() != test.recordType {
-			t.Errorf("Expected type %q got %q", test.recordType, record.Type())
+		if record.RecordType != test.recordType {
+			t.Errorf("Expected type %q got %q", test.recordType, record.RecordType)
 		}
-		if record.ParentVXID() != test.parentVXID {
-			t.Errorf("Expected parentVXID %d got %d", test.parentVXID, record.ParentVXID())
+		if record.Parent != test.parentVXID {
+			t.Errorf("Expected parentVXID %d got %d", test.parentVXID, record.Parent)
 		}
-		if record.ReasonOrProtocol() != test.reasonOrProtocol {
-			t.Errorf("Expected ReasonOrProtocol %q got %q", test.reasonOrProtocol, record.ReasonOrProtocol())
+		if record.Reason != test.reasonOrProtocol {
+			t.Errorf("Expected ReasonOrProtocol %q got %q", test.reasonOrProtocol, record.Reason)
 		}
-		if record.ESILevel() != test.esiLevel {
-			t.Errorf("Expected ESILevel %d got %d", test.esiLevel, record.ESILevel())
+		if record.ESILevel != test.esiLevel {
+			t.Errorf("Expected ESILevel %d got %d", test.esiLevel, record.ESILevel)
 		}
 	}
 }
@@ -155,7 +157,7 @@ func TestLinkRecord(t *testing.T) {
 	testList := []test{
 		{
 			logRecord: "-   Link           req 32770 rxreq",
-			txid:      "32770_req",
+			txid:      "32770-req-rxreq",
 			txType:    "req",
 			vxid:      32770,
 			reason:    "rxreq",
@@ -163,7 +165,7 @@ func TestLinkRecord(t *testing.T) {
 		},
 		{
 			logRecord: "--  Link           bereq 32771 fetch",
-			txid:      "32771_bereq",
+			txid:      "32771-bereq-fetch",
 			txType:    "bereq",
 			vxid:      32771,
 			reason:    "fetch",
@@ -171,7 +173,7 @@ func TestLinkRecord(t *testing.T) {
 		},
 		{
 			logRecord: "--  Link           req 32772 esi 1",
-			txid:      "32772_req_esi_1",
+			txid:      "32772-req-esi-1",
 			txType:    "req",
 			vxid:      32772,
 			reason:    "esi",
@@ -188,20 +190,20 @@ func TestLinkRecord(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion failed: %s", err)
 		}
-		if record.TXID() != test.txid {
-			t.Errorf("TXID() want: %q got: %q", test.txid, record.TXID())
+		if record.TXID != vsl.TXID(test.txid) {
+			t.Errorf("TXID() want: %q got: %q", test.txid, record.TXID)
 		}
-		if record.Type() != test.txType {
-			t.Errorf("Expected type %q got %q", test.txType, record.Type())
+		if record.TXType != test.txType {
+			t.Errorf("Expected type %q got %q", test.txType, record.TXType)
 		}
-		if record.VXID() != test.vxid {
-			t.Errorf("Expected childVXID %d got %d", test.vxid, record.VXID())
+		if record.VXID != test.vxid {
+			t.Errorf("Expected childVXID %d got %d", test.vxid, record.VXID)
 		}
-		if record.Reason() != test.reason {
-			t.Errorf("Expected reason %q got %q", test.reason, record.Reason())
+		if record.Reason != test.reason {
+			t.Errorf("Expected reason %q got %q", test.reason, record.Reason)
 		}
-		if record.ESILevel() != test.esiLevel {
-			t.Errorf("Expected ESILevel %d got %d", test.esiLevel, record.ESILevel())
+		if record.ESILevel != test.esiLevel {
+			t.Errorf("Expected ESILevel %d got %d", test.esiLevel, record.ESILevel)
 		}
 	}
 }
@@ -250,26 +252,26 @@ func TestBackendOpenRecord(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion failed: %s", err)
 		}
-		if record.FileDescriptor() != test.fileDescriptor {
-			t.Errorf("Expected fileDescriptor %v got %v", test.fileDescriptor, record.FileDescriptor())
+		if record.FileDescriptor != test.fileDescriptor {
+			t.Errorf("Expected fileDescriptor %v got %v", test.fileDescriptor, record.FileDescriptor)
 		}
-		if record.Name() != test.name {
-			t.Errorf("Expected name %v got %v", test.name, record.Name())
+		if record.Name != test.name {
+			t.Errorf("Expected name %v got %v", test.name, record.Name)
 		}
-		if !test.remoteAddr.Equal(record.RemoteAddr()) {
-			t.Errorf("Expected remoteAddr %v got %v", test.remoteAddr, record.RemoteAddr())
+		if !test.remoteAddr.Equal(record.RemoteAddr) {
+			t.Errorf("Expected remoteAddr %v got %v", test.remoteAddr, record.RemoteAddr)
 		}
-		if record.RemotePort() != test.remotePort {
-			t.Errorf("Expected remotePort %v got %v", test.remotePort, record.RemotePort())
+		if record.RemotePort != test.remotePort {
+			t.Errorf("Expected remotePort %v got %v", test.remotePort, record.RemotePort)
 		}
-		if !test.localAddr.Equal(record.LocalAddr()) {
-			t.Errorf("Expected localAddr %v got %v", test.localAddr, record.LocalAddr())
+		if !test.localAddr.Equal(record.LocalAddr) {
+			t.Errorf("Expected localAddr %v got %v", test.localAddr, record.LocalAddr)
 		}
-		if record.LocalPort() != test.localPort {
-			t.Errorf("Expected localPort %v got %v", test.localPort, record.LocalPort())
+		if record.LocalPort != test.localPort {
+			t.Errorf("Expected localPort %v got %v", test.localPort, record.LocalPort)
 		}
-		if record.Reason() != test.reason {
-			t.Errorf("Expected reason %v got %v", test.reason, record.Reason())
+		if record.Reason != test.reason {
+			t.Errorf("Expected reason %v got %v", test.reason, record.Reason)
 		}
 	}
 }
@@ -306,14 +308,14 @@ func TestBackendCloseRecord(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion failed: %s", err)
 		}
-		if record.FileDescriptor() != test.fileDescriptor {
-			t.Errorf("Expected fileDescriptor %v got %v", test.fileDescriptor, record.FileDescriptor())
+		if record.FileDescriptor != test.fileDescriptor {
+			t.Errorf("Expected fileDescriptor %v got %v", test.fileDescriptor, record.FileDescriptor)
 		}
-		if record.Name() != test.name {
-			t.Errorf("Expected name %v got %v", test.name, record.Name())
+		if record.Name != test.name {
+			t.Errorf("Expected name %v got %v", test.name, record.Name)
 		}
-		if record.Reason() != test.reason {
-			t.Errorf("Expected reason %v got %v", test.reason, record.Reason())
+		if record.Reason != test.reason {
+			t.Errorf("Expected reason %v got %v", test.reason, record.Reason)
 		}
 	}
 }
@@ -359,23 +361,23 @@ func TestAcctRecord(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion failed: %s", err)
 		}
-		if record.HeaderTx() != test.headerTx {
-			t.Errorf("Expected headerTx %v got %v", test.headerTx, record.HeaderTx())
+		if record.HeaderTx != test.headerTx {
+			t.Errorf("Expected headerTx %v got %v", test.headerTx, record.HeaderTx)
 		}
-		if record.BodyTx() != test.bodyTx {
-			t.Errorf("Expected bodyTx %v got %v", test.bodyTx, record.BodyTx())
+		if record.BodyTx != test.bodyTx {
+			t.Errorf("Expected bodyTx %v got %v", test.bodyTx, record.BodyTx)
 		}
-		if record.TotalTx() != test.totalTx {
-			t.Errorf("Expected totalTx %v got %v", test.totalTx, record.TotalTx())
+		if record.TotalTx != test.totalTx {
+			t.Errorf("Expected totalTx %v got %v", test.totalTx, record.TotalTx)
 		}
-		if record.HeaderRx() != test.headerRx {
-			t.Errorf("Expected headerRx %v got %v", test.headerRx, record.HeaderRx())
+		if record.HeaderRx != test.headerRx {
+			t.Errorf("Expected headerRx %v got %v", test.headerRx, record.HeaderRx)
 		}
-		if record.BodyRx() != test.bodyRx {
-			t.Errorf("Expected bodyRx %v got %v", test.bodyRx, record.BodyRx())
+		if record.BodyRx != test.bodyRx {
+			t.Errorf("Expected bodyRx %v got %v", test.bodyRx, record.BodyRx)
 		}
-		if record.TotalRx() != test.totalRx {
-			t.Errorf("Expected totalRx %v got %v", test.totalRx, record.TotalRx())
+		if record.TotalRx != test.totalRx {
+			t.Errorf("Expected totalRx %v got %v", test.totalRx, record.TotalRx)
 		}
 	}
 }
@@ -424,17 +426,17 @@ func TestTimestampRecord(t *testing.T) {
 		if err != nil {
 			t.Errorf("conversion failed: %s", err)
 		}
-		if record.EventLabel() != test.eventLabel {
-			t.Errorf("Expected eventLabel %v got %v", test.eventLabel, record.EventLabel())
+		if record.EventLabel != test.eventLabel {
+			t.Errorf("Expected eventLabel %v got %v", test.eventLabel, record.EventLabel)
 		}
-		if record.AbsoluteTime() != test.absoluteTime {
-			t.Errorf("Expected absoluteTime %v got %v", test.absoluteTime, record.AbsoluteTime())
+		if record.AbsoluteTime != test.absoluteTime {
+			t.Errorf("Expected absoluteTime %v got %v", test.absoluteTime, record.AbsoluteTime)
 		}
-		if record.SinceStart() != test.sinceStart {
-			t.Errorf("Expected sinceStart %v got %v", test.sinceStart, record.SinceStart())
+		if record.SinceStart != test.sinceStart {
+			t.Errorf("Expected sinceStart %v got %v", test.sinceStart, record.SinceStart)
 		}
-		if record.SinceLast() != test.sinceLast {
-			t.Errorf("Expected sinceLast %v got %v", test.sinceLast, record.SinceLast())
+		if record.SinceLast != test.sinceLast {
+			t.Errorf("Expected sinceLast %v got %v", test.sinceLast, record.SinceLast)
 		}
 	}
 }
@@ -477,8 +479,8 @@ func TestURLRecord(t *testing.T) {
 		if record.Path() != test.path {
 			t.Errorf("Path() want: %q got: %q", test.path, record.Path())
 		}
-		if record.Query() != test.query {
-			t.Errorf("Query() want: %q got: %q", test.query, record.Query())
+		if record.QueryString() != test.query {
+			t.Errorf("Query() want: %q got: %q", test.query, record.QueryString())
 		}
 	}
 }
@@ -519,17 +521,17 @@ func TestHitRecord(t *testing.T) {
 			t.Errorf("conversion failed: %s", err)
 		}
 
-		if record.ObjVXID() != test.vxid {
-			t.Errorf("ObjVXID() want: %v got: %v", test.vxid, record.ObjVXID())
+		if record.ObjVXID != test.vxid {
+			t.Errorf("ObjVXID() want: %v got: %v", test.vxid, record.ObjVXID)
 		}
-		if record.TTL() != test.ttl {
-			t.Errorf("TTL() want: %v got: %v", test.ttl, record.TTL())
+		if record.TTL != test.ttl {
+			t.Errorf("TTL() want: %v got: %v", test.ttl, record.TTL)
 		}
-		if record.Grace() != test.grace {
-			t.Errorf("Grace() want: %v got: %v", test.grace, record.Grace())
+		if record.Grace != test.grace {
+			t.Errorf("Grace() want: %v got: %v", test.grace, record.Grace)
 		}
-		if record.Keep() != test.keep {
-			t.Errorf("Keep() want: %v got: %v", test.keep, record.Keep())
+		if record.Keep != test.keep {
+			t.Errorf("Keep() want: %v got: %v", test.keep, record.Keep)
 		}
 	}
 }
@@ -595,38 +597,38 @@ func TestTTLRecord(t *testing.T) {
 			t.Errorf("conversion failed: %s", err)
 		}
 
-		if record.RawLog() != test.logRecord {
-			t.Errorf("RawLog() want: %q got: %q", test.logRecord, record.RawLog())
+		if record.GetRawLog() != test.logRecord {
+			t.Errorf("RawLog() want: %q got: %q", test.logRecord, record.GetRawLog())
 		}
-		if record.Source() != test.source {
-			t.Errorf("Source() want: %v got: %v", test.source, record.Source())
+		if record.Source != test.source {
+			t.Errorf("Source() want: %v got: %v", test.source, record.Source)
 		}
-		if record.TTL() != test.ttl {
-			t.Errorf("TTL() want: %v got: %v", test.ttl, record.TTL())
+		if record.TTL != test.ttl {
+			t.Errorf("TTL() want: %v got: %v", test.ttl, record.TTL)
 		}
-		if record.Grace() != test.grace {
-			t.Errorf("Grace() want: %v got: %v", test.grace, record.Grace())
+		if record.Grace != test.grace {
+			t.Errorf("Grace() want: %v got: %v", test.grace, record.Grace)
 		}
-		if record.Keep() != test.keep {
-			t.Errorf("Keep() want: %v got: %v", test.keep, record.Keep())
+		if record.Keep != test.keep {
+			t.Errorf("Keep() want: %v got: %v", test.keep, record.Keep)
 		}
-		if record.Reference() != test.reference {
-			t.Errorf("Reference() want: %v got: %v", test.reference, record.Reference())
+		if record.Reference != test.reference {
+			t.Errorf("Reference() want: %v got: %v", test.reference, record.Reference)
 		}
-		if record.Age() != test.age {
-			t.Errorf("Age() want: %v got: %v", test.age, record.Age())
+		if record.Age != test.age {
+			t.Errorf("Age() want: %v got: %v", test.age, record.Age)
 		}
-		if record.Date() != test.date {
-			t.Errorf("Date() want: %v got: %v", test.date, record.Date())
+		if record.Date != test.date {
+			t.Errorf("Date() want: %v got: %v", test.date, record.Date)
 		}
-		if record.Expires() != test.expires {
-			t.Errorf("Expires() want: %v got: %v", test.expires, record.Expires())
+		if record.Expires != test.expires {
+			t.Errorf("Expires() want: %v got: %v", test.expires, record.Expires)
 		}
-		if record.MaxAge() != test.maxAge {
-			t.Errorf("MaxAge() want: %v got: %v", test.maxAge, record.MaxAge())
+		if record.MaxAge != test.maxAge {
+			t.Errorf("MaxAge() want: %v got: %v", test.maxAge, record.MaxAge)
 		}
-		if record.CacheStatus() != test.cacheStatus {
-			t.Errorf("CacheStatus() want: %v got: %v", test.cacheStatus, record.CacheStatus())
+		if record.CacheStatus != test.cacheStatus {
+			t.Errorf("CacheStatus() want: %v got: %v", test.cacheStatus, record.CacheStatus)
 		}
 	}
 }
@@ -675,26 +677,26 @@ func TestSessOpenRecord(t *testing.T) {
 			t.Errorf("conversion to SessOpenRecord failed: %s", err)
 		}
 
-		if !record.RemoteAddr().Equal(test.remoteAddr) {
-			t.Errorf("RemoteAddr() want: %v got: %v", test.remoteAddr, record.RemoteAddr())
+		if !record.RemoteAddr.Equal(test.remoteAddr) {
+			t.Errorf("RemoteAddr() want: %v got: %v", test.remoteAddr, record.RemoteAddr)
 		}
-		if record.RemotePort() != test.remotePort {
-			t.Errorf("RemotePort() want: %v got: %v", test.remotePort, record.RemotePort())
+		if record.RemotePort != test.remotePort {
+			t.Errorf("RemotePort() want: %v got: %v", test.remotePort, record.RemotePort)
 		}
-		if record.SocketName() != test.socketName {
-			t.Errorf("SocketName() want: %v got: %v", test.socketName, record.SocketName())
+		if record.SocketName != test.socketName {
+			t.Errorf("SocketName() want: %v got: %v", test.socketName, record.SocketName)
 		}
-		if !record.LocalAddr().Equal(test.localAddr) {
-			t.Errorf("LocalAddr() want: %v got: %v", test.localAddr, record.LocalAddr())
+		if !record.LocalAddr.Equal(test.localAddr) {
+			t.Errorf("LocalAddr() want: %v got: %v", test.localAddr, record.LocalAddr)
 		}
-		if record.LocalPort() != test.localPort {
-			t.Errorf("LocalPort() want: %v got: %v", test.localPort, record.LocalPort())
+		if record.LocalPort != test.localPort {
+			t.Errorf("LocalPort() want: %v got: %v", test.localPort, record.LocalPort)
 		}
-		if !record.SessionStart().Equal(test.sessionStart) {
-			t.Errorf("SessionStart() want: %v got: %v", test.sessionStart, record.SessionStart())
+		if !record.SessionStart.Equal(test.sessionStart) {
+			t.Errorf("SessionStart() want: %v got: %v", test.sessionStart, record.SessionStart)
 		}
-		if record.FileDescriptor() != test.fileDescriptor {
-			t.Errorf("FileDescriptor() want: %v got: %v", test.fileDescriptor, record.FileDescriptor())
+		if record.FileDescriptor != test.fileDescriptor {
+			t.Errorf("FileDescriptor() want: %v got: %v", test.fileDescriptor, record.FileDescriptor)
 		}
 	}
 }
@@ -728,11 +730,11 @@ func TestTimeoutRecord(t *testing.T) {
 			t.Errorf("conversion to SessCloseRecord failed: %s", err)
 		}
 
-		if record.Reason() != test.reason {
-			t.Errorf("Reason() want: %v got: %v", test.reason, record.Reason())
+		if record.Reason != test.reason {
+			t.Errorf("Reason() want: %v got: %v", test.reason, record.Reason)
 		}
-		if record.Duration() != test.duration {
-			t.Errorf("Duration() want: %v got: %v", test.duration, record.Duration())
+		if record.Duration != test.duration {
+			t.Errorf("Duration() want: %v got: %v", test.duration, record.Duration)
 		}
 	}
 }

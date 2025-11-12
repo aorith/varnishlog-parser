@@ -1,0 +1,118 @@
+*   << Session  >> 1
+-   Begin          sess 0 HTTP/1
+-   SessOpen       192.168.65.1 40945 http 192.168.50.10 80 1762953415.013552 25
+-   Link           req 2 rxreq
+-   SessClose      REM_CLOSE 0.003
+-   End
+**  << Request  >> 2
+--  Begin          req 1 rxreq
+--  Timestamp      Start: 1762953415.013676 0.000000 0.000000
+--  Timestamp      Req: 1762953415.013676 0.000000 0.000000
+--  VCL_use        boot
+--  ReqStart       192.168.65.1 40945 http
+--  ReqMethod      GET
+--  ReqURL         /rt
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: varnishlog.iou.re
+--  ReqHeader      Accept: */*
+--  ReqHeader      User-Agent: hurl/7.0.0
+--  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      Via: 1.1 bfe722a33499 (Varnish/7.7)
+--  VCL_call       RECV
+--  VCL_Log        start custom recv
+--  ReqHeader      whoami: 1
+--  ReqHeader      x-do-restart: yes
+--  VCL_return     restart
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  Timestamp      Restart: 1762953415.013772 0.000096 0.000096
+--  Link           req 3 restart
+--  End
+**  << Request  >> 3
+--  Begin          req 2 restart
+--  Timestamp      Start: 1762953415.013772 0.000096 0.000000
+--  ReqStart       192.168.65.1 40945 http
+--  ReqMethod      GET
+--  ReqURL         /rt
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: varnishlog.iou.re
+--  ReqHeader      Accept: */*
+--  ReqHeader      User-Agent: hurl/7.0.0
+--  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      Via: 1.1 bfe722a33499 (Varnish/7.7)
+--  ReqHeader      whoami: 1
+--  ReqHeader      x-do-restart: yes
+--  VCL_call       RECV
+--  VCL_Log        start custom recv
+--  ReqUnset       whoami: 1
+--  ReqHeader      whoami: 1
+--  VCL_Log        end custom recv
+--  VCL_return     hash
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  VCL_call       MISS
+--  VCL_return     fetch
+--  Link           bereq 4 fetch
+--  Timestamp      Fetch: 1762953415.015726 0.002050 0.001954
+--  RespProtocol   HTTP/1.1
+--  RespStatus     200
+--  RespReason     OK
+--  RespHeader     Date: Wed, 12 Nov 2025 13:16:55 GMT
+--  RespHeader     Content-Length: 312
+--  RespHeader     Content-Type: text/plain; charset=utf-8
+--  RespHeader     Cache-Control: max-age=5
+--  RespHeader     X-Varnish: 3
+--  RespHeader     Age: 0
+--  RespHeader     Via: 1.1 bfe722a33499 (Varnish/7.7)
+--  RespHeader     Accept-Ranges: bytes
+--  VCL_call       DELIVER
+--  VCL_return     deliver
+--  Timestamp      Process: 1762953415.015743 0.002067 0.000017
+--  Filters
+--  RespHeader     Connection: keep-alive
+--  Timestamp      Resp: 1762953415.015856 0.002180 0.000113
+--  ReqAcct        82 0 82 249 312 561
+--  End
+*** << BeReq    >> 4
+--- Begin          bereq 3 fetch
+--- VCL_use        boot
+--- Timestamp      Start: 1762953415.013867 0.000000 0.000000
+--- BereqMethod    GET
+--- BereqURL       /rt
+--- BereqProtocol  HTTP/1.1
+--- BereqHeader    Host: varnishlog.iou.re
+--- BereqHeader    Accept: */*
+--- BereqHeader    User-Agent: hurl/7.0.0
+--- BereqHeader    X-Forwarded-For: 192.168.65.1
+--- BereqHeader    Via: 1.1 bfe722a33499 (Varnish/7.7)
+--- BereqHeader    x-do-restart: yes
+--- BereqHeader    whoami: 1
+--- BereqHeader    Accept-Encoding: gzip
+--- BereqHeader    X-Varnish: 4
+--- VCL_call       BACKEND_FETCH
+--- VCL_return     fetch
+--- Timestamp      Fetch: 1762953415.013897 0.000030 0.000030
+--- Timestamp      Connected: 1762953415.014245 0.000377 0.000347
+--- BackendOpen    30 whoami 192.168.50.11 80 192.168.50.10 53026 connect
+--- Timestamp      Bereq: 1762953415.014324 0.000457 0.000079
+--- BerespProtocol HTTP/1.1
+--- BerespStatus   200
+--- BerespReason   OK
+--- BerespHeader   Date: Wed, 12 Nov 2025 13:16:55 GMT
+--- BerespHeader   Content-Length: 312
+--- BerespHeader   Content-Type: text/plain; charset=utf-8
+--- Timestamp      Beresp: 1762953415.015581 0.001714 0.001257
+--- TTL            RFC 120 10 0 1762953415 1762953415 1762953415 0 0 cacheable
+--- VCL_call       BACKEND_RESPONSE
+--- BerespHeader   Cache-Control: max-age=5
+--- TTL            VCL 5 10 0 1762953415 cacheable
+--- VCL_return     deliver
+--- Timestamp      Process: 1762953415.015659 0.001792 0.000077
+--- Filters
+--- Storage        malloc s0
+--- Fetch_Body     3 length stream
+--- BackendClose   30 whoami recycle
+--- Timestamp      BerespBody: 1762953415.015736 0.001869 0.000077
+--- Length         312
+--- BereqAcct      217 0 217 118 312 430
+--- End

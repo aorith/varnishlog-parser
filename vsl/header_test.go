@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package vsl
 
 import (
@@ -35,7 +37,7 @@ func TestHeadersAddAndValues(t *testing.T) {
 	}
 
 	// Add Host header (should always have unique value)
-	headers.Add("Host", "example.com", HdrStateAdded)
+	headers.Add("Host", "example.org", HdrStateAdded)
 	headers.Add("Host", "other.com", HdrStateAdded)
 	values = headers.Values(HdrNameHost, false)
 	if len(values) != 1 || values[0].Value() != "other.com" {

@@ -1,97 +1,87 @@
+// SPDX-License-Identifier: MIT
+
 package render
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
+	"github.com/aorith/varnishlog-parser/vsl/tags"
 )
 
-func TxTree(tx *vsl.Transaction) string {
+func TxTreeHTML(ts vsl.TransactionSet, root *vsl.Transaction) string {
 	var s rowBuilder
-
-	root := tx.RootParent()
-	visited := make(map[string]bool)
-
-	s.WriteString(`<ul class="root-ul">`)
-	color := 0
-	renderTxTree(&s, root, visited, color)
-	s.WriteString("</ul>")
-
+	visited := make(map[vsl.VXID]bool)
+	renderTxTree(&s, ts, root, visited)
 	return s.String()
 }
 
-func renderTxTree(s *rowBuilder, tx *vsl.Transaction, visited map[string]bool, color int) {
-	if visited[tx.TXID()] {
-		log.Printf("renderTxTree(): loop detected at transaction %q\n", tx.TXID())
+func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) {
+	if visited[tx.VXID] {
+		slog.Warn("renderTxTree(): loop detected", "transaction", tx.TXID)
 		return
 	}
-	visited[tx.TXID()] = true
+	visited[tx.VXID] = true
 
-	s.addRow(tx.TXID(), "tx-header", "", "")
+	s.WriteString("<tx-logs>")
 
-	for _, r := range tx.LogRecords() {
+	for _, r := range tx.Records {
 		switch record := r.(type) {
+		case vsl.BeginRecord:
+			s.addRow(string(tx.TXID), "tx-tree-tx", "", "")
+			s.addRow(record.GetTag(), "", record.GetRawValue(), "")
 		case vsl.SessOpenRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.SessCloseRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.EndRecord:
-			s.addRow(r.Tag(), "", "", "")
+			s.addRow(r.GetTag(), "", "", "")
 		case vsl.HeaderRecord:
-			s.addRow(r.Tag(), "", record.Name()+": "+record.Value(), "")
+			s.addRow(r.GetTag(), "", record.Name+": "+record.Value, "")
 		case vsl.HeaderUnsetRecord:
-			s.addRow(r.Tag(), "", record.Name()+": "+record.Value(), "strike")
+			s.addRow(r.GetTag(), "", record.Name+": "+record.Value, "strike")
 		case vsl.ErrorRecord:
-			s.addRow(r.Tag(), "errorRecord", r.Value(), "errorRecord")
+			s.addRow(r.GetTag(), "errorRecord", r.GetRawValue(), "errorRecord")
 		case vsl.FetchErrorRecord:
-			s.addRow(r.Tag(), "errorRecord", r.Value(), "errorRecord")
+			s.addRow(r.GetTag(), "errorRecord", r.GetRawValue(), "errorRecord")
 		case vsl.TimestampRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", timestampRecordHTML(record), "")
 		case vsl.TTLRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", ttlRecordHTML(record), "")
 		case vsl.AcctRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.HitRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.HitMissRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.GzipRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.BackendOpenRecord:
-			s.addRow(r.Tag(), "", record.String(), "")
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.LengthRecord:
-			s.addRow(r.Tag(), "", record.Size().String(), "")
+			s.addRow(r.GetTag(), "", record.Size.String(), "")
 		case vsl.VCLLogRecord:
-			s.addRow(r.Tag(), "", record.String(), "logMsg")
+			s.addRow(r.GetTag(), "", record.String(), "logMsg")
 		case vsl.StatusRecord:
-			s.addRow(r.Tag(), "", r.Value(), statusCSSClass(record.Status()))
-
+			s.addRow(r.GetTag(), "", r.GetRawValue(), statusCSSClass(record.Status))
 		case vsl.LinkRecord:
-			childTx := tx.Children()[record.TXID()]
+			childTx := ts.GetTX(record.VXID)
 			if childTx == nil {
-				s.addRow(r.Tag(), "", r.Value(), "strike")
 				childTx = vsl.NewMissingTransaction(record)
+				s.addRow(record.GetTag(), "", fmt.Sprintf("%s (%s)", record.GetRawValue(), childTx.TXID), "strike")
 			} else {
-				s.addRow(r.Tag(), "", r.Value(), "")
+				s.addRow(record.GetTag(), "", fmt.Sprintf("%s (%s)", record.GetRawValue(), childTx.TXID), "")
 			}
+			renderTxTree(s, ts, childTx, visited)
 
-			_, err := fmt.Fprintf(s, `<ul class="color-%d">`, color)
-			if err != nil {
-				panic(err)
-			}
-			color++
-			if color > 3 {
-				color = 0
-			}
-			renderTxTree(s, childTx, visited, color)
-			s.WriteString("</ul>")
 		default:
-			s.addRow(r.Tag(), "", r.Value(), "")
+			s.addRow(r.GetTag(), "", r.GetRawValue(), "")
 		}
 	}
 
+	s.WriteString("</tx-logs>")
 }
 
 type rowBuilder struct {
@@ -106,17 +96,12 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 		return ""
 	}
 
-	if classB == "" {
-		classB = "tval"
-	} else {
-		classB = classB + " tval"
+	if classA == "" {
+		classA = keywordClass(a)
 	}
 
-	_, err := fmt.Fprintf(s, `<div%s>%s</div>`, formatClass(classA), a)
-	if err != nil {
-		panic(err)
-	}
-	_, err = fmt.Fprintf(s, `<div%s>%s</div>`, formatClass(classB), b)
+	classA, classB = formatClass(classA), formatClass(classB)
+	_, err := fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, a, classB, b)
 	if err != nil {
 		panic(err)
 	}
@@ -131,6 +116,18 @@ func statusCSSClass(s int) string {
 		return "s3xx"
 	} else if s >= 200 {
 		return "s2xx"
+	}
+	return ""
+}
+
+func keywordClass(s string) string {
+	switch s {
+	case tags.ReqURL, tags.BereqURL:
+		return "blue"
+	case tags.VCLCall:
+		return "brown"
+	case tags.VCLReturn:
+		return "yellow"
 	}
 	return ""
 }

@@ -1,0 +1,106 @@
+.form-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+form {
+  margin-bottom: 1rem;
+  vertical-align: top;
+
+  & fieldset {
+    vertical-align: top;
+    display: inline-block;
+    margin: 0.3rem 0 0 0;
+    padding: 0.6rem;
+
+    background: var(--bg-0);
+    border-radius: 8px;
+  }
+
+  & fieldset legend {
+    padding: 4px;
+    margin: 0;
+
+    background: var(--bg-0);
+  }
+
+  & fieldset label {
+    display: inline-block;
+    font-family: var(--font-text);
+    font-size: var(--fsize-s);
+    font-weight: 500;
+    background: var(--bg-0);
+    color: var(--gray-0);
+    align-items: center;
+    gap: 0.3rem;
+    margin: 4px 6px 4px 0;
+    padding: 2px;
+    white-space: nowrap;
+  }
+
+  & input,
+  & textarea,
+  & select {
+    margin-left: 0.3rem;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: var(--fsize-xs);
+    font-family: var(--font-mono);
+  }
+
+  & select {
+    font-family: var(--font-text);
+  }
+
+  & input[type="checkbox"] {
+    margin-left: 0;
+  }
+
+  & input:focus,
+  & textarea:focus,
+  & select:focus {
+    border-color: var(--warm);
+    outline: none;
+  }
+
+  & button {
+    align-self: flex-start;
+    margin: 1rem 1rem 0 0;
+  }
+}
+
+form .examples {
+  margin: 20px 0 10px 0;
+
+  button {
+    background-color: var(--bg-0);
+    font-size: var(--fsize-xs);
+    padding: 4px 8px;
+    margin: 8px 2px;
+  }
+}
+
+fieldset {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+
+  & legend {
+    font-weight: 600;
+    color: var(--cold);
+  }
+}
+
+fieldset fieldset {
+  font-size: 85%;
+  margin: 0 0.4rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+
+  & legend {
+    color: var(--warm);
+  }
+}
