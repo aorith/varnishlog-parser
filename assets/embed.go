@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 )
@@ -46,8 +47,16 @@ var (
 var CombinedCSS []byte
 
 func init() {
+	// Get the directory of the current source file to ensure css files are found
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("failed to get current file path")
+	}
+	currentDir := filepath.Dir(currentFile)
+	cssDir := filepath.Join(currentDir, "css")
+
 	// Generate the combined css file
-	matches, err := filepath.Glob("assets/css/*.css")
+	matches, err := filepath.Glob(filepath.Join(cssDir, "*.css"))
 	if err != nil {
 		panic(err)
 	}
