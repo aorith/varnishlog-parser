@@ -1,4 +1,6 @@
 github.com/aorith/svg-sequence v0.0.11 h1:LKVmz0h0N310uZrdPWObHqgVAVj+pqX2eH2hqyIhHIQ=
 github.com/aorith/svg-sequence v0.0.11/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
+github.com/aorith/svg-sequence v0.0.12 h1:r6WaUvSC9eDsLFyfoUH+Bs+8+aPmSyOs3uYESjQJME8=
+github.com/aorith/svg-sequence v0.0.12/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
 github.com/aorith/svg-timeline v0.2.1 h1:BKog2X8drlpTeIXZXa89OnxVaFr4IUhVA4/9q3BUsHE=
 github.com/aorith/svg-timeline v0.2.1/go.mod h1:haohFRiwc0+Po6714AgYlsoeolDqRTNkI+d62k51qjo=
