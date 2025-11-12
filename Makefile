@@ -1,11 +1,18 @@
-watch:
-	@templ generate -watch -cmd "go run . server --port=8080"
+SHELL := bash
 
+.PHONY: run
+run:
+	go run ./cmd/server --port=8080
+
+.PHONY: test
 test:
 	@go test -v -timeout=5s -vet=all -count=1 ./...
 
-update_templ:
-	@go install github.com/a-h/templ/cmd/templ@latest
-	@go get -u github.com/a-h/templ
+.PHONY: fmt
+fmt:
+	@goimports -local $(shell go list -m) -w .
+	@gofumpt -l -w .
 
-PHONY: watch test update_templ
+.PHONY: ensure-spdx
+ensure-spdx:
+	find . -type f -name "*.go" -exec sh -c 'head -1 {} | grep -q SPDX || echo "Missing SPDX on file {}"' \;

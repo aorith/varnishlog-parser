@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package render_test
 
 import (
@@ -11,38 +13,37 @@ import (
 
 func TestMissingChild(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLMissingChild1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Errorf("Parse() failed %s", err)
 	}
 
-	tx := txsSet.UniqueRootParents()[0]
-	d := render.SequenceDiagram(tx)
-	txt := "LINKED CHILD TX NOT FOUND"
+	tx := ts.UniqueRootParents(false)[0]
+	d := render.Sequence(ts, tx, render.SequenceConfig{})
+	txt := "child tx not found"
 	if !strings.Contains(d, txt) {
-		t.Errorf("SequenceDiagram() of VCLMissingChild1: expected text %q", txt)
+		t.Errorf("Sequence() of VCLMissingChild1: expected text %q, got %s", txt, d)
 	}
 }
 
 func TestLinkLoop(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLLinkLoop))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Errorf("Parse() failed %s", err)
 	}
 
-	txsSet.GroupRelatedTransactions()
+	ts.GroupRelatedTransactions()
 
-	rootParents := txsSet.UniqueRootParents()
+	rootParents := ts.UniqueRootParents(false)
 	if len(rootParents) != 1 {
 		t.Errorf("txsSet.UniqueRootParents(): wanted: 1, got: %d", len(rootParents))
 	}
 
-	// tx := rootParents[0]
-	tx := txsSet.Transactions()[0]
-	d := render.SequenceDiagram(tx)
-	txt := "LINKED CHILD TX NOT FOUND"
+	tx := rootParents[0]
+	d := render.Sequence(ts, tx, render.SequenceConfig{})
+	txt := "child tx not found"
 	if !strings.Contains(d, txt) {
-		t.Errorf("SequenceDiagram() of VCLMissingChild1: expected text %q", txt)
+		t.Errorf("Sequence() of VCLMissingChild1: expected text %q, got %s", txt, d)
 	}
 }

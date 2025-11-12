@@ -1,0 +1,36 @@
+<!-- templates/views/parse_view.html -->
+
+<div class="view active" id="parse-view">
+	<div class="view-content">
+		<h1>Parse</h1>
+
+		<p>
+			Paste
+			<a href="https://varnish-cache.org/docs/trunk/reference/varnishlog.html"
+			   target="_blank"
+			>varnishlog</a>
+			logs in plain text format below.
+		</p>
+		<ul>
+			<li>Compatible with Varnish version 6 and above.</li>
+			<li>
+				Requires complete <code>varnishlog</code>
+				output. When using filters such
+				as <code>-i</code>
+				or <code>-I</code>, make sure to include at least the
+				<code>Begin</code>, <code>Link</code>, and <code>End</code>
+				VSL tags.
+			</li>
+			<li>Verbose mode (<code>-v</code>) is not supported.</li>
+			<li>
+				Try to use grouping options like <code>-g session</code>
+				or
+				<code>-g request</code>
+				so child transactions are present in the logs.
+			</li>
+		</ul>
+		<br>
+
+		{{ template "parse_form_partial.html" . }}
+	</div>
+</div>

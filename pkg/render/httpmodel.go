@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package render
 
 import (
@@ -8,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
-	"github.com/aorith/varnishlog-parser/vsl/tag"
+	"github.com/aorith/varnishlog-parser/vsl/tags"
 )
 
 type HTTPRequest struct {
@@ -49,13 +51,13 @@ func NewBackend(host string, port string) *Backend {
 // Returns nil if the transaction type is session.
 //
 // If received is true, initial (received) headers are used; otherwise, headers after VCL processing.
-// excludeHeaders can contain an slice of strings, each one must be a header name in canonical format
-func NewHTTPRequest(tx *vsl.Transaction, received bool, excludeHeaders []string) (*HTTPRequest, error) {
-	if tx.Type() == vsl.TxTypeSession {
+// excludedHeaders can contain an slice of strings, each one must be a header name
+func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string) (*HTTPRequest, error) {
+	if tx.TXType == vsl.TxTypeSession {
 		return nil, fmt.Errorf("cannot create an http request from a transaction of type session")
 	}
 
-	headers := tx.ReqHeaders()
+	headers := tx.ReqHeaders
 
 	host := headers.Get("host", received)
 	port := ""
@@ -67,9 +69,14 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludeHeaders []string)
 		}
 	}
 
+	// Ensure that excludeHeaders are in canonical format
+	for i, n := range excludedHeaders {
+		excludedHeaders[i] = vsl.CanonicalHeaderName(n)
+	}
+
 	httpHeaders := []Header{}
 	for name, h := range headers {
-		if name == vsl.HdrNameHost || slices.Contains(excludeHeaders, name) {
+		if name == vsl.HdrNameHost || slices.Contains(excludedHeaders, name) {
 			continue
 		}
 		for _, v := range h.Values(received) {
@@ -82,12 +89,12 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludeHeaders []string)
 
 	url := ""
 	method := ""
-	if tx.Type() == vsl.TxTypeRequest {
-		method = tx.RecordValueByTag(tag.ReqMethod, received)
-		url = tx.RecordValueByTag(tag.ReqURL, received)
+	if tx.TXType == vsl.TxTypeRequest {
+		method = tx.RecordValueByTag(tags.ReqMethod, received)
+		url = tx.RecordValueByTag(tags.ReqURL, received)
 	} else {
-		method = tx.RecordValueByTag(tag.BereqMethod, received)
-		url = tx.RecordValueByTag(tag.BereqURL, received)
+		method = tx.RecordValueByTag(tags.BereqMethod, received)
+		url = tx.RecordValueByTag(tags.BereqURL, received)
 	}
 
 	sort.Slice(httpHeaders, func(i, j int) bool {
@@ -104,6 +111,7 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludeHeaders []string)
 }
 
 // CurlCommand generates a new curl command as a string
+//
 // scheme can be "auto", "http://" or "https://"
 func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	var s strings.Builder
@@ -128,14 +136,19 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	if r.port != "" {
 		hostURL = net.JoinHostPort(r.host, r.port)
 	}
+	hostURL = escapeDoubleQuotes(hostURL)
 
 	// Initial command
-	s.WriteString(fmt.Sprintf(`curl "%s%s%s"`+" \\\n", scheme, hostURL, r.url))
+	s.WriteString(fmt.Sprintf(`curl "%s%s%s"`+" \\\n", scheme, hostURL, escapeDoubleQuotes(r.url)))
 
 	switch r.method {
+	case "GET":
+		// Default
 	case "POST", "PUT", "PATCH":
 		s.WriteString("    -X " + r.method + " \\\n")
 		s.WriteString("    -d '<body-unavailable>' \\\n")
+	case "HEAD":
+		s.WriteString("    --head \\\n")
 	default:
 		s.WriteString("    -X " + r.method + " \\\n")
 	}
@@ -145,8 +158,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 		if h.name == vsl.HdrNameHost {
 			continue
 		}
-		hdrVal := strings.ReplaceAll(h.value, `"`, `\"`)
-		s.WriteString(fmt.Sprintf(`    -H "%s: %s"`+" \\\n", h.name, hdrVal))
+		s.WriteString(fmt.Sprintf(`    -H "%s: %s"`+" \\\n", escapeDoubleQuotes(h.name), escapeDoubleQuotes(h.value)))
 	}
 
 	// Default parameters
@@ -156,8 +168,13 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	// --connect-to HOST1:PORT1:HOST2:PORT2
 	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
 	if backend != nil {
-		s.WriteString(fmt.Sprintf(" \\\n    "+`--connect-to "%s:%s:%s"`, hostURL, backend.host, backend.port))
+		s.WriteString(fmt.Sprintf(" \\\n    "+`--connect-to "%s:%s:%s"`, hostURL, escapeDoubleQuotes(backend.host), backend.port))
 	}
 
 	return s.String()
+}
+
+// escapeDoubleQuotes is an utility function to escape double quotes ;)
+func escapeDoubleQuotes(s string) string {
+	return strings.ReplaceAll(s, `"`, `\"`)
 }

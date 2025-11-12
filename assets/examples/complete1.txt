@@ -13,7 +13,7 @@
 --  ReqMethod      GET
 --  ReqURL         /esi/
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example1.com
+--  ReqHeader      Host: www.example1.org
 --  ReqHeader      User-Agent: curl/8.7.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      secret:1234
@@ -68,7 +68,7 @@
 --- BereqMethod    GET
 --- BereqURL       /esi?turing=imitation-game
 --- BereqProtocol  HTTP/1.1
---- BereqHeader    Host: www.example1.com
+--- BereqHeader    Host: www.example1.org
 --- BereqHeader    User-Agent: curl/8.7.1
 --- BereqHeader    Accept: */*
 --- BereqHeader    secret:1234
@@ -115,7 +115,7 @@
 --- ReqMethod      GET
 --- ReqURL         /included-content
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example1.com
+--- ReqHeader      Host: www.example1.org
 --- ReqHeader      User-Agent: curl/8.7.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      secret:1234
@@ -163,7 +163,7 @@
 -4- BereqMethod    GET
 -4- BereqURL       /included-content?phrase=Speak_friend_and_enter
 -4- BereqProtocol  HTTP/1.1
--4- BereqHeader    Host: www.example1.com
+-4- BereqHeader    Host: www.example1.org
 -4- BereqHeader    User-Agent: curl/8.7.1
 -4- BereqHeader    Accept: */*
 -4- BereqHeader    secret:1234
@@ -220,7 +220,7 @@
 --  ReqMethod      GET
 --  ReqURL         /esi2/
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example2.com
+--  ReqHeader      Host: www.example2.org
 --  ReqHeader      User-Agent: curl/8.7.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      token: 0123456789
@@ -275,7 +275,7 @@
 --  ReqMethod      GET
 --  ReqURL         /esi2/
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example2.com
+--  ReqHeader      Host: www.example2.org
 --  ReqHeader      User-Agent: curl/8.7.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      token: 0123456789
@@ -327,7 +327,7 @@
 --- BereqMethod    GET
 --- BereqURL       /esi2/?phrase=Even_the_smallest_person_can_change_the_course_of_the_future
 --- BereqProtocol  HTTP/1.1
---- BereqHeader    Host: www.example2.com
+--- BereqHeader    Host: www.example2.org
 --- BereqHeader    User-Agent: curl/8.7.1
 --- BereqHeader    Accept: */*
 --- BereqHeader    X-Forwarded-For: 192.168.65.1
@@ -375,7 +375,7 @@
 --- ReqMethod      GET
 --- ReqURL         /esi-content
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example2.com
+--- ReqHeader      Host: www.example2.org
 --- ReqHeader      User-Agent: curl/8.7.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      token: 0123456789
@@ -427,7 +427,7 @@
 --- ReqMethod      GET
 --- ReqURL         /esi-content
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example2.com
+--- ReqHeader      Host: www.example2.org
 --- ReqHeader      User-Agent: curl/8.7.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      token: 0123456789
@@ -477,7 +477,7 @@
 -4- BereqMethod    GET
 -4- BereqURL       /esi-content
 -4- BereqProtocol  HTTP/1.1
--4- BereqHeader    Host: www.example2.com
+-4- BereqHeader    Host: www.example2.org
 -4- BereqHeader    User-Agent: curl/8.7.1
 -4- BereqHeader    Accept: */*
 -4- BereqHeader    X-Forwarded-For: 192.168.65.1
@@ -523,7 +523,7 @@
 -4- ReqMethod      GET
 -4- ReqURL         /last-content?a=1
 -4- ReqProtocol    HTTP/1.1
--4- ReqHeader      Host: www.example2.com
+-4- ReqHeader      Host: www.example2.org
 -4- ReqHeader      User-Agent: curl/8.7.1
 -4- ReqHeader      Accept: */*
 -4- ReqHeader      token: 0123456789
@@ -572,7 +572,7 @@
 -4- ReqMethod      GET
 -4- ReqURL         /last-content?a=2
 -4- ReqProtocol    HTTP/1.1
--4- ReqHeader      Host: www.example2.com
+-4- ReqHeader      Host: www.example2.org
 -4- ReqHeader      User-Agent: curl/8.7.1
 -4- ReqHeader      Accept: */*
 -4- ReqHeader      token: 0123456789
@@ -620,7 +620,7 @@
 -4- BereqMethod    GET
 -4- BereqURL       /esi-content?phrase=Even_the_smallest_person_can_change_the_course_of_the_future
 -4- BereqProtocol  HTTP/1.1
--4- BereqHeader    Host: www.example2.com
+-4- BereqHeader    Host: www.example2.org
 -4- BereqHeader    User-Agent: curl/8.7.1
 -4- BereqHeader    Accept: */*
 -4- BereqHeader    X-Forwarded-For: 192.168.65.1
@@ -668,7 +668,7 @@
 -5- BereqMethod    GET
 -5- BereqURL       /last-content?a=1
 -5- BereqProtocol  HTTP/1.1
--5- BereqHeader    Host: www.example2.com
+-5- BereqHeader    Host: www.example2.org
 -5- BereqHeader    User-Agent: curl/8.7.1
 -5- BereqHeader    Accept: */*
 -5- BereqHeader    X-Forwarded-For: 192.168.65.1
@@ -713,7 +713,7 @@
 -5- BereqMethod    GET
 -5- BereqURL       /last-content?a=2&phrase=A_wizard_is_never_late
 -5- BereqProtocol  HTTP/1.1
--5- BereqHeader    Host: www.example2.com
+-5- BereqHeader    Host: www.example2.org
 -5- BereqHeader    User-Agent: curl/8.7.1
 -5- BereqHeader    Accept: */*
 -5- BereqHeader    X-Forwarded-For: 192.168.65.1
@@ -768,7 +768,7 @@
 --  ReqMethod      GET
 --  ReqURL         /where-is-it/
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: other.example1.com
+--  ReqHeader      Host: other.example1.org
 --  ReqHeader      User-Agent: curl/8.7.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      X-Forwarded-For: 192.168.65.1
@@ -816,7 +816,7 @@
 --  ReqMethod      GET
 --  ReqURL         /admin
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: bad.example1.com
+--  ReqHeader      Host: bad.example1.org
 --  ReqHeader      User-Agent: curl/8.7.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      X-Forwarded-For: 192.168.65.1
@@ -861,7 +861,7 @@
 --- BereqMethod    GET
 --- BereqURL       /admin
 --- BereqProtocol  HTTP/1.1
---- BereqHeader    Host: bad.example1.com
+--- BereqHeader    Host: bad.example1.org
 --- BereqHeader    User-Agent: curl/8.7.1
 --- BereqHeader    Accept: */*
 --- BereqHeader    X-Forwarded-For: 192.168.65.1
@@ -904,7 +904,7 @@
 --  ReqMethod      POST
 --  ReqURL         /they/were/manned/by/small/groups/with/rotating/tours/of/duty?is=true
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example1.com
+--  ReqHeader      Host: www.example1.org
 --  ReqHeader      User-Agent: curl/8.7.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      Content-Length: 44
@@ -954,7 +954,7 @@
 --- BereqMethod    POST
 --- BereqURL       /they/were/manned/by/small/groups/with/rotating/tours/of/duty?is=true
 --- BereqProtocol  HTTP/1.1
---- BereqHeader    Host: www.example1.com
+--- BereqHeader    Host: www.example1.org
 --- BereqHeader    User-Agent: curl/8.7.1
 --- BereqHeader    Accept: */*
 --- BereqHeader    Content-Length: 44

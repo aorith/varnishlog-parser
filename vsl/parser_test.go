@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package vsl_test
 
 import (
@@ -7,17 +9,17 @@ import (
 	"github.com/aorith/varnishlog-parser/assets"
 	"github.com/aorith/varnishlog-parser/pkg/render"
 	"github.com/aorith/varnishlog-parser/vsl"
-	"github.com/aorith/varnishlog-parser/vsl/tag"
+	"github.com/aorith/varnishlog-parser/vsl/tags"
 )
 
 func TestParse(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
-	txs := txsSet.Transactions()
+	txs := ts.Transactions()
 	const expectedTxCount = 25
 	if len(txs) != expectedTxCount {
 		t.Fatalf("incorrect transaction count, wanted: %d, got: %d", expectedTxCount, len(txs))
@@ -25,54 +27,55 @@ func TestParse(t *testing.T) {
 
 	// Validate first and last log record tags of each transaction
 	for i, tx := range txs {
-		first := tx.LogRecords()[0].Tag()
-		last := tx.LogRecords()[len(tx.LogRecords())-1].Tag()
+		first := tx.Records[0].GetTag()
+		last := tx.Records[len(tx.Records)-1].GetTag()
 
-		if first != tag.Begin {
-			t.Errorf("tx[%d]: first logRecord tag, wanted: %v, got: %v", i, tag.Begin, first)
+		if first != tags.Begin {
+			t.Errorf("tx[%d]: first logRecord tag, wanted: %v, got: %v", i, tags.Begin, first)
 		}
-		if last != tag.End {
-			t.Errorf("tx[%d]: last logRecord tag, wanted: %v, got: %v", i, tag.End, last)
+		if last != tags.End {
+			t.Errorf("tx[%d]: last logRecord tag, wanted: %v, got: %v", i, tags.End, last)
 		}
 	}
 
 	// Validate some specific transactions
 	tests := []struct {
-		txIndex int
-		txType  vsl.TxType
-		esi     int
-		level   int
+		vxid   vsl.VXID
+		txType vsl.TxType
+		esi    int
+		level  int
 	}{
-		{0, vsl.TxTypeSession, 0, 1},
-		{len(txs) - 1, vsl.TxTypeBereq, 0, 3},
-		{12, vsl.TxTypeRequest, 2, 0},
+		{vsl.VXID(261), vsl.TxTypeSession, 0, 1},
+		{vsl.VXID(33041), vsl.TxTypeBereq, 0, 3},
+		{vsl.VXID(33032), vsl.TxTypeRequest, 2, 0},
 	}
 
+	tmap := ts.TransactionsMap()
 	for _, tt := range tests {
-		tx := txs[tt.txIndex]
-		if tx.Type() != tt.txType {
-			t.Errorf("tx[%d]: type wanted: %v, got: %v", tt.txIndex, tt.txType, tx.Type())
+		tx := tmap[tt.vxid]
+		if tx.TXType != tt.txType {
+			t.Errorf("tx[%d]: type wanted: %v, got: %v", tt.vxid, tt.txType, tx.TXType)
 		}
-		if tx.ESILevel() != tt.esi {
-			t.Errorf("tx[%d]: ESILevel wanted: %v, got: %v", tt.txIndex, tt.esi, tx.ESILevel())
+		if tx.ESILevel != tt.esi {
+			t.Errorf("tx[%d]: ESILevel wanted: %v, got: %v", tt.vxid, tt.esi, tx.ESILevel)
 		}
-		if tt.level != 0 && tx.Level() != tt.level {
-			t.Errorf("tx[%d]: Level wanted: %v, got: %v", tt.txIndex, tt.level, tx.Level())
+		if tt.level != 0 && tx.Level != tt.level {
+			t.Errorf("tx[%d]: Level wanted: %v, got: %v", tt.vxid, tt.level, tx.Level)
 		}
 	}
 }
 
 func TestReceivedHeaders(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
-	txs := txsSet.Transactions()
+	txs := ts.Transactions()
 	tx := txs[1]
-	if tx.Type() != vsl.TxTypeRequest {
-		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.Type())
+	if tx.TXType != vsl.TxTypeRequest {
+		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.TXType)
 	}
 
 	// Convert to HTTPRequest
@@ -82,7 +85,7 @@ func TestReceivedHeaders(t *testing.T) {
 	}
 
 	// --  ReqProtocol    HTTP/1.1
-	// --  ReqHeader      Host: www.example1.com                           <-- received (ignored)
+	// --  ReqHeader      Host: www.example1.org                           <-- received (ignored)
 	// --  ReqHeader      User-Agent: curl/8.7.1                           <-- received
 	// --  ReqHeader      Accept: */*                                      <-- received
 	// --  ReqHeader      secret:1234                                      <-- received
@@ -131,15 +134,15 @@ func TestReceivedHeaders(t *testing.T) {
 
 func TestProcessedHeaders(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
-	txsSet, err := p.Parse()
+	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
-	txs := txsSet.Transactions()
+	txs := ts.Transactions()
 	tx := txs[1]
-	if tx.Type() != vsl.TxTypeRequest {
-		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.Type())
+	if tx.TXType != vsl.TxTypeRequest {
+		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.TXType)
 	}
 
 	// Convert to HTTPRequest

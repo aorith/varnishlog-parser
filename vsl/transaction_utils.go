@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package vsl
 
 import (
@@ -16,6 +18,9 @@ const (
 	sizeTB             = sizeGB * 1024
 	sizePB             = sizeTB * 1024
 )
+
+// TXID is an unique identifier for a transaction
+type TXID string
 
 // VXID in Varnish the vxid is of type "uint32_t"
 type VXID uint32
@@ -71,11 +76,14 @@ func convertToUnixTimestamp(s string) (time.Time, error) {
 }
 
 // parseTXID returns an string that represents the transaction ID
-func parseTXID(vxid VXID, recordType string, esiLevel int) string {
-	if esiLevel > 0 {
-		return fmt.Sprintf("%d_%s_esi_%d", vxid, recordType, esiLevel)
+func parseTXID(vxid VXID, recordType, reason string, esiLevel int) TXID {
+	if recordType == "sess" {
+		return TXID(fmt.Sprintf("%d-%s", vxid, recordType))
 	}
-	return fmt.Sprintf("%d_%s", vxid, recordType)
+	if esiLevel > 0 {
+		return TXID(fmt.Sprintf("%d-%s-%s-%d", vxid, recordType, reason, esiLevel))
+	}
+	return TXID(fmt.Sprintf("%d-%s-%s", vxid, recordType, reason))
 }
 
 // parseLevel returns the level of the transaction parsing the initial transaction header
@@ -113,19 +121,19 @@ func parseVXID(s string) (VXID, error) {
 }
 
 // collectAllChildren is a helper function to recursively collect all children and their descendants
-func collectAllChildren(parent *Transaction) []*Transaction {
-	visited := make(map[string]bool)
+func collectAllChildren(ts *TransactionSet, parent *Transaction) []*Transaction {
+	visited := make(map[TXID]bool)
 
 	var recursiveCollect func(tx *Transaction) []*Transaction
 	recursiveCollect = func(tx *Transaction) []*Transaction {
 		var allChildren []*Transaction
 
-		if visited[tx.TXID()] {
+		if visited[tx.TXID] {
 			return allChildren
 		}
-		visited[tx.TXID()] = true
+		visited[tx.TXID] = true
 
-		children := tx.ChildrenSortedByVXID()
+		children := ts.SortedChildren(tx)
 		for _, child := range children {
 			allChildren = append(allChildren, child)
 			allChildren = append(allChildren, recursiveCollect(child)...)

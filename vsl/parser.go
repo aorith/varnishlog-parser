@@ -1,13 +1,16 @@
+// SPDX-License-Identifier: MIT
+
 package vsl
 
 import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
+	"slices"
 	"strings"
 
-	"github.com/aorith/varnishlog-parser/vsl/tag"
+	"github.com/aorith/varnishlog-parser/vsl/tags"
 )
 
 type transactionParser struct {
@@ -21,8 +24,8 @@ func NewTransactionParser(r io.Reader) *transactionParser {
 }
 
 func (p *transactionParser) Parse() (TransactionSet, error) {
-	txsSet := TransactionSet{
-		txsMap: make(map[string]*Transaction),
+	ts := TransactionSet{
+		txs: make(map[VXID]*Transaction),
 	}
 
 	for p.scanner.Scan() {
@@ -38,31 +41,33 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 		tx, err := NewTransaction(line)
 		if err != nil {
-			return txsSet, err
+			return ts, err
 		}
 
 		// Expect a Begin tag after the start of the transaction, eg:
 		// --- Begin          req 2 esi 1
 		if !p.scanner.Scan() {
-			return txsSet, fmt.Errorf("expected %s tag, found EOF after %q", tag.Begin, tx.RawLog())
+			return ts, fmt.Errorf("parser error: expected %s tag, found EOF after %q", tags.Begin, tx.RawLog)
 		}
 		line = strings.TrimSpace(p.scanner.Text())
 		if line == "" {
-			return txsSet, fmt.Errorf("expected %s tag, found empty line after %q", tag.Begin, tx.RawLog())
+			return ts, fmt.Errorf("parser error: expected %s tag, found empty line after %q", tags.Begin, tx.RawLog)
 		}
 
 		r, err := processRecord(line)
 		if err != nil {
-			return txsSet, err
+			return ts, err
 		}
-		if r.Tag() != tag.Begin {
-			return txsSet, fmt.Errorf("expected %s tag, found %q on line %q", tag.Begin, r.Tag(), line)
+		if r.GetTag() != tags.Begin {
+			return ts, fmt.Errorf("parser error: expected %s tag, found %q on line %q", tags.Begin, r.GetTag(), line)
 		}
-		// Finish missing Tx field data obtained from the Begin tag
+
+		// Add the data contained in the Begin tag to the new transaction
 		br := r.(BeginRecord)
-		tx.esiLevel = br.ESILevel()
-		tx.txid = parseTXID(tx.VXID(), br.Type(), br.ESILevel())
-		tx.logRecords = append(tx.logRecords, br)
+		tx.Parent = br.Parent
+		tx.ESILevel = br.ESILevel
+		tx.TXID = parseTXID(tx.VXID, br.RecordType, br.Reason, br.ESILevel)
+		tx.Records = append(tx.Records, br)
 
 		// Parse the remaining tags
 		complete := false                                 // to check at the end if the transaction finished (found End tag for example)
@@ -78,9 +83,9 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 			r, err := processRecord(line)
 			if err != nil {
-				return txsSet, err
+				return ts, err
 			}
-			tx.logRecords = append(tx.logRecords, r)
+			tx.Records = append(tx.Records, r)
 
 			switch record := r.(type) {
 			case VCLCallRecord:
@@ -93,9 +98,9 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 						continue
 					}
 					if lastHeaderRecord.IsRespHeader() {
-						mergeTempHeaders(tx.RespHeaders(), tempHeaders)
+						mergeTempHeaders(tx.RespHeaders, tempHeaders)
 					} else {
-						mergeTempHeaders(tx.ReqHeaders(), tempHeaders)
+						mergeTempHeaders(tx.ReqHeaders, tempHeaders)
 					}
 				}
 
@@ -104,15 +109,16 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 				clientHeaders = true
 
 			case LinkRecord:
-				// Add children to the transaction so they are updated later
-				// with the actual transaction (if found)
 				lr := r.(LinkRecord)
-				childTXID := parseTXID(lr.VXID(), lr.Type(), lr.ESILevel())
-				tx.children[childTXID] = &Transaction{level: -1}
+				if slices.Contains(tx.Children, lr.VXID) {
+					slog.Warn("Parse() duplicate children assignment", "txid", tx.TXID, "linkTXID", lr.TXID)
+					continue
+				}
+				tx.Children = append(tx.Children, lr.VXID)
 
 			case BeginRecord:
 				// A Begin tag was found in the middle of a transaction
-				return txsSet, fmt.Errorf("incorrect log: Another %q tag was found in the middle of the transaction %q", tag.Begin, tx.RawLog())
+				return ts, fmt.Errorf("parser error: duplicate %q tag found in the middle of transaction %d", tags.Begin, tx.VXID)
 
 			// HEADERS: handle parsing of HTTP headers, transactions have two  Headers sets, one for Req and another for Resp requests
 			// Varnish also has some built-in VCL that executes after users VCL (if not overridden by a return), but most importantly
@@ -128,91 +134,70 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 
 				var headers Headers
 				if record.IsRespHeader() {
-					headers = tx.RespHeaders()
+					headers = tx.RespHeaders
 				} else {
-					headers = tx.ReqHeaders()
+					headers = tx.ReqHeaders
 				}
 
 				if clientHeaders {
-					if isVarnishModifiedHeader(record.Name(), record.Tag()) {
+					if isVarnishModifiedHeader(record.Name, record.GetTag()) {
 						// Store them to process them later
 						// since deletes only apply to processed headers we should at the end
 						// only have the processed headers, if instead this header is added directly to 'headers'
 						// it will contain duplicate headers for client/received and processed
-						addProcessedHeaders(tempHeaders, record.Name(), record.Value())
+						addProcessedHeaders(tempHeaders, record.Name, record.Value)
 					} else {
 						// Received headers
-						headers.Add(record.Name(), record.Value(), HdrStateReceived)
+						headers.Add(record.Name, record.Value, HdrStateReceived)
 					}
 				} else {
-					addProcessedHeaders(headers, record.Name(), record.Value())
+					addProcessedHeaders(headers, record.Name, record.Value)
 				}
 
 			case HeaderUnsetRecord:
 				var headers Headers
 				if record.IsRespHeader() {
-					headers = tx.RespHeaders()
+					headers = tx.RespHeaders
 				} else {
-					headers = tx.ReqHeaders()
+					headers = tx.ReqHeaders
 				}
 
 				// all headers going forward now are considered as processed by VCL
 				if clientHeaders {
-					if isVarnishModifiedHeader(record.Name(), record.Tag()) {
+					if isVarnishModifiedHeader(record.Name, record.GetTag()) {
 						// Unset found while expecting client headers, assume we're on Varnish C code
 						// add that header to a tempHeaders struct and parse it when the first VCL_call is encountered
-						tempHeaders.Add(record.Name(), record.Value(), HdrStateReceived)
+						tempHeaders.Add(record.Name, record.Value, HdrStateReceived)
 					} else {
-						log.Printf("WARNING: unset found for non-tracked Varnish C code modificable header: %s\n", record.Name())
+						slog.Warn("unset found for non-tracked Varnish C code modificable header", "header", record.Name)
 					}
 				}
-				headers.Delete(record.Name())
-				tempHeaders.Delete(record.Name()) // Received headers are not deleted
+				headers.Delete(record.Name)
+				tempHeaders.Delete(record.Name) // Received headers are not deleted
 			}
 
 			// Check if the tx is complete, this is outside of the switch case to be able to break the for loop
-			if r.Tag() == tag.End {
-				txsSet.txs = append(txsSet.txs, tx)
-				txsSet.txsMap[tx.TXID()] = tx
+			if r.GetTag() == tags.End {
+				ts.txs[tx.VXID] = tx
 				complete = true
 				break
 			}
 		}
 
 		if err := p.scanner.Err(); err != nil {
-			return txsSet, err
+			return ts, err
 		}
 
 		if !complete {
-			return txsSet, fmt.Errorf("Transaction %q finished without %s tag at EOL", tx.RawLog(), tag.End)
+			return ts, fmt.Errorf("parser error: transaction %q finished without %s tag at EOL", tx.RawLog, tags.End)
 		}
 	}
 
 	if err := p.scanner.Err(); err != nil {
-		return txsSet, err
+		return ts, err
 	}
 
-	// Update parent and children relationships
-	for _, currTx := range txsSet.Transactions() {
-		for childTXID := range currTx.Children() {
-			child, childExists := txsSet.txsMap[childTXID]
-			if childExists {
-				child.parent = currTx
-				currTx.children[childTXID] = child
-			}
-		}
-	}
-
-	// Delete children not found in the complete varnishlog log
-	for _, currTx := range txsSet.Transactions() {
-		for childTXID, child := range currTx.Children() {
-			if child.Level() == -1 {
-				delete(currTx.Children(), childTXID)
-			}
-		}
-	}
-
-	return txsSet, nil
+	return ts, nil
 }
 
 func processRecord(line string) (Record, error) {
@@ -221,77 +206,77 @@ func processRecord(line string) (Record, error) {
 		return blr, err
 	}
 
-	t := blr.Tag()
+	t := blr.GetTag()
 	switch t {
-	case tag.End:
+	case tags.End:
 		return EndRecord{BaseRecord: blr}, nil
-	case tag.RespReason, tag.BerespReason:
+	case tags.RespReason, tags.BerespReason:
 		return ReasonRecord{BaseRecord: blr}, nil
-	case tag.FetchError:
+	case tags.FetchError:
 		return FetchErrorRecord{BaseRecord: blr}, nil
-	case tag.Begin:
+	case tags.Begin:
 		return NewBeginRecord(blr)
-	case tag.Link:
+	case tags.Link:
 		return NewLinkRecord(blr)
 
 		// Headers
-	case tag.ReqHeader, tag.RespHeader, tag.BereqHeader, tag.BerespHeader, tag.ObjHeader:
+	case tags.ReqHeader, tags.RespHeader, tags.BereqHeader, tags.BerespHeader, tags.ObjHeader:
 		return NewHeaderRecord(blr)
-	case tag.ObjUnset, tag.ReqUnset, tag.RespUnset, tag.BereqUnset, tag.BerespUnset:
+	case tags.ObjUnset, tags.ReqUnset, tags.RespUnset, tags.BereqUnset, tags.BerespUnset:
 		return NewHeaderUnsetRecord(blr)
 
-	case tag.ReqMethod, tag.BereqMethod:
+	case tags.ReqMethod, tags.BereqMethod:
 		return MethodRecord{BaseRecord: blr}, nil
-	case tag.ReqProtocol, tag.RespProtocol, tag.BereqProtocol, tag.BerespProtocol, tag.ObjProtocol:
+	case tags.ReqProtocol, tags.RespProtocol, tags.BereqProtocol, tags.BerespProtocol, tags.ObjProtocol:
 		return ProtocolRecord{BaseRecord: blr}, nil
-	case tag.BackendOpen:
+	case tags.BackendOpen:
 		return NewBackendOpenRecord(blr)
-	case tag.BackendStart:
+	case tags.BackendStart:
 		return NewBackendStartRecord(blr)
-	case tag.BackendClose:
+	case tags.BackendClose:
 		return NewBackendCloseRecord(blr)
-	case tag.ReqAcct, tag.BereqAcct:
+	case tags.ReqAcct, tags.BereqAcct:
 		return NewAcctRecord(blr)
-	case tag.Timestamp:
+	case tags.Timestamp:
 		return NewTimestampRecord(blr)
-	case tag.ReqStart:
+	case tags.ReqStart:
 		return NewReqStartRecord(blr)
-	case tag.ReqURL, tag.BereqURL:
+	case tags.ReqURL, tags.BereqURL:
 		return NewURLRecord(blr)
-	case tag.Filters:
+	case tags.Filters:
 		return NewFiltersRecord(blr)
-	case tag.RespStatus, tag.BerespStatus, tag.ObjStatus:
+	case tags.RespStatus, tags.BerespStatus, tags.ObjStatus:
 		return NewStatusRecord(blr)
-	case tag.Length:
+	case tags.Length:
 		return NewLengthRecord(blr)
-	case tag.Hit:
+	case tags.Hit:
 		return NewHitRecord(blr)
-	case tag.HitMiss:
+	case tags.HitMiss:
 		return NewHitMissRecord(blr)
-	case tag.TTL:
+	case tags.TTL:
 		return NewTTLRecord(blr)
-	case tag.VCLLog:
+	case tags.VCLLog:
 		return NewVCLLogRecord(blr)
-	case tag.Storage:
+	case tags.Storage:
 		return NewStorageRecord(blr)
-	case tag.FetchBody:
+	case tags.FetchBody:
 		return NewFetchBodyRecord(blr)
-	case tag.SessOpen:
+	case tags.SessOpen:
 		return NewSessOpenRecord(blr)
-	case tag.SessClose:
+	case tags.SessClose:
 		return NewSessCloseRecord(blr)
-	case tag.Gzip:
+	case tags.Gzip:
 		return NewGzipRecord(blr)
-	case tag.VCLCall:
+	case tags.VCLCall:
 		return VCLCallRecord{BaseRecord: blr}, nil
-	case tag.VCLReturn:
+	case tags.VCLReturn:
 		return VCLReturnRecord{BaseRecord: blr}, nil
-	case tag.VCLUse:
+	case tags.VCLUse:
 		return VCLUseRecord{BaseRecord: blr}, nil
-	case tag.Error:
+	case tags.Error:
 		return ErrorRecord{BaseRecord: blr}, nil
 	default:
-		log.Printf("Unknown tag %q", t)
+		slog.Warn("unknown tag", "tag", t)
 		return blr, nil
 	}
 }
@@ -308,7 +293,7 @@ func isVarnishModifiedHeader(name, tagName string) bool {
 
 	// Only consider Recv headers
 	switch tagName {
-	case tag.ReqHeader, tag.ReqUnset:
+	case tags.ReqHeader, tags.ReqUnset:
 	default:
 		return false
 	}
@@ -349,7 +334,8 @@ func mergeTempHeaders(headers, tempHeaders Headers) {
 	// -   ReqHeader      Via: a, 1.1 53d4be3da396 (Varnish/7.5)
 	// -   VCL_call       RECV
 
-	for name, h := range tempHeaders {
+	for _, h := range tempHeaders.GetSortedHeaders() {
+		name := h.Name()
 		for _, v := range h.Values(true) {
 			if v.State() == HdrStateReceived {
 				headers.Add(name, v.Value(), HdrStateReceived)
@@ -363,6 +349,7 @@ func mergeTempHeaders(headers, tempHeaders Headers) {
 			}
 		}
 	}
+
 	tempHeaders.Clear()
 }
 

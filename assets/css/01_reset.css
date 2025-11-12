@@ -1,0 +1,61 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  font-size: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-family: var(--font-text2);
+}
+
+h1 {
+  font-size: var(--fsize-xl);
+}
+
+h2 {
+  font-size: var(--fsize-xl);
+}
+
+h3 {
+  font-size: var(--fsize-l);
+}
+
+h4 {
+  font-size: var(--fsize-normal);
+}
+
+h5 {
+  font-size: var(--fsize-s);
+}
+
+h6 {
+  font-size: var(--fsize-xs);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+ul,
+ol {
+  list-style-position: inside;
+  padding-inline-start: 0;
+}

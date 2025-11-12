@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: MIT
+
 package vsl
 
 import (
+	"encoding/json"
 	"net/textproto"
-	"sort"
+	"slices"
 )
 
 // The RFCs allow multiple headers with the same name, and both set and unset
@@ -48,6 +51,17 @@ type Header struct {
 	receivedValues []HdrValue // Keeps track of the headers that were sent by the client
 }
 
+func (h Header) MarshalJSON() ([]byte, error) {
+	aux := struct {
+		Values         []HdrValue
+		ReceivedValues []HdrValue
+	}{
+		Values:         h.values,
+		ReceivedValues: h.receivedValues,
+	}
+	return json.Marshal(aux)
+}
+
 func (h Header) ID() int {
 	return h.id
 }
@@ -69,6 +83,17 @@ func (h Header) Values(received bool) []HdrValue {
 type HdrValue struct {
 	value string
 	state HdrState
+}
+
+func (h HdrValue) MarshalJSON() ([]byte, error) {
+	aux := struct {
+		Value string
+		State string
+	}{
+		Value: h.value,
+		State: h.state.String(),
+	}
+	return json.Marshal(aux)
 }
 
 // Value returns the header value
@@ -199,8 +224,13 @@ func (h Headers) GetSortedHeaders() []Header {
 		sorted = append(sorted, hdr)
 	}
 
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].ID() < sorted[j].ID()
+	slices.SortStableFunc(sorted, func(a, b Header) int {
+		if a.ID() == b.ID() {
+			return 0
+		} else if a.ID() < b.ID() {
+			return -1
+		}
+		return 1
 	})
 
 	return sorted

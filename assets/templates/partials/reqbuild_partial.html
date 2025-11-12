@@ -1,0 +1,17 @@
+<!-- templates/partials/reqbuild_partial.html -->
+
+<div class="fade-me-in">
+	{{ $scheme := .ReqBuild.Scheme }}
+	{{ $connectTo := .ReqBuild.ConnectTo }}
+	{{ $backend := .ReqBuild.Backend }}
+	{{ $custom := .ReqBuild.ConnectCustom }}
+	{{ $received := .ReqBuild.ReceivedHeaders }}
+	{{ $excluded := .ReqBuild.ExcludedHeaders }}
+	{{- range .Transactions.Set.Transactions }}
+	{{ if isTxTypeSession . }}{{ continue }}{{ end }}
+	<h3>{{ .TXID }}</h3>
+	<pre><code class="language-bash">{{- curlCommand . $scheme $connectTo $backend $custom $received $excluded -}}</code></pre>
+	{{- end }}
+</div>
+
+<script src="/static/vendor/prism.js"></script>

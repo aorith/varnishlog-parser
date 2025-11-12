@@ -1,0 +1,50 @@
+<!-- templates/views/headers_view.html -->
+
+<div class="view" id="headers-view">
+	<div class="view-content">
+		<h1>Headers</h1>
+
+		<p>
+			State of HTTP headers for each transaction.
+			For transactions of type <code>client request</code>
+			or <code>backend request</code>,
+			headers are displayed in order: first the request headers, then the response headers,
+			showing how they were modified by VCL code.
+		</p>
+
+		<div class="hdr-legend">
+			<div class="hdr-legend-item">
+				<div class="hdr-legend-color diff-received"></div>
+				<span><b>Received/Unchanged</b></span>
+				<span>Headers present before any VCL processing, as originally received.</span>
+			</div>
+			<div class="hdr-legend-item">
+				<div class="hdr-legend-color diff-added"></div>
+				<span><b>Added</b></span>
+				<span>Headers introduced by VCL code.</span>
+			</div>
+			<div class="hdr-legend-item">
+				<div class="hdr-legend-color diff-modified"></div>
+				<span><b>Modified</b></span>
+				<span>Headers that were present in the received set but were later changed by VCL code.</span>
+			</div>
+			<div class="hdr-legend-item">
+				<div class="hdr-legend-color diff-deleted"></div>
+				<span><b>Deleted/Unset</b></span>
+				<span>Headers that were removed at any point during processing.</span>
+			</div>
+		</div>
+
+		<br>
+
+		{{ $set := .Transactions.Set }}
+		{{ range .Transactions.Set.UniqueRootParents false }}
+		<h2>{{ .TXID }}</h2>
+		<div class="hdr-table">
+			{{ range headersView $set . }}
+			{{ . }}
+			{{ end }}
+		</div>
+		{{ end }}
+	</div>
+</div>

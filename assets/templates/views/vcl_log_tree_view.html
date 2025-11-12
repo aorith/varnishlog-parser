@@ -1,0 +1,26 @@
+<!-- templates/views/vcl_log_tree_view.html -->
+
+<div class="view" id="vcllogtree-view">
+	<div class="view-content">
+		<h1>VCL Log Tree</h1>
+
+		<p><i>VCL Log Tree</i>
+		offers a new way to visualize <code>varnishlog</code>
+		transactions. In the standard <code>varnishlog</code>
+		text output, VSL tags are grouped by individual transactions. Here, however, whenever a VSL tag of type <code>Link</code>
+		is found, it indicates a child transaction, and a new <i>tree box</i>
+		is created to display the tags of this child transaction, continuing recursively as needed.</p>
+		<p>Some VSL tags are also enhanced for readability: for example, <code>Timestamp</code>
+			tags display elapsed time in a human-readable format, and unset headers are shown with strikethrough text.</p>
+
+		{{ $set := .Transactions.Set }}
+		{{ range .Transactions.Set.UniqueRootParents true }}
+		<h2>Tree for {{ .TXID }}</h2>
+		<div class="txtree">
+			{{ renderTXLogTree $set . }}
+		</div>
+		<br>
+		<br>
+		{{ end }}
+	</div>
+</div>

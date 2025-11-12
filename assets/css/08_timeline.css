@@ -1,0 +1,119 @@
+div.timeline {
+  display: inline-block;
+  width: 80vw;
+  max-width: var(--view-width);
+}
+
+/* Default classes from svg-timeline */
+.tl-bg {
+  fill: #ffffff;
+}
+
+.tl-event {
+  cursor: pointer;
+}
+
+.tl-event rect {
+  fill: rgba(115, 105, 250, 0.8);
+  stroke: #000000;
+  stroke-width: 0;
+}
+
+.tl-event:hover rect {
+  stroke: #000000;
+  stroke-width: 1;
+}
+
+.tl-event text {
+  fill: #ffffff;
+}
+
+.tl-era rect {
+  fill: rgba(200, 240, 240, 0.35);
+  stroke: rgba(200, 240, 240, 0.95);
+  stroke-width: 0;
+}
+
+.tl-era text {
+  fill: #444444;
+}
+
+.tl-axis,
+.tl-ticks line {
+  stroke: #333333;
+  stroke-width: 1;
+}
+
+.tl-ticks text {
+  fill: #333333;
+}
+
+/* Custom classes */
+
+/* Eras */
+.ctl-session rect {
+  fill: rgba(180, 180, 180, 0.15);
+  stroke: rgba(200, 200, 200, 0.5);
+
+  &:hover {
+    fill: rgba(180, 180, 180, 0.3);
+    stroke-width: 1;
+  }
+}
+
+.ctl-request rect {
+  fill: rgba(252, 186, 3, 0.15);
+  stroke: rgba(252, 186, 3, 0.5);
+
+  &:hover {
+    fill: rgba(252, 186, 3, 0.3);
+    stroke-width: 1;
+  }
+}
+
+.ctl-bereq rect {
+  fill: rgba(252, 3, 3, 0.15);
+  stroke: rgba(252, 3, 3, 0.5);
+
+  &:hover {
+    fill: rgba(252, 3, 3, 0.3);
+    stroke-width: 1;
+  }
+}
+
+/* Events */
+.ctl-e-start rect {
+  fill: rgba(212, 136, 3, 0.85);
+}
+
+.ctl-e-req rect {
+  fill: rgba(3, 3, 212, 0.85);
+}
+
+.ctl-e-process rect {
+  fill: rgba(3, 52, 212, 0.85);
+}
+
+.ctl-e-resp rect {
+  fill: rgba(3, 113, 212, 0.85);
+}
+
+.ctl-e-connected rect {
+  fill: rgba(212, 3, 52, 0.85);
+}
+
+.ctl-e-bereq rect {
+  fill: rgba(212, 3, 3, 0.85);
+}
+
+.ctl-e-fetch rect {
+  fill: rgba(212, 2, 3, 0.85);
+}
+
+.ctl-e-beresp rect {
+  fill: rgba(212, 52, 3, 0.85);
+}
+
+.ctl-e-berespbody rect {
+  fill: rgba(212, 112, 3, 0.85);
+}

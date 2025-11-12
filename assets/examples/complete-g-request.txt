@@ -7,7 +7,7 @@
 -   ReqMethod      GET
 -   ReqURL         /esi/
 -   ReqProtocol    HTTP/1.1
--   ReqHeader      Host: www.example1.com
+-   ReqHeader      Host: www.example1.org
 -   ReqHeader      User-Agent: curl/8.9.1
 -   ReqHeader      Accept: */*
 -   ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -55,7 +55,7 @@
 --  BereqMethod    GET
 --  BereqURL       /esi/
 --  BereqProtocol  HTTP/1.1
---  BereqHeader    Host: www.example1.com
+--  BereqHeader    Host: www.example1.org
 --  BereqHeader    User-Agent: curl/8.9.1
 --  BereqHeader    Accept: */*
 --  BereqHeader    X-Forwarded-For: 192.168.50.1
@@ -100,7 +100,7 @@
 --  ReqMethod      GET
 --  ReqURL         /included-content
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example1.com
+--  ReqHeader      Host: www.example1.org
 --  ReqHeader      User-Agent: curl/8.9.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -144,7 +144,7 @@
 --- BereqMethod    GET
 --- BereqURL       /included-content
 --- BereqProtocol  HTTP/1.1
---- BereqHeader    Host: www.example1.com
+--- BereqHeader    Host: www.example1.org
 --- BereqHeader    User-Agent: curl/8.9.1
 --- BereqHeader    Accept: */*
 --- BereqHeader    X-Forwarded-For: 192.168.50.1
@@ -191,7 +191,7 @@
 -   ReqMethod      GET
 -   ReqURL         /esi2/
 -   ReqProtocol    HTTP/1.1
--   ReqHeader      Host: www.example2.com
+-   ReqHeader      Host: www.example2.org
 -   ReqHeader      User-Agent: curl/8.9.1
 -   ReqHeader      Accept: */*
 -   ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -239,7 +239,7 @@
 --  BereqMethod    GET
 --  BereqURL       /esi2/
 --  BereqProtocol  HTTP/1.1
---  BereqHeader    Host: www.example2.com
+--  BereqHeader    Host: www.example2.org
 --  BereqHeader    User-Agent: curl/8.9.1
 --  BereqHeader    Accept: */*
 --  BereqHeader    X-Forwarded-For: 192.168.50.1
@@ -284,7 +284,7 @@
 --  ReqMethod      GET
 --  ReqURL         /esi-content
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example2.com
+--  ReqHeader      Host: www.example2.org
 --  ReqHeader      User-Agent: curl/8.9.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -331,7 +331,7 @@
 --- BereqMethod    GET
 --- BereqURL       /esi-content
 --- BereqProtocol  HTTP/1.1
---- BereqHeader    Host: www.example2.com
+--- BereqHeader    Host: www.example2.org
 --- BereqHeader    User-Agent: curl/8.9.1
 --- BereqHeader    Accept: */*
 --- BereqHeader    X-Forwarded-For: 192.168.50.1
@@ -376,7 +376,7 @@
 --- ReqMethod      GET
 --- ReqURL         /last-content?a=1
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example2.com
+--- ReqHeader      Host: www.example2.org
 --- ReqHeader      User-Agent: curl/8.9.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -423,7 +423,7 @@
 --- ReqMethod      GET
 --- ReqURL         /last-content?a=2
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example2.com
+--- ReqHeader      Host: www.example2.org
 --- ReqHeader      User-Agent: curl/8.9.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -469,7 +469,7 @@
 -4- BereqMethod    GET
 -4- BereqURL       /last-content?a=1
 -4- BereqProtocol  HTTP/1.1
--4- BereqHeader    Host: www.example2.com
+-4- BereqHeader    Host: www.example2.org
 -4- BereqHeader    User-Agent: curl/8.9.1
 -4- BereqHeader    Accept: */*
 -4- BereqHeader    X-Forwarded-For: 192.168.50.1
@@ -516,7 +516,7 @@
 -4- BereqMethod    GET
 -4- BereqURL       /last-content?a=2
 -4- BereqProtocol  HTTP/1.1
--4- BereqHeader    Host: www.example2.com
+-4- BereqHeader    Host: www.example2.org
 -4- BereqHeader    User-Agent: curl/8.9.1
 -4- BereqHeader    Accept: */*
 -4- BereqHeader    X-Forwarded-For: 192.168.50.1
@@ -566,7 +566,7 @@
 -   ReqMethod      GET
 -   ReqURL         /esi2/
 -   ReqProtocol    HTTP/1.1
--   ReqHeader      Host: www.example2.com
+-   ReqHeader      Host: www.example2.org
 -   ReqHeader      User-Agent: curl/8.9.1
 -   ReqHeader      Accept: */*
 -   ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -614,7 +614,7 @@
 --  ReqMethod      GET
 --  ReqURL         /esi-content
 --  ReqProtocol    HTTP/1.1
---  ReqHeader      Host: www.example2.com
+--  ReqHeader      Host: www.example2.org
 --  ReqHeader      User-Agent: curl/8.9.1
 --  ReqHeader      Accept: */*
 --  ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -661,7 +661,7 @@
 --- ReqMethod      GET
 --- ReqURL         /last-content?a=1
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example2.com
+--- ReqHeader      Host: www.example2.org
 --- ReqHeader      User-Agent: curl/8.9.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -706,7 +706,7 @@
 --- ReqMethod      GET
 --- ReqURL         /last-content?a=2
 --- ReqProtocol    HTTP/1.1
---- ReqHeader      Host: www.example2.com
+--- ReqHeader      Host: www.example2.org
 --- ReqHeader      User-Agent: curl/8.9.1
 --- ReqHeader      Accept: */*
 --- ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -753,7 +753,7 @@
 -   ReqMethod      GET
 -   ReqURL         /where-is-it/
 -   ReqProtocol    HTTP/1.1
--   ReqHeader      Host: other.example1.com
+-   ReqHeader      Host: other.example1.org
 -   ReqHeader      User-Agent: curl/8.9.1
 -   ReqHeader      Accept: */*
 -   ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -793,7 +793,7 @@
 -   ReqMethod      GET
 -   ReqURL         /admin
 -   ReqProtocol    HTTP/1.1
--   ReqHeader      Host: bad.example1.com
+-   ReqHeader      Host: bad.example1.org
 -   ReqHeader      User-Agent: curl/8.9.1
 -   ReqHeader      Accept: */*
 -   ReqHeader      X-Forwarded-For: 192.168.50.1
@@ -837,7 +837,7 @@
 --  BereqMethod    GET
 --  BereqURL       /admin
 --  BereqProtocol  HTTP/1.1
---  BereqHeader    Host: bad.example1.com
+--  BereqHeader    Host: bad.example1.org
 --  BereqHeader    User-Agent: curl/8.9.1
 --  BereqHeader    Accept: */*
 --  BereqHeader    X-Forwarded-For: 192.168.50.1

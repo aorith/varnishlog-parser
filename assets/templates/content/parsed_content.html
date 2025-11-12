@@ -1,0 +1,11 @@
+{{ define "content" }}
+<!-- templates/content/parsed_content.html -->
+
+{{ template "parsed_view.html" . }}
+{{ template "overview_view.html" . }}
+{{ template "timings_view.html" . }}
+{{ template "headers_view.html" . }}
+{{ template "vcl_log_tree_view.html" . }}
+{{ template "reqbuild_view.html" . }}
+
+{{ end }}

@@ -1,0 +1,12 @@
+{{ define "content" }}
+<!-- templates/content/index_content.html -->
+
+{{ template "parse_view.html" . }}
+
+<div class="view" id="overview-view">{{ template "unparsed.html" }}</div>
+<div class="view" id="timings-view">{{ template "unparsed.html" }}</div>
+<div class="view" id="headers-view">{{ template "unparsed.html" }}</div>
+<div class="view" id="vcllogtree-view">{{ template "unparsed.html" }}</div>
+<div class="view" id="reqbuild-view">{{ template "unparsed.html" }}</div>
+
+{{ end }}

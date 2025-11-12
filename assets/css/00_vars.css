@@ -1,0 +1,51 @@
+:root {
+  --bg-0: #ffffff;
+  --bg-1: #f5f5f5;
+  --fg-0: #000000;
+  --fg-1: #333333;
+
+  --nav-bg: #f1f1f1;
+  --border: #e0e0e0;
+  --view-bg: #ffffff;
+  --calm: #61284e;
+  --cold: #093060;
+  --mild: #184033;
+  --warm: #5d3025;
+
+  --gray-0: #666666;
+  --red-0: #a60000;
+  --green-0: #006800;
+  --yellow-0: #936e05;
+  --brown-0: #7d5654;
+  --blue-0: #0543cb;
+
+  --added: #ccffcc;
+  --modified: #ffffcc;
+  --deleted: #ffcccc;
+
+  --accent: #023e8a;
+  --accent-hover: #0077b6;
+
+  --view-width: 1180px;
+  --line-height: 1.5;
+  --fsize-xxxs: round(0.6rem, 1px);
+  --fsize-xxs: round(0.75rem, 1px);
+  --fsize-xs: round(0.85rem, 1px);
+  --fsize-s: round(0.95rem, 1px);
+  --fsize-normal: round(1rem, 1px);
+  --fsize-m: round(1.1rem, 1px);
+  --fsize-l: round(1.2rem, 1px);
+  --fsize-xl: round(1.35rem, 1px);
+  --fsize-xxl: round(1.6rem, 1px);
+
+  --vertical-0: calc(var(--line-height) * 0.9rem);
+  --vertical-1: calc(var(--line-height) * 1.2rem);
+  --space-0: 0.5rem;
+  --space-1: 1rem;
+
+  --font-text: "helvetica neue", "arial", sans-serif;
+  --font-text2: "Noto Sans", sans-serif;
+  --font-mono:
+    SFMono-Regular, Menlo, Consolas, Monaco, "Liberation Mono",
+    "Lucida Console", monospace;
+}

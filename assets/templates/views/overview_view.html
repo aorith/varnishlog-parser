@@ -1,0 +1,29 @@
+<!-- templates/views/overview_view.html -->
+
+<div class="view" id="overview-view">
+	<div class="view-content">
+		<h1>Overview</h1>
+		<p>
+			A total of
+			<b>{{ .Transactions.Count }}</b>
+			transactions have been parsed and organized
+			into
+			<b>{{ .Transactions.GroupCount }}</b>
+			<abbr title="Transactions are grouped into related sets, called transaction groups. This grouping occurs because individual transactions can have parent and child relationships. For example, a client request transaction often has a child transaction of type backend request if the object is not in cache. Varnishlog can group transactions using the '-g' flag.">transaction group(s)</abbr>.
+		</p>
+		<p>
+			For easier reference, transactions have a custom identifier formatted as <code>{vxid}-{txType}-{reason}[-{ESILevel}]</code>.
+		</p>
+
+		{{ $set := .Transactions.Set }}
+		{{ $cfg := .Sequence }}
+		{{ range .Transactions.Set.UniqueRootParents false }}
+		<h3>{{ .TXID }}</h3>
+		<h4>Sequence Diagram</h4>
+		<div class="sequence">{{ sequence $set . $cfg }}</div>
+		<h4>VSL Log</h4>
+		<pre>{{ $set.RawLogForTx . true }}</pre>
+		<br>
+		{{ end }}
+	</div>
+</div>
