@@ -4,11 +4,7 @@ package assets
 
 import (
 	"embed"
-	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -44,31 +40,31 @@ var (
 	VCLESISynth string
 )
 
+//go:embed all:css
+var cssFiles embed.FS
+
 var CombinedCSS []byte
 
 func init() {
-	// Get the directory of the current source file to ensure css files are found
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("failed to get current file path")
-	}
-	currentDir := filepath.Dir(currentFile)
-	cssDir := filepath.Join(currentDir, "css")
-
-	// Generate the combined css file
-	matches, err := filepath.Glob(filepath.Join(cssDir, "*.css"))
+	files, err := cssFiles.ReadDir("css")
 	if err != nil {
 		panic(err)
 	}
-	sort.Strings(matches)
-
-	var parts []string
-	for _, path := range matches {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			panic(fmt.Sprintf("failed to read %s: %v", path, err))
-		}
-		parts = append(parts, string(data))
+	names := make([]string, len(files))
+	for i, f := range files {
+		names[i] = f.Name()
 	}
-	CombinedCSS = []byte(strings.Join(parts, "\n"))
+	slices.Sort(names)
+
+	// Read and join all files
+	var sb strings.Builder
+	for _, name := range names {
+		data, err := cssFiles.ReadFile("css/" + name)
+		if err != nil {
+			panic(err)
+		}
+		sb.Write(data)
+		sb.WriteByte('\n')
+	}
+	CombinedCSS = []byte(sb.String())
 }
