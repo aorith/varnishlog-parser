@@ -158,7 +158,11 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			}
 
 		case vsl.HitRecord:
-			s1 := fmt.Sprintf("%s TTL: %s\nGrace: %s, Keep: %s", record.GetTag(), record.TTL.String(), record.Grace.String(), record.Keep.String())
+			s1 := ""
+			if record.Fetched > 0 {
+				s1 += "Streaming-"
+			}
+			s1 += record.GetTag() + "\n" + wrapAndTruncate(record.String(), 33, 120)
 			s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: H, Description: s1, Color: ColorHit})
 
 		case vsl.HitMissRecord:

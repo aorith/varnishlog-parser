@@ -30,6 +30,9 @@ var (
 	//go:embed examples/cached.txt
 	VCLCached string
 
+	//go:embed examples/streaming-hit.txt
+	VCLStreamingHit string
+
 	//go:embed examples/esi-1.txt
 	VCLESI1 string
 

@@ -1,0 +1,210 @@
+*   << Session  >> 1         
+-   Begin          sess 0 HTTP/1
+-   SessOpen       192.168.65.1 63931 http 192.168.50.10 80 1763032780.085929 25
+-   Link           req 2 rxreq
+-   SessClose      REM_CLOSE 7.514
+-   End            
+**  << Request  >> 2         
+--  Begin          req 1 rxreq
+--  Timestamp      Start: 1763032780.085970 0.000000 0.000000
+--  Timestamp      Req: 1763032780.085970 0.000000 0.000000
+--  VCL_use        boot
+--  ReqStart       192.168.65.1 63931 http
+--  ReqMethod      GET
+--  ReqURL         /stream-bytes/100
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: httpbin.org
+--  ReqHeader      Accept: application/octet-stream
+--  ReqHeader      User-Agent: hurl/7.0.0
+--  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      Via: 1.1 ed09215e950d (Varnish/7.7)
+--  VCL_call       RECV
+--  VCL_Log        start custom recv
+--  ReqHeader      httpbin: 1
+--  VCL_Log        end custom recv
+--  VCL_return     hash
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  Hit            32771 303.504073 10.000000 0.000000 100
+--  Timestamp      Waitinglist: 1763032783.590142 3.504172 3.504172
+--  VCL_call       HIT
+--  VCL_return     deliver
+--  RespProtocol   HTTP/1.1
+--  RespStatus     200
+--  RespReason     OK
+--  RespHeader     Date: Thu, 13 Nov 2025 11:19:43 GMT
+--  RespHeader     Content-Type: application/octet-stream
+--  RespHeader     Server: gunicorn/19.9.0
+--  RespHeader     Access-Control-Allow-Origin: *
+--  RespHeader     Access-Control-Allow-Credentials: true
+--  RespHeader     Cache-Control: max-age=300
+--  RespHeader     X-Varnish: 2 32771
+--  RespHeader     Age: 0
+--  RespHeader     Via: 1.1 ed09215e950d (Varnish/7.7)
+--  RespHeader     Accept-Ranges: bytes
+--  VCL_call       DELIVER
+--  VCL_return     deliver
+--  Timestamp      Process: 1763032783.590147 3.504177 0.000005
+--  Filters        
+--  RespHeader     Content-Length: 100
+--  RespHeader     Connection: keep-alive
+--  Timestamp      Resp: 1763032783.590164 3.504194 0.000016
+--  ReqAcct        111 0 111 353 100 453
+--  End            
+
+*   << Session  >> 32769     
+-   Begin          sess 0 HTTP/1
+-   SessOpen       192.168.65.1 29943 http 192.168.50.10 80 1763032780.085941 29
+-   Link           req 32770 rxreq
+-   SessClose      REM_CLOSE 7.514
+-   End            
+**  << Request  >> 32770     
+--  Begin          req 32769 rxreq
+--  Timestamp      Start: 1763032780.085972 0.000000 0.000000
+--  Timestamp      Req: 1763032780.085972 0.000000 0.000000
+--  VCL_use        boot
+--  ReqStart       192.168.65.1 29943 http
+--  ReqMethod      GET
+--  ReqURL         /stream-bytes/100
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: httpbin.org
+--  ReqHeader      Accept: application/octet-stream
+--  ReqHeader      User-Agent: hurl/7.0.0
+--  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      Via: 1.1 ed09215e950d (Varnish/7.7)
+--  VCL_call       RECV
+--  VCL_Log        start custom recv
+--  ReqHeader      httpbin: 1
+--  VCL_Log        end custom recv
+--  VCL_return     hash
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  VCL_call       MISS
+--  VCL_return     fetch
+--  Link           bereq 32771 fetch
+--  Timestamp      Fetch: 1763032783.590284 3.504312 3.504312
+--  RespProtocol   HTTP/1.1
+--  RespStatus     200
+--  RespReason     OK
+--  RespHeader     Date: Thu, 13 Nov 2025 11:19:43 GMT
+--  RespHeader     Content-Type: application/octet-stream
+--  RespHeader     Server: gunicorn/19.9.0
+--  RespHeader     Access-Control-Allow-Origin: *
+--  RespHeader     Access-Control-Allow-Credentials: true
+--  RespHeader     Cache-Control: max-age=300
+--  RespHeader     X-Varnish: 32770
+--  RespHeader     Age: 0
+--  RespHeader     Via: 1.1 ed09215e950d (Varnish/7.7)
+--  RespHeader     Accept-Ranges: bytes
+--  VCL_call       DELIVER
+--  VCL_return     deliver
+--  Timestamp      Process: 1763032783.590351 3.504379 0.000067
+--  Filters        
+--  RespHeader     Content-Length: 100
+--  RespHeader     Connection: keep-alive
+--  Timestamp      Resp: 1763032783.590361 3.504388 0.000009
+--  ReqAcct        111 0 111 351 100 451
+--  End            
+*** << BeReq    >> 32771     
+--- Begin          bereq 32770 fetch
+--- VCL_use        boot
+--- Timestamp      Start: 1763032780.086032 0.000000 0.000000
+--- BereqMethod    GET
+--- BereqURL       /stream-bytes/100
+--- BereqProtocol  HTTP/1.1
+--- BereqHeader    Host: httpbin.org
+--- BereqHeader    Accept: application/octet-stream
+--- BereqHeader    User-Agent: hurl/7.0.0
+--- BereqHeader    X-Forwarded-For: 192.168.65.1
+--- BereqHeader    Via: 1.1 ed09215e950d (Varnish/7.7)
+--- BereqHeader    httpbin: 1
+--- BereqHeader    Accept-Encoding: gzip
+--- BereqHeader    X-Varnish: 32771
+--- VCL_call       BACKEND_FETCH
+--- BereqUnset     Host: httpbin.org
+--- BereqHeader    host: httpbin.org
+--- VCL_return     fetch
+--- Timestamp      Fetch: 1763032780.088698 0.002666 0.002666
+--- Timestamp      Connected: 1763032780.197993 0.111960 0.109294
+--- BackendOpen    32 d(35.170.145.70:80) 35.170.145.70 80 192.168.50.10 39038 connect
+--- Timestamp      Bereq: 1763032780.198104 0.112071 0.000111
+--- BerespProtocol HTTP/1.1
+--- BerespStatus   200
+--- BerespReason   OK
+--- BerespHeader   Date: Thu, 13 Nov 2025 11:19:43 GMT
+--- BerespHeader   Content-Type: application/octet-stream
+--- BerespHeader   Transfer-Encoding: chunked
+--- BerespHeader   Connection: keep-alive
+--- BerespHeader   Server: gunicorn/19.9.0
+--- BerespHeader   Access-Control-Allow-Origin: *
+--- BerespHeader   Access-Control-Allow-Credentials: true
+--- Timestamp      Beresp: 1763032783.590043 3.504010 3.391938
+--- TTL            RFC 120 10 0 1763032784 1763032784 1763032783 0 0 cacheable
+--- VCL_call       BACKEND_RESPONSE
+--- BerespHeader   Cache-Control: max-age=300
+--- TTL            VCL 300 10 0 1763032784 cacheable
+--- VCL_return     deliver
+--- Timestamp      Process: 1763032783.590070 3.504038 0.000027
+--- Filters        
+--- Storage        malloc s0
+--- Fetch_Body     2 chunked stream
+--- BackendClose   32 d(35.170.145.70:80) recycle
+--- Timestamp      BerespBody: 1763032783.590116 3.504084 0.000046
+--- Length         100
+--- BereqAcct      232 0 232 245 100 345
+--- End            
+
+*   << Session  >> 65537     
+-   Begin          sess 0 HTTP/1
+-   SessOpen       192.168.65.1 46521 http 192.168.50.10 80 1763032780.085997 24
+-   Link           req 65538 rxreq
+-   SessClose      REM_CLOSE 7.515
+-   End            
+**  << Request  >> 65538     
+--  Begin          req 65537 rxreq
+--  Timestamp      Start: 1763032780.086008 0.000000 0.000000
+--  Timestamp      Req: 1763032780.086008 0.000000 0.000000
+--  VCL_use        boot
+--  ReqStart       192.168.65.1 46521 http
+--  ReqMethod      GET
+--  ReqURL         /stream-bytes/100
+--  ReqProtocol    HTTP/1.1
+--  ReqHeader      Host: httpbin.org
+--  ReqHeader      Accept: application/octet-stream
+--  ReqHeader      User-Agent: hurl/7.0.0
+--  ReqHeader      X-Forwarded-For: 192.168.65.1
+--  ReqHeader      Via: 1.1 ed09215e950d (Varnish/7.7)
+--  VCL_call       RECV
+--  VCL_Log        start custom recv
+--  ReqHeader      httpbin: 1
+--  VCL_Log        end custom recv
+--  VCL_return     hash
+--  VCL_call       HASH
+--  VCL_return     lookup
+--  Hit            32771 303.504035 10.000000 0.000000 100
+--  Timestamp      Waitinglist: 1763032783.590139 3.504131 3.504131
+--  VCL_call       HIT
+--  VCL_return     deliver
+--  RespProtocol   HTTP/1.1
+--  RespStatus     200
+--  RespReason     OK
+--  RespHeader     Date: Thu, 13 Nov 2025 11:19:43 GMT
+--  RespHeader     Content-Type: application/octet-stream
+--  RespHeader     Server: gunicorn/19.9.0
+--  RespHeader     Access-Control-Allow-Origin: *
+--  RespHeader     Access-Control-Allow-Credentials: true
+--  RespHeader     Cache-Control: max-age=300
+--  RespHeader     X-Varnish: 65538 32771
+--  RespHeader     Age: 0
+--  RespHeader     Via: 1.1 ed09215e950d (Varnish/7.7)
+--  RespHeader     Accept-Ranges: bytes
+--  VCL_call       DELIVER
+--  VCL_return     deliver
+--  Timestamp      Process: 1763032783.590147 3.504139 0.000007
+--  Filters        
+--  RespHeader     Content-Length: 100
+--  RespHeader     Connection: keep-alive
+--  Timestamp      Resp: 1763032783.590169 3.504161 0.000021
+--  ReqAcct        111 0 111 357 100 457
+--  End            
+

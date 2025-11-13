@@ -50,6 +50,8 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 			data.Logs.Textinput = assets.VCLSimplePOST
 		case "eg-cached":
 			data.Logs.Textinput = assets.VCLCached
+		case "eg-streaming-hit":
+			data.Logs.Textinput = assets.VCLStreamingHit
 		case "eg-esi1":
 			data.Logs.Textinput = assets.VCLESI1
 		case "eg-req-restart":

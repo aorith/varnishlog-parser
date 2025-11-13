@@ -607,26 +607,39 @@ func NewLengthRecord(blr BaseRecord) (LengthRecord, error) {
 // HitRecord contains information about a hit of an object in the cache
 type HitRecord struct {
 	BaseRecord
-	ObjVXID VXID          // object VXID
-	TTL     time.Duration // remaining TTL
-	Grace   time.Duration // grace period
-	Keep    time.Duration // keep period
+	ObjVXID       VXID          // object VXID
+	TTL           time.Duration // remaining TTL
+	Grace         time.Duration // grace period
+	Keep          time.Duration // keep period
+	Fetched       SizeValue     // bytes fetched so far
+	ContentLength SizeValue     // Content length
 }
 
 func (r HitRecord) String() string {
-	return fmt.Sprintf(
-		"%d | TTL: %s | Grace: %s | Keep: %s",
+	s := fmt.Sprintf(
+		"ObjVXID: %d | TTL: %s | Grace: %s | Keep: %s",
 		r.ObjVXID,
 		r.TTL.String(),
 		r.Grace.String(),
 		r.Keep.String(),
 	)
+
+	if r.Fetched != 0 {
+		s += fmt.Sprintf(" | Fetched: %s", r.Fetched)
+	}
+
+	if r.ContentLength != 0 {
+		s += fmt.Sprintf(" | ContentLength: %s", r.ContentLength)
+	}
+
+	return s
 }
 
 func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 4 {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, incorrect len on line %q", blr.GetRawLog())
+	n := len(parts)
+	if n < 4 || n > 6 {
+		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, incorrect len of %d on line %q", n, blr.GetRawLog())
 	}
 
 	vxid, err := parseVXID(parts[0])
@@ -649,7 +662,28 @@ func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad field keep on line %q", blr.GetRawLog())
 	}
 
-	return HitRecord{BaseRecord: blr, ObjVXID: vxid, TTL: ttl, Grace: grace, Keep: keep}, nil
+	hr := HitRecord{BaseRecord: blr, ObjVXID: vxid, TTL: ttl, Grace: grace, Keep: keep}
+	if n == 4 {
+		return hr, nil
+	}
+
+	fetched, err := strconv.Atoi(parts[4])
+	if err != nil {
+		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad value in part[4] on line %q", blr.GetRawLog())
+	}
+
+	hr.Fetched = SizeValue(fetched)
+	if n == 5 {
+		return hr, nil
+	}
+
+	cl, err := strconv.Atoi(parts[5])
+	if err != nil {
+		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad value in part[5] on line %q", blr.GetRawLog())
+	}
+
+	hr.ContentLength = SizeValue(cl)
+	return hr, nil
 }
 
 // HitMissRecord contains information about a hit for miss object in cache.

@@ -1,15 +1,15 @@
-*   << Session  >> 1
+*   << Session  >> 1         
 -   Begin          sess 0 HTTP/1
--   SessOpen       192.168.65.1 35592 http 192.168.50.10 80 1762957800.988350 21
+-   SessOpen       192.168.65.1 27916 http 192.168.50.10 80 1763028915.160485 22
 -   Link           req 2 rxreq
--   SessClose      REM_CLOSE 0.002
--   End
-**  << Request  >> 2
+-   SessClose      REM_CLOSE 0.001
+-   End            
+**  << Request  >> 2         
 --  Begin          req 1 rxreq
---  Timestamp      Start: 1762957800.988381 0.000000 0.000000
---  Timestamp      Req: 1762957800.988381 0.000000 0.000000
+--  Timestamp      Start: 1763028915.160513 0.000000 0.000000
+--  Timestamp      Req: 1763028915.160513 0.000000 0.000000
 --  VCL_use        boot
---  ReqStart       192.168.65.1 35592 http
+--  ReqStart       192.168.65.1 27916 http
 --  ReqMethod      GET
 --  ReqURL         /ec1
 --  ReqProtocol    HTTP/1.1
@@ -17,10 +17,9 @@
 --  ReqHeader      Accept: */*
 --  ReqHeader      User-Agent: hurl/7.0.0
 --  ReqHeader      X-Forwarded-For: 192.168.65.1
---  ReqHeader      Via: 1.1 b7578264dd5b (Varnish/7.7)
+--  ReqHeader      Via: 1.1 80de151ba9e5 (Varnish/7.7)
 --  VCL_call       RECV
 --  VCL_Log        start custom recv
---  ReqHeader      whoami: 1
 --  ReqHeader      x-do-esi: 1
 --  VCL_Log        end custom recv
 --  VCL_return     hash
@@ -29,35 +28,34 @@
 --  VCL_call       MISS
 --  VCL_return     fetch
 --  Link           bereq 3 fetch
---  Timestamp      Fetch: 1762957800.989133 0.000752 0.000752
+--  Timestamp      Fetch: 1763028915.160847 0.000333 0.000333
 --  RespProtocol   HTTP/1.1
 --  RespStatus     200
 --  RespReason     OK
---  RespHeader     Date: Wed, 12 Nov 2025 14:30:00 GMT
+--  RespHeader     Date: Thu, 13 Nov 2025 10:15:15 GMT
 --  RespHeader     Server: Varnish
 --  RespHeader     X-Varnish: 2
 --  RespHeader     Content-Type: text/html; charset=utf-8
 --  RespHeader     Content-Length: 84
---  RespHeader     Cache-Control: max-age=5
 --  RespHeader     X-Varnish: 2
 --  RespHeader     Age: 0
---  RespHeader     Via: 1.1 b7578264dd5b (Varnish/7.7)
+--  RespHeader     Via: 1.1 80de151ba9e5 (Varnish/7.7)
 --  RespHeader     Accept-Ranges: bytes
 --  VCL_call       DELIVER
 --  VCL_return     deliver
---  Timestamp      Process: 1762957800.989142 0.000761 0.000009
+--  Timestamp      Process: 1763028915.160854 0.000340 0.000007
 --  Filters         esi
 --  RespUnset      Content-Length: 84
 --  RespHeader     Connection: keep-alive
 --  RespHeader     Transfer-Encoding: chunked
 --  Link           req 4 esi 1
---  Timestamp      Resp: 1762957800.989625 0.001244 0.000482
---  ReqAcct        83 0 83 286 98 384
---  End
-*** << BeReq    >> 3
+--  Timestamp      Resp: 1763028915.161249 0.000735 0.000394
+--  ReqAcct        83 0 83 260 98 358
+--  End            
+*** << BeReq    >> 3         
 --- Begin          bereq 2 fetch
 --- VCL_use        boot
---- Timestamp      Start: 1762957800.988429 0.000000 0.000000
+--- Timestamp      Start: 1763028915.160569 0.000000 0.000000
 --- BereqMethod    GET
 --- BereqURL       /ec1
 --- BereqProtocol  HTTP/1.1
@@ -65,46 +63,43 @@
 --- BereqHeader    Accept: */*
 --- BereqHeader    User-Agent: hurl/7.0.0
 --- BereqHeader    X-Forwarded-For: 192.168.65.1
---- BereqHeader    Via: 1.1 b7578264dd5b (Varnish/7.7)
---- BereqHeader    whoami: 1
+--- BereqHeader    Via: 1.1 80de151ba9e5 (Varnish/7.7)
 --- BereqHeader    x-do-esi: 1
 --- BereqHeader    Accept-Encoding: gzip
 --- BereqHeader    X-Varnish: 3
 --- VCL_call       BACKEND_FETCH
 --- VCL_return     fetch
---- Timestamp      Fetch: 1762957800.988442 0.000013 0.000013
---- Timestamp      Connected: 1762957800.988534 0.000105 0.000092
---- BackendOpen    30 backend1 192.168.50.11 80 192.168.50.10 48584 connect
---- Timestamp      Bereq: 1762957800.988552 0.000123 0.000017
+--- Timestamp      Fetch: 1763028915.160581 0.000011 0.000011
+--- Timestamp      Connected: 1763028915.160647 0.000078 0.000066
+--- BackendOpen    30 backend1 192.168.50.11 80 192.168.50.10 50000 connect
+--- Timestamp      Bereq: 1763028915.160668 0.000099 0.000020
 --- BerespProtocol HTTP/1.1
 --- BerespStatus   200
 --- BerespReason   OK
---- BerespHeader   Date: Wed, 12 Nov 2025 14:30:00 GMT
+--- BerespHeader   Date: Thu, 13 Nov 2025 10:15:15 GMT
 --- BerespHeader   Server: Varnish
 --- BerespHeader   X-Varnish: 2
 --- BerespHeader   Content-Type: text/html; charset=utf-8
 --- BerespHeader   Content-Length: 84
 --- BerespHeader   Connection: keep-alive
---- Timestamp      Beresp: 1762957800.988940 0.000510 0.000387
---- TTL            RFC 120 10 0 1762957801 1762957801 1762957800 0 0 cacheable
+--- Timestamp      Beresp: 1763028915.160785 0.000215 0.000116
+--- TTL            RFC 120 10 0 1763028915 1763028915 1763028915 0 0 cacheable
 --- VCL_call       BACKEND_RESPONSE
---- BerespHeader   Cache-Control: max-age=5
---- TTL            VCL 5 10 0 1762957801 cacheable
 --- VCL_return     deliver
---- Timestamp      Process: 1762957800.988979 0.000550 0.000039
+--- Timestamp      Process: 1763028915.160797 0.000227 0.000012
 --- Filters         esi
 --- Storage        malloc s0
 --- Fetch_Body     3 length -
 --- BackendClose   30 backend1 recycle
---- Timestamp      BerespBody: 1762957800.989018 0.000588 0.000038
+--- Timestamp      BerespBody: 1763028915.160827 0.000257 0.000029
 --- Length         84
---- BereqAcct      212 0 212 171 84 255
---- End
-*** << Request  >> 4
+--- BereqAcct      201 0 201 171 84 255
+--- End            
+*** << Request  >> 4         
 --- Begin          req 2 esi 1
---- Timestamp      Start: 1762957800.989164 0.000000 0.000000
+--- Timestamp      Start: 1763028915.160874 0.000000 0.000000
 --- ReqURL         /esi1
---- ReqStart       192.168.65.1 35592 http
+--- ReqStart       192.168.65.1 27916 http
 --- ReqMethod      GET
 --- ReqURL         /esi1
 --- ReqProtocol    HTTP/1.1
@@ -112,10 +107,9 @@
 --- ReqHeader      Accept: */*
 --- ReqHeader      User-Agent: hurl/7.0.0
 --- ReqHeader      X-Forwarded-For: 192.168.65.1
---- ReqHeader      Via: 1.1 b7578264dd5b (Varnish/7.7)
+--- ReqHeader      Via: 1.1 80de151ba9e5 (Varnish/7.7)
 --- VCL_call       RECV
 --- VCL_Log        start custom recv
---- ReqHeader      whoami: 1
 --- VCL_Log        end custom recv
 --- VCL_return     hash
 --- VCL_call       HASH
@@ -123,31 +117,30 @@
 --- VCL_call       MISS
 --- VCL_return     fetch
 --- Link           bereq 5 fetch
---- Timestamp      Fetch: 1762957800.989587 0.000422 0.000422
+--- Timestamp      Fetch: 1763028915.161195 0.000320 0.000320
 --- RespProtocol   HTTP/1.1
 --- RespStatus     200
 --- RespReason     OK
---- RespHeader     Date: Wed, 12 Nov 2025 14:30:00 GMT
+--- RespHeader     Date: Thu, 13 Nov 2025 10:15:15 GMT
 --- RespHeader     Server: Varnish
 --- RespHeader     X-Varnish: 3
 --- RespHeader     Content-Type: text/html; charset=utf-8
 --- RespHeader     Content-Length: 40
---- RespHeader     Cache-Control: max-age=5
 --- RespHeader     X-Varnish: 4
 --- RespHeader     Age: 0
---- RespHeader     Via: 1.1 b7578264dd5b (Varnish/7.7)
+--- RespHeader     Via: 1.1 80de151ba9e5 (Varnish/7.7)
 --- RespHeader     Accept-Ranges: bytes
 --- VCL_call       DELIVER
 --- VCL_return     deliver
---- Timestamp      Process: 1762957800.989590 0.000426 0.000003
---- Filters
---- Timestamp      Resp: 1762957800.989605 0.000441 0.000015
+--- Timestamp      Process: 1763028915.161201 0.000326 0.000005
+--- Filters        
+--- Timestamp      Resp: 1763028915.161218 0.000343 0.000017
 --- ReqAcct        0 0 0 0 40 40
---- End
-*4* << BeReq    >> 5
+--- End            
+*4* << BeReq    >> 5         
 -4- Begin          bereq 4 fetch
 -4- VCL_use        boot
--4- Timestamp      Start: 1762957800.989215 0.000000 0.000000
+-4- Timestamp      Start: 1763028915.160923 0.000000 0.000000
 -4- BereqMethod    GET
 -4- BereqURL       /esi1
 -4- BereqProtocol  HTTP/1.1
@@ -155,37 +148,35 @@
 -4- BereqHeader    Accept: */*
 -4- BereqHeader    User-Agent: hurl/7.0.0
 -4- BereqHeader    X-Forwarded-For: 192.168.65.1
--4- BereqHeader    Via: 1.1 b7578264dd5b (Varnish/7.7)
--4- BereqHeader    whoami: 1
+-4- BereqHeader    Via: 1.1 80de151ba9e5 (Varnish/7.7)
 -4- BereqHeader    Accept-Encoding: gzip
 -4- BereqHeader    X-Varnish: 5
 -4- VCL_call       BACKEND_FETCH
 -4- VCL_return     fetch
--4- Timestamp      Fetch: 1762957800.989222 0.000007 0.000007
--4- Timestamp      Connected: 1762957800.989224 0.000009 0.000001
--4- BackendOpen    30 backend1 192.168.50.11 80 192.168.50.10 48584 reuse
--4- Timestamp      Bereq: 1762957800.989303 0.000088 0.000079
+-4- Timestamp      Fetch: 1763028915.161011 0.000087 0.000087
+-4- Timestamp      Connected: 1763028915.161014 0.000091 0.000003
+-4- BackendOpen    30 backend1 192.168.50.11 80 192.168.50.10 50000 reuse
+-4- Timestamp      Bereq: 1763028915.161080 0.000157 0.000066
 -4- BerespProtocol HTTP/1.1
 -4- BerespStatus   200
 -4- BerespReason   OK
--4- BerespHeader   Date: Wed, 12 Nov 2025 14:30:00 GMT
+-4- BerespHeader   Date: Thu, 13 Nov 2025 10:15:15 GMT
 -4- BerespHeader   Server: Varnish
 -4- BerespHeader   X-Varnish: 3
 -4- BerespHeader   Content-Type: text/html; charset=utf-8
 -4- BerespHeader   Content-Length: 40
 -4- BerespHeader   Connection: keep-alive
--4- Timestamp      Beresp: 1762957800.989505 0.000290 0.000202
--4- TTL            RFC 120 10 0 1762957801 1762957801 1762957800 0 0 cacheable
+-4- Timestamp      Beresp: 1763028915.161165 0.000241 0.000084
+-4- TTL            RFC 120 10 0 1763028915 1763028915 1763028915 0 0 cacheable
 -4- VCL_call       BACKEND_RESPONSE
--4- BerespHeader   Cache-Control: max-age=5
--4- TTL            VCL 5 10 0 1762957801 cacheable
 -4- VCL_return     deliver
--4- Timestamp      Process: 1762957800.989525 0.000310 0.000019
--4- Filters
+-4- Timestamp      Process: 1763028915.161170 0.000246 0.000005
+-4- Filters        
 -4- Storage        malloc s0
 -4- Fetch_Body     3 length stream
 -4- BackendClose   30 backend1 recycle
--4- Timestamp      BerespBody: 1762957800.989600 0.000385 0.000075
+-4- Timestamp      BerespBody: 1763028915.161189 0.000266 0.000019
 -4- Length         40
--4- BereqAcct      200 0 200 171 40 211
--4- End
+-4- BereqAcct      189 0 189 171 40 211
+-4- End            
+

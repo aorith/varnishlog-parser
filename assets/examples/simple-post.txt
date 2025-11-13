@@ -1,15 +1,15 @@
-*   << Session  >> 1
+*   << Session  >> 1         
 -   Begin          sess 0 HTTP/1
--   SessOpen       192.168.65.1 42238 http 192.168.50.10 80 1762776691.859004 26
+-   SessOpen       192.168.65.1 49887 http 192.168.50.10 80 1763029416.214207 24
 -   Link           req 2 rxreq
--   SessClose      REM_CLOSE 0.006
--   End
-**  << Request  >> 2
+-   SessClose      REM_CLOSE 0.001
+-   End            
+**  << Request  >> 2         
 --  Begin          req 1 rxreq
---  Timestamp      Start: 1762776691.859300 0.000000 0.000000
---  Timestamp      Req: 1762776691.859300 0.000000 0.000000
+--  Timestamp      Start: 1763029416.214237 0.000000 0.000000
+--  Timestamp      Req: 1763029416.214237 0.000000 0.000000
 --  VCL_use        boot
---  ReqStart       192.168.65.1 42238 http
+--  ReqStart       192.168.65.1 49887 http
 --  ReqMethod      POST
 --  ReqURL         /upload
 --  ReqProtocol    HTTP/1.1
@@ -20,9 +20,11 @@
 --  ReqHeader      User-Agent: hurl/7.0.0
 --  ReqHeader      Content-Length: 129
 --  ReqHeader      X-Forwarded-For: 192.168.65.1
---  ReqHeader      Via: 1.1 f210dad3ea4a (Varnish/7.7)
+--  ReqHeader      Via: 1.1 017085f46a86 (Varnish/7.7)
 --  VCL_call       RECV
+--  VCL_Log        start custom recv
 --  ReqHeader      whoami: 1
+--  VCL_Log        end custom recv
 --  VCL_return     pass
 --  VCL_call       HASH
 --  VCL_return     lookup
@@ -30,30 +32,30 @@
 --  VCL_return     fetch
 --  Link           bereq 3 pass
 --  Storage        malloc Transient
---  Timestamp      ReqBody: 1762776691.860440 0.001139 0.001139
---  Timestamp      Fetch: 1762776691.864147 0.004846 0.003707
+--  Timestamp      ReqBody: 1763029416.214389 0.000152 0.000152
+--  Timestamp      Fetch: 1763029416.214763 0.000526 0.000373
 --  RespProtocol   HTTP/1.1
 --  RespStatus     200
 --  RespReason     OK
---  RespHeader     Date: Mon, 10 Nov 2025 12:11:31 GMT
+--  RespHeader     Date: Thu, 13 Nov 2025 10:23:36 GMT
 --  RespHeader     Content-Length: 513
 --  RespHeader     Content-Type: text/plain; charset=utf-8
 --  RespHeader     Cache-Control: max-age=5
 --  RespHeader     X-Varnish: 2
 --  RespHeader     Age: 0
---  RespHeader     Via: 1.1 f210dad3ea4a (Varnish/7.7)
+--  RespHeader     Via: 1.1 017085f46a86 (Varnish/7.7)
 --  VCL_call       DELIVER
 --  VCL_return     deliver
---  Timestamp      Process: 1762776691.864173 0.004872 0.000026
---  Filters
+--  Timestamp      Process: 1763029416.214770 0.000533 0.000006
+--  Filters        
 --  RespHeader     Connection: keep-alive
---  Timestamp      Resp: 1762776691.864265 0.004964 0.000092
+--  Timestamp      Resp: 1763029416.214792 0.000554 0.000021
 --  ReqAcct        196 129 325 227 513 740
---  End
-*** << BeReq    >> 3
+--  End            
+*** << BeReq    >> 3         
 --- Begin          bereq 2 pass
 --- VCL_use        boot
---- Timestamp      Start: 1762776691.859646 0.000000 0.000000
+--- Timestamp      Start: 1763029416.214286 0.000000 0.000000
 --- BereqMethod    POST
 --- BereqURL       /upload
 --- BereqProtocol  HTTP/1.1
@@ -64,32 +66,33 @@
 --- BereqHeader    User-Agent: hurl/7.0.0
 --- BereqHeader    Content-Length: 129
 --- BereqHeader    X-Forwarded-For: 192.168.65.1
---- BereqHeader    Via: 1.1 f210dad3ea4a (Varnish/7.7)
+--- BereqHeader    Via: 1.1 017085f46a86 (Varnish/7.7)
 --- BereqHeader    whoami: 1
 --- BereqHeader    X-Varnish: 3
 --- VCL_call       BACKEND_FETCH
 --- VCL_return     fetch
---- Timestamp      Fetch: 1762776691.859668 0.000022 0.000022
---- Timestamp      Connected: 1762776691.860238 0.000592 0.000570
---- BackendOpen    30 whoami 192.168.50.11 80 192.168.50.10 44764 connect
---- Timestamp      Bereq: 1762776691.860463 0.000816 0.000224
+--- Timestamp      Fetch: 1763029416.214292 0.000006 0.000006
+--- Timestamp      Connected: 1763029416.214367 0.000080 0.000074
+--- BackendOpen    30 whoami 192.168.50.12 80 192.168.50.10 50448 connect
+--- Timestamp      Bereq: 1763029416.214394 0.000107 0.000026
 --- BerespProtocol HTTP/1.1
 --- BerespStatus   200
 --- BerespReason   OK
---- BerespHeader   Date: Mon, 10 Nov 2025 12:11:31 GMT
+--- BerespHeader   Date: Thu, 13 Nov 2025 10:23:36 GMT
 --- BerespHeader   Content-Length: 513
 --- BerespHeader   Content-Type: text/plain; charset=utf-8
---- Timestamp      Beresp: 1762776691.864069 0.004423 0.003606
+--- Timestamp      Beresp: 1763029416.214720 0.000434 0.000326
 --- VCL_call       BACKEND_RESPONSE
 --- BerespHeader   Cache-Control: max-age=5
---- TTL            VCL 5 0 0 1762776692 uncacheable
+--- TTL            VCL 5 0 0 1763029416 uncacheable
 --- VCL_return     deliver
---- Timestamp      Process: 1762776691.864097 0.004451 0.000028
---- Filters
+--- Timestamp      Process: 1763029416.214728 0.000442 0.000007
+--- Filters        
 --- Storage        malloc Transient
 --- Fetch_Body     3 length stream
 --- BackendClose   30 whoami recycle
---- Timestamp      BerespBody: 1762776691.864182 0.004535 0.000084
+--- Timestamp      BerespBody: 1763029416.214756 0.000469 0.000027
 --- Length         513
 --- BereqAcct      289 129 418 118 513 631
---- End
+--- End            
+
