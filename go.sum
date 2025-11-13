@@ -2,5 +2,7 @@ github.com/aorith/svg-sequence v0.0.13 h1:bRLN27OSoK0wsXOvzkNmpAdMuZDBueXxU14sFN
 github.com/aorith/svg-sequence v0.0.13/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
 github.com/aorith/svg-sequence v0.0.14 h1:DCoSHVg37o7W3eRqbhEeAsIq/jbzrpkvCS2XTPg0XfI=
 github.com/aorith/svg-sequence v0.0.14/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
+github.com/aorith/svg-sequence v0.0.15 h1:E9kH4/WE9+BiQFmOqP3oCuP6e79Cqg1MygetofqTZTs=
+github.com/aorith/svg-sequence v0.0.15/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
 github.com/aorith/svg-timeline v0.2.1 h1:BKog2X8drlpTeIXZXa89OnxVaFr4IUhVA4/9q3BUsHE=
 github.com/aorith/svg-timeline v0.2.1/go.mod h1:haohFRiwc0+Po6714AgYlsoeolDqRTNkI+d62k51qjo=

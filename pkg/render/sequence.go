@@ -128,15 +128,15 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 		case vsl.VCLCallRecord:
 			if cfg.IncludeCalls {
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "call " + record.GetRawValue(), Color: ColorCall})
+				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "call " + record.GetRawValue(), Color: ColorCall})
 			}
 
 			switch r.GetRawValue() {
 			case "RECV":
-				s.AddStep(svgsequence.Step{SourceActor: client, TargetActor: V, Description: drawRequest(reqReceived, truncateLen)})
+				s.AddStep(svgsequence.Step{Source: client, Target: V, Text: drawRequest(reqReceived, truncateLen)})
 
 			case "HASH":
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: "HASH"})
+				s.AddStep(svgsequence.Step{Source: V, Target: H, Text: "HASH"})
 
 			case "HIT":
 				hitRecord := getLastHitRecord(tx, i)
@@ -150,10 +150,10 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					s1 += fmt.Sprintf("%s\n", hitRecord.Tag)
 					s1 += wrapAndTruncate(hitRecord.String(), truncateLen, 100)
 				}
-				s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: V, Description: s1, Color: ColorHit})
+				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: s1, Color: ColorHit})
 
 			case "MISS", "PASS":
-				s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: V, Description: r.GetRawValue()})
+				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: r.GetRawValue()})
 
 			case "SYNTH":
 				lastStatus := tx.LastRecordByTag(tags.RespStatus, i)
@@ -165,14 +165,14 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				if lastReason != nil {
 					s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
 				}
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: s1})
+				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: s1})
 
 			case "PIPE":
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "Open pipe to backend and forward request"})
-				s.AddStep(svgsequence.Step{SourceActor: B, TargetActor: client, Description: r.GetRawValue()})
+				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "Open pipe to backend and forward request"})
+				s.AddStep(svgsequence.Step{Source: B, Target: client, Text: r.GetRawValue()})
 
 			case "BACKEND_FETCH":
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: B, Description: drawRequest(reqProcessed, truncateLen)})
+				s.AddStep(svgsequence.Step{Source: V, Target: B, Text: drawRequest(reqProcessed, truncateLen)})
 
 			case "BACKEND_RESPONSE":
 				// handled at return deliver
@@ -181,7 +181,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 		case vsl.VCLReturnRecord:
 			if cfg.IncludeReturns {
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "return " + record.GetRawValue(), Color: ColorReturn})
+				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "return " + record.GetRawValue(), Color: ColorReturn})
 			}
 
 			switch r.GetRawValue() {
@@ -196,7 +196,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 						if lastReason != nil {
 							s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
 						}
-						s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: client, Description: s1})
+						s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
 					}
 
 				case vsl.TxTypeBereq:
@@ -209,15 +209,15 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 							s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
 						}
 					}
-					s.AddStep(svgsequence.Step{SourceActor: B, TargetActor: V, Description: s1})
+					s.AddStep(svgsequence.Step{Source: B, Target: V, Text: s1})
 
 				}
 			}
 
 		case vsl.BackendOpenRecord:
 			s.AddStep(svgsequence.Step{
-				SourceActor: B, TargetActor: B,
-				Description: fmt.Sprintf(
+				Source: B, Target: B,
+				Text: fmt.Sprintf(
 					"Backend: %s\n%s %s:%d",
 					truncateStrMiddle(record.Name, truncateLen),
 					record.Reason,
@@ -228,8 +228,8 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 		case vsl.BackendCloseRecord:
 			s.AddStep(svgsequence.Step{
-				SourceActor: B, TargetActor: B,
-				Description: fmt.Sprintf(
+				Source: B, Target: B,
+				Text: fmt.Sprintf(
 					"Backend: %s\n%s %s",
 					truncateStrMiddle(record.Name, truncateLen),
 					record.Reason,
@@ -238,15 +238,15 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			})
 
 		case vsl.FetchErrorRecord:
-			s.AddStep(svgsequence.Step{SourceActor: B, TargetActor: B, Description: wrapAndTruncate(record.GetRawValue(), truncateLen, 100), Color: ColorError})
+			s.AddStep(svgsequence.Step{Source: B, Target: B, Text: wrapAndTruncate(record.GetRawValue(), truncateLen, 100), Color: ColorError})
 
 		case vsl.URLRecord:
 			if cfg.TrackURLAndHost {
 				s.AddStep(svgsequence.Step{
-					SourceActor: V,
-					TargetActor: V,
-					Description: truncateStr("URL: "+record.Path()+record.QueryString(), truncateLen),
-					Color:       ColorTrack,
+					Source: V,
+					Target: V,
+					Text:   truncateStr("URL: "+record.Path()+record.QueryString(), truncateLen),
+					Color:  ColorTrack,
 				})
 			}
 
@@ -254,16 +254,16 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			if cfg.TrackURLAndHost {
 				// Header name should be already in canonical format
 				if record.Name == "Host" {
-					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: truncateStr(record.Name+": "+record.Value, truncateLen), Color: ColorTrack})
+					s.AddStep(svgsequence.Step{Source: V, Target: V, Text: truncateStr(record.Name+": "+record.Value, truncateLen), Color: ColorTrack})
 				}
 			}
 
 		case vsl.VCLLogRecord:
 			s.AddStep(svgsequence.Step{
-				SourceActor: V,
-				TargetActor: V,
-				Description: record.String(),
-				Color:       ColorGray,
+				Source: V,
+				Target: V,
+				Text:   record.String(),
+				Color:  ColorGray,
 			})
 
 		case vsl.LinkRecord:
@@ -278,8 +278,8 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					actor = B
 				}
 				s.AddStep(svgsequence.Step{
-					SourceActor: actor, TargetActor: actor,
-					Description: fmt.Sprintf("%s\n*Linked child tx not found*", record.GetRawLog()),
+					Source: actor, Target: actor,
+					Text: fmt.Sprintf("%s\n*Linked child tx not found*", record.GetRawLog()),
 				})
 			}
 		}
