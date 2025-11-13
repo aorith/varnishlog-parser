@@ -4,6 +4,7 @@ package vsl
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/textproto"
 	"slices"
 )
@@ -83,6 +84,10 @@ func (h Header) Values(received bool) []HdrValue {
 type HdrValue struct {
 	value string
 	state HdrState
+}
+
+func (h HdrValue) String() string {
+	return fmt.Sprintf("Value: %s, State: %s", h.value, h.state)
 }
 
 func (h HdrValue) MarshalJSON() ([]byte, error) {
