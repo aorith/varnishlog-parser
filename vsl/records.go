@@ -327,6 +327,7 @@ type BackendCloseRecord struct {
 	FileDescriptor int    // Connection file descriptor
 	Name           string // Backend display name
 	Reason         string // "close" or "recycle"
+	OptionalReason string // Optional reason
 }
 
 func NewBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
@@ -345,11 +346,17 @@ func NewBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
 		reason = parts[2]
 	}
 
+	optReason := ""
+	if len(parts) >= 4 {
+		optReason = parts[3]
+	}
+
 	return BackendCloseRecord{
 		BaseRecord:     blr,
 		FileDescriptor: fileDesc,
 		Name:           parts[1],
 		Reason:         reason,
+		OptionalReason: optReason,
 	}, nil
 }
 
@@ -396,6 +403,50 @@ func NewAcctRecord(blr BaseRecord) (AcctRecord, error) {
 		value, err := strconv.Atoi(parts[i])
 		if err != nil {
 			return AcctRecord{}, fmt.Errorf("conversion to AcctRecord failed, bad value in part[%d] on line %q", i, blr.GetRawLog())
+		}
+		*fields[i] = SizeValue(value)
+	}
+
+	return record, nil
+}
+
+// PipeAcctRecord holds accounting information for PipeAcct tags
+type PipeAcctRecord struct {
+	BaseRecord
+	ClientReqHeaders  SizeValue // Client request headers
+	BackendReqHeaders SizeValue // Backend request headers
+	PipedFrom         SizeValue // Piped bytes from client
+	PipedTo           SizeValue // Piped bytes to client
+}
+
+func (r PipeAcctRecord) String() string {
+	return fmt.Sprintf(
+		"Hdr(client %s, backend %s) | Piped(from %s, to %s)",
+		r.ClientReqHeaders,
+		r.BackendReqHeaders,
+		r.PipedFrom,
+		r.PipedTo,
+	)
+}
+
+func NewPipeAcctRecord(blr BaseRecord) (PipeAcctRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 4 {
+		return PipeAcctRecord{}, fmt.Errorf("conversion to PipeAcctRecord failed, incorrect len on line %q", blr.GetRawLog())
+	}
+
+	record := PipeAcctRecord{BaseRecord: blr}
+	fields := []*SizeValue{
+		&record.ClientReqHeaders,
+		&record.BackendReqHeaders,
+		&record.PipedFrom,
+		&record.PipedTo,
+	}
+
+	for i := range fields {
+		value, err := strconv.Atoi(parts[i])
+		if err != nil {
+			return PipeAcctRecord{}, fmt.Errorf("conversion to PipeAcctRecord failed, bad value in part[%d] on line %q", i, blr.GetRawLog())
 		}
 		*fields[i] = SizeValue(value)
 	}

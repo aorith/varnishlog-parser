@@ -168,7 +168,8 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: s1})
 
 			case "PIPE":
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: r.GetRawValue()})
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "Open pipe to backend and forward request"})
+				s.AddStep(svgsequence.Step{SourceActor: B, TargetActor: client, Description: r.GetRawValue()})
 
 			case "BACKEND_FETCH":
 				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: B, Description: drawRequest(reqProcessed, truncateLen)})
@@ -222,6 +223,17 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					record.Reason,
 					record.RemoteAddr.String(),
 					record.RemotePort,
+				),
+			})
+
+		case vsl.BackendCloseRecord:
+			s.AddStep(svgsequence.Step{
+				SourceActor: B, TargetActor: B,
+				Description: fmt.Sprintf(
+					"Backend: %s\n%s %s",
+					truncateStrMiddle(record.Name, truncateLen),
+					record.Reason,
+					record.OptionalReason,
 				),
 			})
 

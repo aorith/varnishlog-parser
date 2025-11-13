@@ -40,6 +40,11 @@ sub vcl_recv {
         std.log("end custom recv");
         return(restart);
 
+    } else if (req.url ~ "^/pipe") {
+        set req.http.whoami = "1";
+        set req.backend_hint = whoami;
+        return(pipe);
+
     } else if (req.url ~ "^(/item|/test|/upload)") {
         set req.http.whoami = "1";
         set req.backend_hint = whoami;

@@ -238,6 +238,8 @@ func processRecord(line string) (Record, error) {
 		return NewBackendCloseRecord(blr)
 	case tags.ReqAcct, tags.BereqAcct:
 		return NewAcctRecord(blr)
+	case tags.PipeAcct:
+		return NewPipeAcctRecord(blr)
 	case tags.Timestamp:
 		return NewTimestampRecord(blr)
 	case tags.ReqStart:
