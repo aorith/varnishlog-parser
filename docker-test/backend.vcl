@@ -6,6 +6,8 @@ import std;
 backend default none;
 
 sub vcl_recv {
+    std.log("start custom backend recv");
+
     set req.backend_hint = default;
 
     if (req.url ~ "^/ec1") {
@@ -24,6 +26,7 @@ sub vcl_recv {
         return(synth(709, "ESI 1"));
     }
 
+    std.log("end custom backend recv");
     return(synth(710, "OK"));
 }
 

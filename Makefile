@@ -2,7 +2,8 @@ SHELL := bash
 
 .PHONY: run
 run:
-	go run ./cmd/server --port=8080
+	CGO_ENABLED=0 go build -o varnishlog-parser cmd/server/varnishlog-parser.go
+	./varnishlog-parser --port=8080
 
 .PHONY: test
 test:
