@@ -5,6 +5,7 @@ package render
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -31,13 +32,15 @@ const (
 	ColorReturn = "#995599"
 	ColorHit    = "#115F00"
 	ColorGray   = "#707070"
+	ColorTrack  = "#492020"
 )
 
 type SequenceConfig struct {
-	Distance       int  // distance between actors
-	StepHeight     int  // height between each step
-	IncludeCalls   bool // whether to include all VCL calls
-	IncludeReturns bool // whether to include all VCL returns
+	Distance        int  // distance between actors
+	StepHeight      int  // height between each step
+	IncludeCalls    bool // whether to include all VCL calls
+	IncludeReturns  bool // whether to include all VCL returns
+	TrackURLAndHost bool // whether to track all modifications to the URL and Host
 }
 
 // Sequence returns a sequence diagram rendered as an SVG image.
@@ -54,10 +57,23 @@ func Sequence(ts vsl.TransactionSet, root *vsl.Transaction, cfg SequenceConfig) 
 	if cfg.StepHeight != 0 {
 		s.SetStepHeight(cfg.StepHeight)
 	}
-	s.AddActors(C, V, H, B)
 
 	visited := make(map[vsl.TXID]bool)
 	addTransactionLogs(s, ts, root, cfg, visited)
+
+	// Ensure correct actor ordering
+	finalActors := []string{}
+	for _, a := range s.Actors() {
+		if a != C && a != V && a != H && a != B {
+			finalActors = append(finalActors, a)
+		}
+	}
+	if slices.Contains(s.Actors(), C) {
+		finalActors = append(finalActors, C)
+	}
+	finalActors = append(finalActors, V, H, B)
+	s.AddActors(finalActors...)
+
 	s.CloseAllSections()
 
 	svg, err := s.Generate()
@@ -90,54 +106,25 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 		reqProcessed = &HTTPRequest{}
 	}
 
-	// When processing ESI, if we add the response status step at the exact moment
-	// that the RespStatus record is logged, it appears before ESI processing and looks weird
-	// so save it here and draw it on request end
-	var respStep *svgsequence.Step
+	client := C
+	reqStart := tx.NextRecordByTag(tags.ReqStart, 0)
+	if reqStart != nil {
+		reqStartRecord := reqStart.(vsl.ReqStartRecord)
+		client = truncateStr(reqStartRecord.ClientIP.String(), 20)
+	}
 
-	for _, r := range tx.Records {
+	truncateLen := 32
+	if cfg.Distance != 0 {
+		truncateLen = cfg.Distance/6 - 1
+	}
+
+	for i, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
 			s.OpenSection(string(tx.TXID), getTxTypeColor(tx.TXType))
 
-		case vsl.ReqStartRecord:
-			if tx.ESILevel > 0 {
-				start := fmt.Sprintf("%s\nESI Level %d", requestSequence(reqReceived), tx.ESILevel)
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: start})
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: requestSequence(reqProcessed)})
-			} else {
-				start := fmt.Sprintf("%s\n%s %s", requestSequence(reqReceived), record.ClientIP, record.Listener)
-				s.AddStep(svgsequence.Step{SourceActor: C, TargetActor: V, Description: start})
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: requestSequence(reqProcessed)})
-			}
-
 		case vsl.EndRecord:
-			if respStep != nil {
-				s.AddStep(*respStep)
-			}
 			s.CloseSection()
-
-		case vsl.SessOpenRecord:
-			s.AddStep(svgsequence.Step{
-				SourceActor: C,
-				TargetActor: V,
-				Description: record.GetTag() + " " + record.RemoteAddr.String(),
-			})
-
-		case vsl.SessCloseRecord:
-			s.AddStep(svgsequence.Step{
-				SourceActor: V,
-				TargetActor: C,
-				Description: record.String(),
-			})
-
-		case vsl.VCLLogRecord:
-			s.AddStep(svgsequence.Step{
-				SourceActor: V,
-				TargetActor: V,
-				Description: record.String(),
-				Color:       ColorGray,
-			})
 
 		case vsl.VCLCallRecord:
 			if cfg.IncludeCalls {
@@ -145,58 +132,84 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			}
 
 			switch r.GetRawValue() {
-			case "HIT", "MISS", "PASS":
+			case "RECV":
+				s.AddStep(svgsequence.Step{SourceActor: client, TargetActor: V, Description: drawRequest(reqReceived, truncateLen)})
+
+			case "HASH":
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: "HASH"})
+
+			case "HIT":
+				hitRecord := getLastHitRecord(tx, i)
+				s1 := ""
+				if hitRecord == nil {
+					s1 = "HIT"
+				} else {
+					if hitRecord.Fetched > 0 {
+						s1 += "Streaming-"
+					}
+					s1 += fmt.Sprintf("%s\n", hitRecord.Tag)
+					s1 += wrapAndTruncate(hitRecord.String(), truncateLen, 100)
+				}
+				s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: V, Description: s1, Color: ColorHit})
+
+			case "MISS", "PASS":
 				s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: V, Description: r.GetRawValue()})
 
 			case "SYNTH":
-				if respStep != nil {
-					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "SYNTH\n" + respStep.Description})
-					respStep = nil
-				} else {
-					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: r.GetRawValue()})
+				lastStatus := tx.LastRecordByTag(tags.RespStatus, i)
+				lastReason := tx.LastRecordByTag(tags.RespReason, i)
+				s1 := "SYNTH"
+				if lastStatus != nil {
+					s1 += "\n" + lastStatus.GetRawValue()
 				}
+				if lastReason != nil {
+					s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
+				}
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: s1})
 
 			case "PIPE":
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: C, Description: r.GetRawValue()})
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: r.GetRawValue()})
 
 			case "BACKEND_FETCH":
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: B, Description: requestSequence(reqProcessed)})
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: B, Description: drawRequest(reqProcessed, truncateLen)})
+
+			case "BACKEND_RESPONSE":
+				// handled at return deliver
 
 			}
-
-		case vsl.HitRecord:
-			s1 := ""
-			if record.Fetched > 0 {
-				s1 += "Streaming-"
-			}
-			s1 += record.GetTag() + "\n" + wrapAndTruncate(record.String(), 33, 120)
-			s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: H, Description: s1, Color: ColorHit})
-
-		case vsl.HitMissRecord:
-			s1 := fmt.Sprintf("%s TTL: %s", record.GetTag(), record.TTL.String())
-			s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: H, Description: s1, Color: ColorHit})
 
 		case vsl.VCLReturnRecord:
 			if cfg.IncludeReturns {
 				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "return " + record.GetRawValue(), Color: ColorReturn})
 			}
 
-		case vsl.StatusRecord:
-			switch record.GetTag() {
-			case tags.BerespStatus:
-				s1 := statusSequence(tx, record.Status, tags.BerespReason)
-				respStep = &svgsequence.Step{SourceActor: B, TargetActor: V, Description: s1}
+			switch r.GetRawValue() {
+			case "deliver":
+				switch tx.TXType {
+				case vsl.TxTypeRequest:
+					lastStatus := tx.LastRecordByTag(tags.RespStatus, i)
+					// If a RespStatus is not found, we are probably serving a cache hit
+					if lastStatus != nil {
+						s1 := "DELIVER\n" + lastStatus.GetRawValue()
+						lastReason := tx.LastRecordByTag(tags.RespReason, i)
+						if lastReason != nil {
+							s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
+						}
+						s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: client, Description: s1})
+					}
 
-			case tags.RespStatus:
-				s1 := statusSequence(tx, record.Status, tags.RespReason)
-				if respStep != nil {
-					// Probably a synth response
-					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: respStep.Description})
-				}
-				if tx.ESILevel == 0 {
-					respStep = &svgsequence.Step{SourceActor: V, TargetActor: C, Description: s1}
-				} else {
-					respStep = &svgsequence.Step{SourceActor: V, TargetActor: V, Description: s1}
+				case vsl.TxTypeBereq:
+					lastStatus := tx.LastRecordByTag(tags.BerespStatus, i)
+					s1 := "BACKEND_RESPONSE"
+					if lastStatus != nil {
+						s1 += "\n" + lastStatus.GetRawValue()
+						lastReason := tx.LastRecordByTag(tags.BerespReason, i)
+						if lastReason != nil {
+							s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
+						}
+					}
+					s.AddStep(svgsequence.Step{SourceActor: B, TargetActor: V, Description: s1})
+
 				}
 			}
 
@@ -205,7 +218,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				SourceActor: B, TargetActor: B,
 				Description: fmt.Sprintf(
 					"Backend: %s\n%s %s:%d",
-					truncateStrMiddle(record.Name, 40),
+					truncateStrMiddle(record.Name, truncateLen),
 					record.Reason,
 					record.RemoteAddr.String(),
 					record.RemotePort,
@@ -213,7 +226,33 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			})
 
 		case vsl.FetchErrorRecord:
-			s.AddStep(svgsequence.Step{SourceActor: B, TargetActor: B, Description: wrapAndTruncate(record.GetRawValue(), 35, 100), Color: ColorError})
+			s.AddStep(svgsequence.Step{SourceActor: B, TargetActor: B, Description: wrapAndTruncate(record.GetRawValue(), truncateLen, 100), Color: ColorError})
+
+		case vsl.URLRecord:
+			if cfg.TrackURLAndHost {
+				s.AddStep(svgsequence.Step{
+					SourceActor: V,
+					TargetActor: V,
+					Description: truncateStr("URL: "+record.Path()+record.QueryString(), truncateLen),
+					Color:       ColorTrack,
+				})
+			}
+
+		case vsl.HeaderRecord:
+			if cfg.TrackURLAndHost {
+				// Header name should be already in canonical format
+				if record.Name == "Host" {
+					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: truncateStr(record.Name+": "+record.Value, truncateLen), Color: ColorTrack})
+				}
+			}
+
+		case vsl.VCLLogRecord:
+			s.AddStep(svgsequence.Step{
+				SourceActor: V,
+				TargetActor: V,
+				Description: record.String(),
+				Color:       ColorGray,
+			})
 
 		case vsl.LinkRecord:
 			childTx := ts.GetTX(record.VXID)
@@ -235,18 +274,11 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 	}
 }
 
-func requestSequence(req *HTTPRequest) string {
+func drawRequest(req *HTTPRequest, truncateLen int) string {
 	method := req.method
 	url := req.url
 	host := req.host
-	return method + " " + truncateStr(url, 40) + "\n" + host
-}
-
-func statusSequence(tx *vsl.Transaction, status int, reasonTag string) string {
-	s := fmt.Sprintf("%d", status)
-	reason := tx.RecordValueByTag(reasonTag, false)
-	s += " " + wrapAndTruncate(reason, 35, 100)
-	return s
+	return method + " " + truncateStr(url, truncateLen) + "\n" + host
 }
 
 // truncateStr trims the input string to a maximum length, appending "…" if it exceeds the length.
@@ -333,4 +365,21 @@ func getTxTypeColor(txType vsl.TxType) string {
 		return ColorBereq
 	}
 	return ColorReq
+}
+
+func getLastHitRecord(tx *vsl.Transaction, index int) *vsl.HitRecord {
+	var r vsl.Record
+	r = tx.LastRecordByTag(tags.Hit, index)
+	if r == nil {
+		r = tx.LastRecordByTag(tags.HitMiss, index)
+	}
+	if r == nil {
+		r = tx.LastRecordByTag(tags.HitPass, index)
+	}
+
+	record, ok := r.(vsl.HitRecord)
+	if ok {
+		return &record
+	}
+	return nil
 }

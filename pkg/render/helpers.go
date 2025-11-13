@@ -86,15 +86,8 @@ func ttlRecordHTML(r vsl.TTLRecord) string {
 // timestampRecordHTML returns a Timestamp record in HTML format using abbr for human readable dates
 func timestampRecordHTML(r vsl.TimestampRecord) string {
 	absTime := float64(r.AbsoluteTime.UnixMicro()) / 1e6
-	if r.AbsoluteTime.Equal(r.StartTime) {
-		return fmt.Sprintf(
-			`%s | Elapsed: %s | Total: %s | <abbr title="%s">%.6f</abbr>`,
-			r.EventLabel, r.SinceLast.String(), r.SinceStart.String(), r.AbsoluteTime.String(), absTime,
-		)
-	}
-	startTime := float64(r.StartTime.UnixMicro()) / 1e6
 	return fmt.Sprintf(
-		`%s | Elapsed: %s | Total: %s | Start: <abbr title="%s">%.6f</abbr> End: <abbr title="%s">%.6f</abbr>`,
-		r.EventLabel, r.SinceLast.String(), r.SinceStart.String(), r.StartTime.String(), startTime, r.AbsoluteTime.String(), absTime,
+		`%s | Elapsed: %s | Total: %s | <abbr title="%s">%.6f</abbr>`,
+		r.EventLabel, r.SinceLast.String(), r.SinceStart.String(), r.AbsoluteTime.String(), absTime,
 	)
 }

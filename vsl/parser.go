@@ -67,6 +67,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		tx.Parent = br.Parent
 		tx.ESILevel = br.ESILevel
 		tx.TXID = parseTXID(tx.VXID, br.RecordType, br.Reason, br.ESILevel)
+		tx.Reason = br.Reason
 		tx.Records = append(tx.Records, br)
 
 		// Parse the remaining tags
@@ -249,10 +250,8 @@ func processRecord(line string) (Record, error) {
 		return NewStatusRecord(blr)
 	case tags.Length:
 		return NewLengthRecord(blr)
-	case tags.Hit:
+	case tags.Hit, tags.HitMiss, tags.HitPass:
 		return NewHitRecord(blr)
-	case tags.HitMiss:
-		return NewHitMissRecord(blr)
 	case tags.TTL:
 		return NewTTLRecord(blr)
 	case tags.VCLLog:

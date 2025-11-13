@@ -30,6 +30,7 @@ type Transaction struct {
 	TXID        TXID     // Custom transaction id: {vxid}-{type}-{reason}[-{ESILevel}] - eg: 33030-req-esi-1
 	VXID        VXID     // Transaction ID
 	Level       int      // Transaction level
+	Reason      string   // Reason from the begin tag (rxreq, esi, fetch, ...)
 	ESILevel    int      // ESI level, 0 if not an ESI request
 	TXType      TxType   // Session, Request, BeReq
 	RawLog      string   // Raw log string
@@ -52,6 +53,32 @@ func (t *Transaction) RecordByTag(tag string, first bool) Record {
 		record = r
 		if first {
 			break
+		}
+	}
+	return record
+}
+
+// LastRecordByTag finds the last record with the given tag, searching backwards
+// starting from the given index (inclusive). Returns nil if no matching record is found.
+func (t *Transaction) LastRecordByTag(tag string, index int) Record {
+	var record Record
+	// Search backwards from index to 0
+	for i := index; i >= 0; i-- {
+		if t.Records[i].GetTag() == tag {
+			return t.Records[i]
+		}
+	}
+	return record
+}
+
+// NextRecordByTag finds the next record with the given tag, searching forwards
+// starting from the given index (exclusive). Returns nil if no matching record is found.
+func (t *Transaction) NextRecordByTag(tag string, index int) Record {
+	var record Record
+	// Search forwards from index+1 to end
+	for i := index + 1; i < len(t.Records); i++ {
+		if t.Records[i].GetTag() == tag {
+			return t.Records[i]
 		}
 	}
 	return record

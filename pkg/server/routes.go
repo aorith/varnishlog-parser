@@ -19,6 +19,7 @@ func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
 	data.Sequence.StepHeight = 40
 	data.Sequence.IncludeCalls = false
 	data.Sequence.IncludeReturns = false
+	data.Sequence.TrackURLAndHost = false
 
 	data.Timeline.Sessions = false
 	data.Timeline.Precision = 1200
@@ -81,6 +82,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 
 		data.Sequence.IncludeCalls = r.Form.Get("includeCalls") == "yes"
 		data.Sequence.IncludeReturns = r.Form.Get("includeReturns") == "yes"
+		data.Sequence.TrackURLAndHost = r.Form.Get("trackURLAndHost") == "yes"
 
 		// Timeline settings
 		data.Timeline.Sessions = r.Form.Get("sessions") == "yes"

@@ -22,6 +22,10 @@
 					<input type="checkbox" name="includeReturns" value="yes" {{ if .Sequence.IncludeReturns }}checked{{ end -}}>
 					Include VCL returns
 				</label>
+				<label class="form-row">
+					<input type="checkbox" name="trackURLAndHost" value="yes" {{ if .Sequence.TrackURLAndHost }}checked{{ end -}}>
+					Track URL and Host
+				</label>
 
 				<label class="form-row">
 					Actor distance

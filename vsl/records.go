@@ -415,8 +415,8 @@ type TimestampRecord struct {
 // String returns the timestamp in a human readable string
 func (r TimestampRecord) String() string {
 	return fmt.Sprintf(
-		"%s | Elapsed: %s | Total: %s",
-		r.EventLabel, r.SinceLast.String(), r.SinceStart.String(),
+		"%s | Elapsed: %s, Total: %s, %s",
+		r.EventLabel, r.SinceLast.String(), r.SinceStart.String(), r.AbsoluteTime.String(),
 	)
 }
 
@@ -605,6 +605,8 @@ func NewLengthRecord(blr BaseRecord) (LengthRecord, error) {
 }
 
 // HitRecord contains information about a hit of an object in the cache
+//
+// It can be either a Hit, HitMiss or HitPass record
 type HitRecord struct {
 	BaseRecord
 	ObjVXID       VXID          // object VXID
@@ -617,19 +619,27 @@ type HitRecord struct {
 
 func (r HitRecord) String() string {
 	s := fmt.Sprintf(
-		"ObjVXID: %d | TTL: %s | Grace: %s | Keep: %s",
+		"ObjVXID: %d, TTL: %s",
 		r.ObjVXID,
 		r.TTL.String(),
+	)
+
+	if r.GetTag() == tags.HitMiss || r.GetTag() == tags.HitPass {
+		return s
+	}
+
+	s += fmt.Sprintf(
+		", Grace: %s, Keep: %s",
 		r.Grace.String(),
 		r.Keep.String(),
 	)
 
 	if r.Fetched != 0 {
-		s += fmt.Sprintf(" | Fetched: %s", r.Fetched)
+		s += fmt.Sprintf(", Fetched: %s", r.Fetched)
 	}
 
 	if r.ContentLength != 0 {
-		s += fmt.Sprintf(" | ContentLength: %s", r.ContentLength)
+		s += fmt.Sprintf(", ContentLength: %s", r.ContentLength)
 	}
 
 	return s
@@ -638,7 +648,7 @@ func (r HitRecord) String() string {
 func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 	parts := strings.Fields(blr.GetRawValue())
 	n := len(parts)
-	if n < 4 || n > 6 {
+	if n < 2 || n > 6 {
 		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, incorrect len of %d on line %q", n, blr.GetRawLog())
 	}
 
@@ -650,6 +660,10 @@ func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 	ttl, err := convertStrToDuration(parts[1], time.Second)
 	if err != nil {
 		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad field TTL on line %q", blr.GetRawLog())
+	}
+
+	if n == 2 {
+		return HitRecord{BaseRecord: blr, ObjVXID: vxid, TTL: ttl}, nil
 	}
 
 	grace, err := convertStrToDuration(parts[2], time.Second)
@@ -684,40 +698,6 @@ func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 
 	hr.ContentLength = SizeValue(cl)
 	return hr, nil
-}
-
-// HitMissRecord contains information about a hit for miss object in cache.
-type HitMissRecord struct {
-	BaseRecord
-	ObjVXID VXID          // object VXID
-	TTL     time.Duration // remaining TTL
-}
-
-func (r HitMissRecord) String() string {
-	return fmt.Sprintf(
-		"%d | TTL: %s",
-		r.ObjVXID,
-		r.TTL.String(),
-	)
-}
-
-func NewHitMissRecord(blr BaseRecord) (HitMissRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 2 {
-		return HitMissRecord{}, fmt.Errorf("conversion to HitMissRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
-
-	vxid, err := parseVXID(parts[0])
-	if err != nil {
-		return HitMissRecord{}, fmt.Errorf("conversion to HitMissRecord failed, bad VXID on line %q", blr.GetRawLog())
-	}
-
-	ttl, err := convertStrToDuration(parts[1], time.Second)
-	if err != nil {
-		return HitMissRecord{}, fmt.Errorf("conversion to HitMissRecord failed, bad field TTL on line %q", blr.GetRawLog())
-	}
-
-	return HitMissRecord{BaseRecord: blr, ObjVXID: vxid, TTL: ttl}, nil
 }
 
 // TTLRecord reprensets the ttl, grace, keep values for an object
