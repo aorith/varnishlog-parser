@@ -42,6 +42,11 @@ type SequenceConfig struct {
 
 // Sequence returns a sequence diagram rendered as an SVG image.
 func Sequence(ts vsl.TransactionSet, root *vsl.Transaction, cfg SequenceConfig) string {
+	// Reject sessions
+	if root.TXType == vsl.TxTypeSession {
+		return "ERROR: sequence does not support sessions"
+	}
+
 	s := svgsequence.NewSequence()
 	if cfg.Distance != 0 {
 		s.SetDistance(cfg.Distance)
@@ -74,22 +79,15 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 	var err error
 	var reqReceived, reqProcessed *HTTPRequest
 
-	// The diagram is better understood without sessions, keeping it working
-	// with them just in case
-	if tx.TXType == vsl.TxTypeSession {
+	reqReceived, err = NewHTTPRequest(tx, true, nil)
+	if err != nil {
+		slog.Warn("failed to create HTTPRequest", "tx", tx.TXID)
 		reqReceived = &HTTPRequest{}
+	}
+	reqProcessed, err = NewHTTPRequest(tx, false, nil)
+	if err != nil {
+		slog.Warn("failed to create HTTPRequest", "tx", tx.TXID)
 		reqProcessed = &HTTPRequest{}
-	} else {
-		reqReceived, err = NewHTTPRequest(tx, true, nil)
-		if err != nil {
-			slog.Warn("failed to create HTTPRequest", "tx", tx.TXID)
-			reqReceived = &HTTPRequest{}
-		}
-		reqProcessed, err = NewHTTPRequest(tx, false, nil)
-		if err != nil {
-			slog.Warn("failed to create HTTPRequest", "tx", tx.TXID)
-			reqProcessed = &HTTPRequest{}
-		}
 	}
 
 	// When processing ESI, if we add the response status step at the exact moment
@@ -100,8 +98,17 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 	for _, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
-			if tx.TXType != vsl.TxTypeSession {
-				s.OpenSection(string(tx.TXID), getTxTypeColor(tx.TXType))
+			s.OpenSection(string(tx.TXID), getTxTypeColor(tx.TXType))
+
+		case vsl.ReqStartRecord:
+			if tx.ESILevel > 0 {
+				start := fmt.Sprintf("%s\nESI Level %d", requestSequence(reqReceived), tx.ESILevel)
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: start})
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: requestSequence(reqProcessed)})
+			} else {
+				start := fmt.Sprintf("%s\n%s %s", requestSequence(reqReceived), record.ClientIP, record.Listener)
+				s.AddStep(svgsequence.Step{SourceActor: C, TargetActor: V, Description: start})
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: requestSequence(reqProcessed)})
 			}
 
 		case vsl.EndRecord:
@@ -132,17 +139,6 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				Color:       ColorGray,
 			})
 
-		case vsl.ReqStartRecord:
-			if tx.ESILevel > 0 {
-				start := fmt.Sprintf("%s\nESI Level %d", requestSequence(reqReceived), tx.ESILevel)
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: start})
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: requestSequence(reqProcessed)})
-			} else {
-				start := fmt.Sprintf("%s\n%s %s", requestSequence(reqReceived), record.ClientIP, record.Listener)
-				s.AddStep(svgsequence.Step{SourceActor: C, TargetActor: V, Description: start})
-				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: H, Description: requestSequence(reqProcessed)})
-			}
-
 		case vsl.VCLCallRecord:
 			if cfg.IncludeCalls {
 				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "call " + record.GetRawValue(), Color: ColorCall})
@@ -151,6 +147,17 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			switch r.GetRawValue() {
 			case "HIT", "MISS", "PASS":
 				s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: V, Description: r.GetRawValue()})
+
+			case "SYNTH":
+				if respStep != nil {
+					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "SYNTH\n" + respStep.Description})
+					respStep = nil
+				} else {
+					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: r.GetRawValue()})
+				}
+
+			case "PIPE":
+				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: C, Description: r.GetRawValue()})
 
 			case "BACKEND_FETCH":
 				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: B, Description: requestSequence(reqProcessed)})
@@ -174,11 +181,6 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: "return " + record.GetRawValue(), Color: ColorReturn})
 			}
 
-			switch r.GetRawValue() {
-			case "synth":
-				s.AddStep(svgsequence.Step{SourceActor: H, TargetActor: V, Description: r.GetRawValue()})
-			}
-
 		case vsl.StatusRecord:
 			switch record.GetTag() {
 			case tags.BerespStatus:
@@ -187,6 +189,10 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 			case tags.RespStatus:
 				s1 := statusSequence(tx, record.Status, tags.RespReason)
+				if respStep != nil {
+					// Probably a synth response
+					s.AddStep(svgsequence.Step{SourceActor: V, TargetActor: V, Description: respStep.Description})
+				}
 				if tx.ESILevel == 0 {
 					respStep = &svgsequence.Step{SourceActor: V, TargetActor: C, Description: s1}
 				} else {
@@ -214,9 +220,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			if childTx != nil {
 				s.CloseSection()
 				addTransactionLogs(s, ts, childTx, cfg, visited)
-				if tx.TXType != vsl.TxTypeSession {
-					s.OpenSection(string(tx.TXID), getTxTypeColor(tx.TXType))
-				}
+				s.OpenSection(string(tx.TXID), getTxTypeColor(tx.TXType))
 			} else {
 				actor := V
 				if record.TXType == vsl.LinkTypeBereq {
