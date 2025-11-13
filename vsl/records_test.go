@@ -487,11 +487,13 @@ func TestURLRecord(t *testing.T) {
 
 func TestHitRecord(t *testing.T) {
 	type test struct {
-		logRecord string
-		vxid      vsl.VXID
-		ttl       time.Duration
-		grace     time.Duration
-		keep      time.Duration
+		logRecord     string
+		vxid          vsl.VXID
+		ttl           time.Duration
+		grace         time.Duration
+		keep          time.Duration
+		fetched       vsl.SizeValue
+		contentLength vsl.SizeValue
 	}
 
 	testList := []test{
@@ -503,11 +505,13 @@ func TestHitRecord(t *testing.T) {
 			keep:      time.Duration(0 * time.Second),
 		},
 		{
-			logRecord: "-4- Hit            32775 14.998964 10.000000 0.000000 a b",
-			vxid:      vsl.VXID(32775),
-			ttl:       time.Duration(float64(14.998964) * float64(time.Second)),
-			grace:     time.Duration(10 * time.Second),
-			keep:      time.Duration(0 * time.Second),
+			logRecord:     "-4- Hit            32775 14.998964 10.000000 0.000000 1 2",
+			vxid:          vsl.VXID(32775),
+			ttl:           time.Duration(float64(14.998964) * float64(time.Second)),
+			grace:         time.Duration(10 * time.Second),
+			keep:          time.Duration(0 * time.Second),
+			fetched:       vsl.SizeValue(1),
+			contentLength: vsl.SizeValue(2),
 		},
 	}
 
@@ -532,6 +536,12 @@ func TestHitRecord(t *testing.T) {
 		}
 		if record.Keep != test.keep {
 			t.Errorf("Keep() want: %v got: %v", test.keep, record.Keep)
+		}
+		if record.Fetched != test.fetched {
+			t.Errorf("Fetched() want: %v got: %v", test.fetched, record.Fetched)
+		}
+		if record.ContentLength != test.contentLength {
+			t.Errorf("Keep() want: %v got: %v", test.contentLength, record.ContentLength)
 		}
 	}
 }
