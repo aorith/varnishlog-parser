@@ -231,7 +231,7 @@ async function editName(hash) {
     const cell = document.getElementById(`name-${hash}`);
     const currentName = entry.name;
 
-    cell.innerHTML = `<input type="text" class="name-input" value="${currentName}" id="input-${hash}" onblur="saveName('${hash}')" onkeypress="if(event.key==='Enter') saveName('${hash}')">`;
+    cell.innerHTML = `<input type="text" class="name-input" value="${currentName}" id="input-${hash}" onblur="saveName('${hash}')" onkeypress="if(event.key==='Enter') { saveName('${hash}'); event.preventDefault(); }">`;
 
     const input = document.getElementById(`input-${hash}`);
     input.focus();
