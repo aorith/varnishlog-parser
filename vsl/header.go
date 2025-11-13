@@ -48,8 +48,8 @@ func (s HdrState) String() string {
 type Header struct {
 	id             int
 	name           string
-	values         []HdrValue // Keeps track of the headers after VCL code execution
-	receivedValues []HdrValue // Keeps track of the headers that were sent by the client
+	values         []HdrValue // Keeps track of the headers after VCL code execution + original received headers
+	receivedValues []HdrValue // Keeps track of the headers that were sent by the client (original received headers)
 }
 
 func (h Header) MarshalJSON() ([]byte, error) {
@@ -87,7 +87,7 @@ type HdrValue struct {
 }
 
 func (h HdrValue) String() string {
-	return fmt.Sprintf("Value: %s, State: %s", h.value, h.state)
+	return fmt.Sprintf("{Value: %s, State: %s}", h.value, h.state)
 }
 
 func (h HdrValue) MarshalJSON() ([]byte, error) {
@@ -117,6 +117,7 @@ type Headers map[string]Header
 // Add adds a header value to the Headers map.
 // If the header already exists, the value is appended.
 // Otherwise, a new Header is created.
+//
 // If the state is 'modified', previous values are discarded
 // as Varnish VCL removes all the previous values on 'set' and 'unset'.
 func (h Headers) Add(name string, value string, state HdrState) {
@@ -138,7 +139,7 @@ func (h Headers) Add(name string, value string, state HdrState) {
 	// A check must be done before calling Add to determine
 	// if the modified state should be used
 	//
-	// If the header name is Host, it also accepts an unique value
+	// If the header name is Host, do the same since it should have a unique value.
 	if state == HdrStateModified || name == HdrNameHost {
 		header.values = []HdrValue{}
 	}
@@ -169,19 +170,17 @@ func (h Headers) Delete(name string) {
 		return
 	}
 
-	// Mark all values as deleted
+	// Mark all values as deleted only in the values slice.
+	// The receivedValues slice is immutable.
 	for i := range header.values {
 		header.values[i].state = HdrStateDeleted
 	}
-	// Client send-headers cannot be deleted, if that happens it was inside of Varnish C code
-	// for i := range header.receivedValues {
-	// 	header.receivedValues[i].state = HdrStateDeleted
-	// }
 
 	h[name] = header
 }
 
-// Values returns all the values associated with the given header name
+// Values returns all the values associated with the given header name.
+//
 // When received is true, it returns the values from the receivedValues slice.
 func (h Headers) Values(name string, received bool) []HdrValue {
 	name = CanonicalHeaderName(name)
@@ -196,8 +195,9 @@ func (h Headers) Values(name string, received bool) []HdrValue {
 }
 
 // Get gets the first value associated with the given header name.
+//
 // When received is true it only returns values from the receivedValues slice.
-// If there are no values it returns ""
+// If there are no values it returns an empty string.
 func (h Headers) Get(name string, received bool) string {
 	name = CanonicalHeaderName(name)
 	header, exists := h[name]
