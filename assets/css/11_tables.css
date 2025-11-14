@@ -37,13 +37,7 @@ td {
   color: #212529;
 }
 
-td:first-child {
-  font-weight: 500;
-  color: #495057;
-  font-size: var(--fsize-s);
-}
-
-td:not(:first-child) {
+td {
   font-family: var(--font-mono);
   font-size: var(--fsize-xs);
 }

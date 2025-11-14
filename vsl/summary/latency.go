@@ -3,6 +3,7 @@
 package summary
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"time"
@@ -142,10 +143,10 @@ func TimestampEventsSummary(ts vsl.TransactionSet) []*latencyCounter {
 	}
 
 	slices.SortStableFunc(events, func(a, b *latencyCounter) int {
-		if a.txType < b.txType {
-			return 1
+		if c := cmp.Compare(b.txType, a.txType); c != 0 {
+			return c
 		}
-		return -1
+		return cmp.Compare(b.Average(), a.Average())
 	})
 
 	return events
