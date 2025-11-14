@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/aorith/varnishlog-parser/assets"
-	"github.com/aorith/varnishlog-parser/pkg/render"
+	"github.com/aorith/varnishlog-parser/render"
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 

@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/aorith/varnishlog-parser/assets"
-	"github.com/aorith/varnishlog-parser/pkg/server/html"
+	"github.com/aorith/varnishlog-parser/internal/server/html"
 )
 
 func indexHandler(version string) func(http.ResponseWriter, *http.Request) {

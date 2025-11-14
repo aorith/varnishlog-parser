@@ -11,7 +11,7 @@ import (
 	"text/template"
 
 	"github.com/aorith/varnishlog-parser/assets"
-	"github.com/aorith/varnishlog-parser/pkg/render"
+	"github.com/aorith/varnishlog-parser/render"
 	"github.com/aorith/varnishlog-parser/vsl"
 	"github.com/aorith/varnishlog-parser/vsl/summary"
 )
@@ -50,7 +50,7 @@ type PageData struct {
 }
 
 var funcMap = template.FuncMap{
-	"headersView":            render.HeadersView,
+	"headersView":            render.HTMLHeadersTable,
 	"renderTXLogTree":        render.TxTreeHTML,
 	"isTxTypeSession":        func(tx *vsl.Transaction) bool { return tx.TXType == vsl.TxTypeSession },
 	"curlCommand":            curlCommand,
@@ -151,57 +151,4 @@ func executeTemplate(w io.Writer, tmpl *template.Template, name string, data any
 		}
 	}
 	return err
-}
-
-func curlCommand(tx *vsl.Transaction, scheme, connectTo, backendStr, custom string, received bool, excluded string) string {
-	var backend *render.Backend
-
-	switch connectTo {
-	case "backend":
-		switch backendStr {
-		case "none":
-			backend = nil
-
-		case "auto":
-			if tx.TXType == vsl.TxTypeBereq {
-				host, port, err := render.ParseBackend(tx.GetBackendConnStr())
-				if err != nil {
-					return "error parsing backend: " + err.Error()
-				}
-				backend = render.NewBackend(host, port)
-			}
-
-		default:
-			host, port, err := render.ParseBackend(backendStr)
-			if err != nil {
-				return "error parsing backend: " + err.Error()
-			}
-			backend = render.NewBackend(host, port)
-		}
-
-	case "custom":
-		if custom == "" {
-			return "no value provided for the custom backend"
-		}
-		host, port, err := render.ParseBackend(custom)
-		if err != nil {
-			return "error parsing backend: " + err.Error()
-		}
-		backend = render.NewBackend(host, port)
-
-	default:
-		return "unknown value for connectTo: " + connectTo
-	}
-
-	excludedHeaders := strings.Split(excluded, ",")
-	for i, n := range excludedHeaders {
-		excludedHeaders[i] = strings.TrimSpace(n)
-	}
-
-	httpReq, err := render.NewHTTPRequest(tx, received, excludedHeaders)
-	if err != nil {
-		return "error generating curl command: " + err.Error()
-	}
-
-	return httpReq.CurlCommand(scheme, backend)
 }

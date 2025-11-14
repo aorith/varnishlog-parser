@@ -11,16 +11,8 @@ import (
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 
-type CustomBuilder struct {
-	strings.Builder
-}
-
-// PadAdd is a helper function to append a fixed padding to the string
-func (b *CustomBuilder) PadAdd(s string) {
-	b.WriteString("    " + s + "\n")
-}
-
 // ParseBackend parses "<HOST/IP>:<PORT>" where HOST may be a hostname,
+//
 // IPv4, or IPv6 (possibly unbracketed). Returns host and port separately.
 func ParseBackend(s string) (host, port string, err error) {
 	// Try the standard parser first (works for "host:port" and "[v6]:port").

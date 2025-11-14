@@ -10,7 +10,8 @@ import (
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 
-func HeadersView(ts vsl.TransactionSet, tx *vsl.Transaction) []string {
+// HTMLHeadersTable returns an HTML table with HTTP header states
+func HTMLHeadersTable(ts vsl.TransactionSet, tx *vsl.Transaction) []string {
 	visited := make(map[vsl.VXID]bool)
 	return headersView(ts, tx, visited)
 }

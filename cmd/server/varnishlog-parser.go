@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/aorith/varnishlog-parser/pkg/server"
+	"github.com/aorith/varnishlog-parser/internal/server"
 )
 
 var version string = "dev"
