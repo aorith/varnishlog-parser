@@ -96,7 +96,7 @@ input[type="radio"].nav {
   display: block;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 980px) {
   body {
     grid-template-areas:
       "nav"

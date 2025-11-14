@@ -4,9 +4,9 @@
 	<fieldset>
 		<div class="inline-block">
 			{{ if .Logs.Textinput -}}
-			<textarea id="logsInput" rows="26" cols="65" name="logs" placeholder="Paste varnishlog logs here">{{ .Logs.Textinput }}</textarea>
+			<textarea id="logsInput" name="logs" placeholder="Paste varnishlog logs here">{{ .Logs.Textinput }}</textarea>
 			{{ else }}
-			<textarea id="logsInput" rows="26" cols="65" name="logs" placeholder="Paste varnishlog logs here"></textarea>
+			<textarea id="logsInput" name="logs" placeholder="Paste varnishlog logs here"></textarea>
 			{{ end }}
 		</div>
 

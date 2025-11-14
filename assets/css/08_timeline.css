@@ -1,7 +1,13 @@
 div.timeline {
   display: inline-block;
-  width: 80vw;
+  width: 83vw;
   max-width: var(--view-width);
+}
+
+@media (max-width: 980px) {
+  div.timeline {
+    width: 98vw;
+  }
 }
 
 /* Default classes from svg-timeline */

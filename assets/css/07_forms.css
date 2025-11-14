@@ -5,6 +5,12 @@
   margin-bottom: 6px;
 }
 
+#parse-view textarea {
+  width: 40dvw;
+  max-width: 650px;
+  height: 400px;
+}
+
 form {
   margin-bottom: 1rem;
   vertical-align: top;
