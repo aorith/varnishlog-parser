@@ -162,7 +162,11 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	}
 
 	// Default parameters
-	s.WriteString("    -qsv -k -o /dev/null")
+	s.WriteString("    -qsv")
+	if scheme == "https://" {
+		s.WriteString(" -k")
+	}
+	s.WriteString(" -o /dev/null")
 
 	// Connect-to
 	// --connect-to HOST1:PORT1:HOST2:PORT2
@@ -213,7 +217,9 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	}
 
 	// Options
-	s.WriteString("\n[Options]\ninsecure: true\n")
+	if scheme == "https://" {
+		s.WriteString("\n[Options]\ninsecure: true\n")
+	}
 
 	// Connect-to
 	// --connect-to HOST1:PORT1:HOST2:PORT2
