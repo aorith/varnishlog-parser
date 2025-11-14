@@ -71,3 +71,11 @@ func curlCommand(tx *vsl.Transaction, cfg PageData) string {
 	}
 	return httpReq.CurlCommand(cfg.ReqBuild.Scheme, backend)
 }
+
+func hurlFile(tx *vsl.Transaction, cfg PageData) string {
+	httpReq, backend, err := processReqBuildForm(tx, cfg)
+	if err != nil {
+		return err.Error()
+	}
+	return httpReq.HurlFile(cfg.ReqBuild.Scheme, backend)
+}

@@ -5,7 +5,10 @@
 	{{- range .Transactions.Set.Transactions }}
 	{{ if isTxTypeSession . }}{{ continue }}{{ end }}
 	<h3>{{ .TXID }}</h3>
+	<h4>curl</h4>
 	<pre><code class="language-bash">{{- curlCommand . $data -}}</code></pre>
+	<h4>hurl</h4>
+	<pre><code class="language-http">{{- hurlFile . $data -}}</code></pre>
 	{{- end }}
 </div>
 

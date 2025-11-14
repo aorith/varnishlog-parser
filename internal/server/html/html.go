@@ -54,6 +54,7 @@ var funcMap = template.FuncMap{
 	"renderTXLogTree":        render.TxTreeHTML,
 	"isTxTypeSession":        func(tx *vsl.Transaction) bool { return tx.TXType == vsl.TxTypeSession },
 	"curlCommand":            curlCommand,
+	"hurlFile":               hurlFile,
 	"timeline":               render.Timeline,
 	"sequence":               render.Sequence,
 	"timestampEventsSummary": summary.TimestampEventsSummary,

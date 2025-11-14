@@ -174,6 +174,60 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	return s.String()
 }
 
+// HurlFile generates a new hurl file as a string
+//
+// scheme can be "auto", "http://" or "https://"
+func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
+	var s strings.Builder
+
+	// Parse scheme
+	switch scheme {
+	case "auto":
+		if r.port == "443" {
+			scheme = "https://"
+		} else {
+			// default to http for 80, empty, or any other port
+			scheme = "http://"
+		}
+	case "http://", "https://":
+		// keep as-is
+	default:
+		return "invalid scheme: " + scheme
+	}
+
+	// Build host URL, append port only when provided
+	hostURL := r.host
+	if r.port != "" {
+		hostURL = net.JoinHostPort(r.host, r.port)
+	}
+
+	// Start hurl file
+	s.WriteString(fmt.Sprintf("%s %s%s%s\n", r.method, scheme, hostURL, r.url))
+
+	// Headers
+	for _, h := range r.headers {
+		if h.name == vsl.HdrNameHost {
+			continue
+		}
+		s.WriteString(fmt.Sprintf("%s: %s\n", h.name, h.value))
+	}
+
+	// Options
+	s.WriteString("\n[Options]\ninsecure: true\n")
+
+	// Connect-to
+	// --connect-to HOST1:PORT1:HOST2:PORT2
+	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
+	if backend != nil {
+		s.WriteString("\n# To connect to the backend run the hurl file as:\n")
+		s.WriteString(fmt.Sprintf(`# hurl --connect-to "%s:%s:%s" file.hurl`,
+			escapeDoubleQuotes(hostURL), escapeDoubleQuotes(backend.host), backend.port,
+		))
+	}
+
+	return s.String()
+}
+
 // escapeDoubleQuotes is an utility function to escape double quotes ;)
 func escapeDoubleQuotes(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
