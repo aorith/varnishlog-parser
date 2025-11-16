@@ -8,6 +8,8 @@
 
   & table {
     margin-top: 10px;
+    min-width: 850px;
+    max-width: var(--view-width);
   }
 
   & th,
@@ -73,5 +75,29 @@
     margin-bottom: 10px;
     font-size: var(--fsize-xxxs);
     font-style: italic;
+  }
+
+  & {
+    .pagination {
+      display: flex;
+      justify-content: left;
+      align-items: left;
+      gap: 0.5rem;
+    }
+
+    .pagination a {
+      color: var(--accent);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .pagination a.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination span {
+      color: var(--fg-1);
+    }
   }
 }

@@ -7,6 +7,7 @@
 
 #parse-view textarea {
   width: 40dvw;
+  min-width: 350px;
   max-width: 650px;
   height: 400px;
 }
@@ -91,8 +92,7 @@ form .examples {
 }
 
 fieldset {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  border: none;
 
   & legend {
     font-weight: 600;
@@ -103,8 +103,7 @@ fieldset {
 fieldset fieldset {
   font-size: 85%;
   margin: 0 0.4rem;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border);
 
   & legend {
     color: var(--warm);

@@ -186,7 +186,9 @@ async function renameEntry(hash, newName) {
 }
 
 // Render history table
-async function renderHistory() {
+let currentPage = 1;
+const entriesPerPage = 10;
+async function renderHistory(page = 1) {
   try {
     const entries = await getAllEntries();
     const container = document.getElementById("historyContainer");
@@ -197,24 +199,41 @@ async function renderHistory() {
       return;
     }
 
+    // calculate pagination
+    const totalPages = Math.ceil(entries.length / entriesPerPage);
+    currentPage = Math.max(1, Math.min(page, totalPages));
+    const startIndex = (currentPage - 1) * entriesPerPage;
+    const endIndex = startIndex + entriesPerPage;
+    const paginatedEntries = entries.slice(startIndex, endIndex);
+
     let html =
       "<table><thead><tr><th>Name</th><th>Hash</th><th>Created At</th><th>Actions</th></tr></thead><tbody>";
 
-    entries.forEach((entry) => {
+    paginatedEntries.forEach((entry) => {
       html += `
-                        <tr>
-                            <td class="name-cell" onclick="editName('${entry.hash}')" id="name-${entry.hash}">${entry.name}</td>
-                            <td class="hash-cell"><abbr title="sha-256 digest generated from the logs input: ${entry.hash}">${entry.hash.slice(0, 10)}...</abbr></td>
-                            <td>${entry.created}</td>
-                            <td>
-                                <a class="btn-small btn-load" onclick="loadEntry('${entry.hash}')">Load</a>
-                                <a class="btn-small btn-delete" onclick="deleteEntry('${entry.hash}')">Delete</a>
-                            </td>
-                        </tr>
-                    `;
+        <tr>
+          <td class="name-cell" onclick="editName('${entry.hash}')" id="name-${entry.hash}">${entry.name}</td>
+          <td class="hash-cell"><abbr title="sha-256 digest generated from the logs input: ${entry.hash}">${entry.hash.slice(0, 10)}...</abbr></td>
+          <td>${entry.created}</td>
+          <td>
+            <a class="btn-small btn-load" onclick="loadEntry('${entry.hash}')">Load</a>
+            <a class="btn-small btn-delete" onclick="deleteEntry('${entry.hash}')">Delete</a>
+          </td>
+        </tr>
+      `;
     });
 
     html += "</tbody></table>";
+
+    // pagination controls
+    if (totalPages > 1) {
+      html += '<div class="pagination">';
+      html += `<a onclick="renderHistory(${currentPage - 1})" ${currentPage === 1 ? `class="disabled"` : ""}>Previous</a>`;
+      html += `<span>Page ${currentPage} of ${totalPages}</span>`;
+      html += `<a onclick="renderHistory(${currentPage + 1})" ${currentPage === totalPages ? `class="disabled"` : ""}>Next</a>`;
+      html += "</div>";
+    }
+
     container.innerHTML = html;
   } catch (error) {
     container.innerHTML = "Error rendering history";
