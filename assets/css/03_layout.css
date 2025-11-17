@@ -3,9 +3,11 @@ body {
 
   display: grid;
 
-  grid-template-areas: "nav content";
-  grid-template-rows: 1fr;
-  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "nav"
+    "content";
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
 }
 
 #content {
@@ -13,49 +15,41 @@ body {
   display: grid;
 
   height: 100dvh;
-  overflow: auto;
+  margin: 0 auto;
 }
 
 nav {
   grid-area: nav;
   display: flex;
-  flex-direction: row-reverse;
-  align-content: right;
-  align-items: flex-start;
-}
-
-nav fieldset {
-  display: flex;
-  gap: 2px;
-  flex-direction: column;
+  gap: 8px;
+  flex-direction: row;
+  align-content: center; /* vertical align */
+  align-items: center;
   justify-content: center;
-  align-items: left;
-  padding: 0.5rem 0.8rem 0.8rem 0.8rem;
-  margin: 1rem 1.8rem 1rem 1.8rem;
-  background-color: var(--bg-0);
-  border: 2px solid var(--accent);
-  border-radius: 0px;
-  box-shadow: none;
+  justify-items: center;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  background-color: var(--bg-1);
+  border-bottom: 1px solid var(--border);
 }
 
-nav fieldset legend {
-  font-family: var(--font-text2);
-  font-size: var(--fsize-xs);
-  font-style: italic;
-  color: var(--fg-1);
-  padding: 0 0.3rem 0 0.3rem;
+nav div {
+  width: var(--view-width);
+  max-width: var(--view-width);
+  margin: 0 auto;
+  padding-left: 0.8rem;
 }
 
-nav fieldset label {
+nav label {
   color: var(--fg-0);
   font-size: var(--fsize-s);
   font-family: var(--font-text2);
+  font-weight: 500;
   cursor: pointer;
   padding: 2px;
 }
 
-nav fieldset label:hover {
-  color: var(--accent-hover) !important;
+nav label:hover {
+  color: var(--accent-hover);
   text-decoration: underline;
 }
 
@@ -77,14 +71,14 @@ input[type="radio"].nav {
   padding: 1rem;
 }
 
-#radio-parse:checked ~ nav fieldset label[for="radio-parse"],
-#radio-overview:checked ~ nav fieldset label[for="radio-overview"],
-#radio-timings:checked ~ nav fieldset label[for="radio-timings"],
-#radio-headers:checked ~ nav fieldset label[for="radio-headers"],
-#radio-vcllogtree:checked ~ nav fieldset label[for="radio-vcllogtree"],
-#radio-reqbuild:checked ~ nav fieldset label[for="radio-reqbuild"] {
+#radio-parse:checked ~ nav label[for="radio-parse"],
+#radio-overview:checked ~ nav label[for="radio-overview"],
+#radio-timings:checked ~ nav label[for="radio-timings"],
+#radio-headers:checked ~ nav label[for="radio-headers"],
+#radio-vcllogtree:checked ~ nav label[for="radio-vcllogtree"],
+#radio-reqbuild:checked ~ nav label[for="radio-reqbuild"] {
   color: var(--accent);
-  font-weight: bold;
+  text-decoration: underline;
 }
 
 #radio-parse:checked ~ #content #parse-view,
@@ -94,39 +88,4 @@ input[type="radio"].nav {
 #radio-vcllogtree:checked ~ #content #vcllogtree-view,
 #radio-reqbuild:checked ~ #content #reqbuild-view {
   display: block;
-}
-
-@media (max-width: 980px) {
-  body {
-    grid-template-areas:
-      "nav"
-      "content";
-    grid-template-rows: auto 1fr;
-    grid-template-columns: 1fr;
-  }
-
-  #content {
-    overflow: visible;
-  }
-
-  nav {
-    flex-direction: row;
-    align-content: center;
-    align-items: center;
-    padding: 0 0 2px 0;
-  }
-
-  nav fieldset {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-    margin: 0 0.4rem 0 0.4rem;
-    padding: 0.3rem 0.4rem 0.4rem 0.4rem;
-  }
-
-  .view-content {
-    max-width: 100vw;
-    padding: 0.6rem;
-  }
 }

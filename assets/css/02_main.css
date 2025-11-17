@@ -8,22 +8,6 @@ body {
   height: 100dvh;
 }
 
-h2 {
-  color: var(--warm);
-}
-h3 {
-  color: var(--cold);
-}
-h4 {
-  color: var(--mild);
-}
-h5 {
-  color: var(--calm);
-}
-h6 {
-  color: var(--fg-1);
-}
-
 p {
   margin: 0 0 var(--vertical-0);
 }
@@ -43,48 +27,6 @@ button:hover {
   color: var(--accent-hover);
   border-color: var(--accent-hover);
   background: var(--bg-0);
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  text-wrap: balance;
-  margin-bottom: 1rem;
-  font-weight: 700;
-}
-
-h1 {
-  color: var(--accent);
-  border-bottom: 2px solid var(--accent);
-  width: 100%;
-}
-
-h2 {
-  color: var(--warm);
-}
-
-h3 {
-  color: var(--cold);
-}
-
-h4 {
-  color: var(--mild);
-}
-
-h5 {
-  color: var(--calm);
-}
-
-h6 {
-  color: var(--fg-1);
-}
-
-p {
-  text-wrap: pretty;
-  margin: 0 0 var(--vertical-0);
 }
 
 abbr {

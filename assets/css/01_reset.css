@@ -28,6 +28,9 @@ h6 {
 
 h1 {
   font-size: var(--fsize-xl);
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  width: 100%;
 }
 
 h2 {
@@ -52,6 +55,7 @@ h6 {
 
 p {
   text-wrap: pretty;
+  margin: 0 0 var(--vertical-0);
 }
 
 ul,

@@ -1,11 +1,5 @@
 div.sequence {
   display: inline-block;
-  width: 83vw;
+  width: var(--view-width);
   max-width: var(--view-width);
-}
-
-@media (max-width: 980px) {
-  div.sequence {
-    width: 98vw;
-  }
 }

@@ -109,11 +109,3 @@ div.hdr-table {
   background: var(--deleted) !important;
   text-decoration: line-through !important;
 }
-
-@media (max-width: 980px) {
-  div.hdr-table {
-    & abbr input {
-      padding: 2px;
-    }
-  }
-}
