@@ -13,7 +13,7 @@
 		<div class="inline-block">
 			<!-- Sequence settings -->
 			<fieldset>
-				<legend>Overview 🡒 Sequence</legend>
+				<legend>Overview &gt; Sequence</legend>
 				<label class="form-row">
 					<input type="checkbox" name="includeCalls" value="yes" {{ if .Sequence.IncludeCalls }}checked{{ end -}}>
 					Include VCL calls
@@ -28,33 +28,31 @@
 				</label>
 
 				<label class="form-row">
-					Actor distance
+					Actor distance:
 					<input name="distance" type="number" min="50" max="500" value="{{ .Sequence.Distance -}}" step="5">
 				</label>
 				<label class="form-row">
-					Step Height
+					Step height:
 					<input name="stepHeight" type="number" min="10" max="120" value="{{ .Sequence.StepHeight -}}" step="2">
 				</label>
 			</fieldset>
 
 			<!-- Timeline settings -->
-			<div class="form-row">
-				<fieldset>
-					<legend>Timings 🡒 Timeline</legend>
-					<label class="form-row">
-						<input type="checkbox" name="sessions" value="yes" {{ if .Timeline.Sessions }}checked{{ end -}}>
-						Include sessions
-					</label>
-					<label class="form-row">
-						Precision/Width
-						<input name="precision" type="number" min="100" max="5000" value="{{ .Timeline.Precision -}}" step="4">
-					</label>
-					<label class="form-row">
-						Num Ticks
-						<input name="ticks" type="number" min="1" max="50" value="{{ .Timeline.Ticks -}}" step="1">
-					</label>
-				</fieldset>
-			</div>
+			<fieldset>
+				<legend>Timings &gt; Timeline</legend>
+				<label class="form-row">
+					<input type="checkbox" name="sessions" value="yes" {{ if .Timeline.Sessions }}checked{{ end -}}>
+					Include sessions
+				</label>
+				<label class="form-row">
+					Width:
+					<input name="precision" type="number" min="100" max="5000" value="{{ .Timeline.Precision -}}" step="4">
+				</label>
+				<label class="form-row">
+					Num ticks:
+					<input name="ticks" type="number" min="1" max="50" value="{{ .Timeline.Ticks -}}" step="1">
+				</label>
+			</fieldset>
 		</div>
 
 		<div class="form-row">
@@ -85,20 +83,5 @@
 			<button type="submit" name="action" value="eg-req-restart">Req Restart</button>
 			<button type="submit" name="action" value="eg-streaming-hit">Streaming Hit</button>
 		</div>
-	</div>
-
-	<div class="about">
-		<h2>About</h2>
-		<p>Varnishlog Parser
-			is a small Go library built to parse and analyze <code>varnishlog</code>
-			output, just like the name suggests.
-			It doesn’t rely on any external Go dependencies.</p>
-
-		<a rel="nofollow noopener"
-		   target="_blank"
-		   href="https://github.com/aorith/varnishlog-parser"
-		>Source code <svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_nPIU"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></a>
-		&nbsp;
-		<abbr title="Version">{{ .Version }}</abbr>
 	</div>
 </form>

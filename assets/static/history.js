@@ -207,17 +207,16 @@ async function renderHistory(page = 1) {
     const paginatedEntries = entries.slice(startIndex, endIndex);
 
     let html =
-      "<table><thead><tr><th>Name</th><th>Hash</th><th>Created At</th><th>Actions</th></tr></thead><tbody>";
+      "<table><thead><tr><th>Name</th><th>Created At</th><th>Actions</th></tr></thead><tbody>";
 
     paginatedEntries.forEach((entry) => {
       html += `
         <tr>
           <td class="name-cell" onclick="editName('${entry.hash}')" id="name-${entry.hash}">${entry.name}</td>
-          <td class="hash-cell"><abbr title="sha-256 digest generated from the logs input: ${entry.hash}">${entry.hash.slice(0, 10)}...</abbr></td>
           <td>${entry.created}</td>
           <td>
-            <a class="btn-small btn-load" onclick="loadEntry('${entry.hash}')">Load</a>
-            <a class="btn-small btn-delete" onclick="deleteEntry('${entry.hash}')">Delete</a>
+            <a class="btn-load" onclick="loadEntry('${entry.hash}')">Load</a>
+            <a class="btn-delete" onclick="deleteEntry('${entry.hash}')">Delete</a>
           </td>
         </tr>
       `;

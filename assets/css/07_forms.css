@@ -6,10 +6,13 @@
 }
 
 #parse-view textarea {
-  width: 40dvw;
-  min-width: 350px;
-  max-width: 650px;
-  height: 400px;
+  width: 600px;
+  height: 220px;
+}
+
+#parse-submit-btn {
+  width: 610px;
+  padding: 10px;
 }
 
 form {
@@ -84,7 +87,6 @@ form .examples {
   margin: 20px 0 10px 0;
 
   button {
-    background-color: var(--bg-0);
     font-size: var(--fsize-xs);
     padding: 4px 8px;
     margin: 8px 2px;

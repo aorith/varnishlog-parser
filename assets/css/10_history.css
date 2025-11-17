@@ -18,28 +18,23 @@
     vertical-align: middle;
   }
 
-  & .btn-small {
+  & .btn-load,
+  .btn-delete {
+    display: block;
     cursor: pointer;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: var(--fsize-xxs);
-    margin-right: 2px 4px;
   }
 
-  & .btn-load {
-    background-color: #90caf9;
+  .btn-load {
+    color: var(--accent);
   }
 
-  & .btn-load:hover {
-    background-color: #c5e3fc;
+  .btn-delete {
+    color: var(--red-0);
   }
 
-  & .btn-delete {
-    background-color: #f99790;
-  }
-
-  & .btn-delete:hover {
-    background-color: #fcc9c5;
+  .btn-load:hover,
+  .btn-delete:hover {
+    text-decoration: underline;
   }
 
   & .name-cell {
@@ -59,15 +54,9 @@
     border-radius: 3px;
   }
 
-  & .hash-cell {
-    font-family: monospace;
-    font-size: var(--fsize-xxs);
-    color: #606060;
-  }
-
   & .empty-state {
     text-align: left;
-    color: #909090;
+    color: var(--gray-0);
   }
 
   & .note {

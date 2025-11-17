@@ -1,22 +1,17 @@
 table {
   border-collapse: collapse;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 18px;
-  border: 2px solid var(--border);
-}
-
-thead {
-  background-color: var(--border);
-  border-bottom: 2px solid var(--border);
+  border: none;
 }
 
 th {
-  padding: 8px 12px;
-  text-align: left;
+  font-size: var(--fsize-xs);
+  color: var(--fg-0);
   font-weight: 600;
-  color: #495057;
+  text-decoration: underline;
+  padding: 4px 10px;
+  text-align: left;
   text-transform: uppercase;
-  font-size: 12px;
   letter-spacing: 0.5px;
 }
 

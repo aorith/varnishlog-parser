@@ -1,27 +1,27 @@
 body {
   width: 100%;
+  min-height: 100dvh;
 
   display: grid;
 
   grid-template-areas:
     "nav"
-    "content";
-  grid-template-rows: auto 1fr;
+    "content"
+    "footer";
+  grid-template-rows: auto 1fr auto;
   grid-template-columns: 1fr;
 }
 
 #content {
   grid-area: content;
   display: grid;
-
-  height: 100dvh;
   margin: 0 auto;
 }
 
 nav {
   grid-area: nav;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-direction: row;
   align-content: center; /* vertical align */
   align-items: center;
@@ -32,7 +32,25 @@ nav {
   border-bottom: 1px solid var(--border);
 }
 
+footer {
+  grid-area: footer;
+  display: flex;
+  gap: 18px;
+  flex-direction: row;
+  align-content: center; /* vertical align */
+  align-items: center;
+  justify-content: center;
+  justify-items: stretch;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  font-size: var(--fsize-xxs);
+  background-color: var(--bg-1);
+  border-top: 1px solid var(--border);
+  font-style: italic;
+  color: var(--fg-1);
+}
+
 nav div {
+  color: var(--gray-0);
   width: var(--view-width);
   max-width: var(--view-width);
   margin: 0 auto;
@@ -67,16 +85,17 @@ input[type="radio"].nav {
 }
 
 .view-content {
+  width: var(--view-width);
   max-width: var(--view-width);
   padding: 1rem;
 }
 
-#radio-parse:checked ~ nav label[for="radio-parse"],
-#radio-overview:checked ~ nav label[for="radio-overview"],
-#radio-timings:checked ~ nav label[for="radio-timings"],
-#radio-headers:checked ~ nav label[for="radio-headers"],
-#radio-vcllogtree:checked ~ nav label[for="radio-vcllogtree"],
-#radio-reqbuild:checked ~ nav label[for="radio-reqbuild"] {
+#radio-parse:checked ~ nav div label[for="radio-parse"],
+#radio-overview:checked ~ nav div label[for="radio-overview"],
+#radio-timings:checked ~ nav div label[for="radio-timings"],
+#radio-headers:checked ~ nav div label[for="radio-headers"],
+#radio-vcllogtree:checked ~ nav div label[for="radio-vcllogtree"],
+#radio-reqbuild:checked ~ nav div label[for="radio-reqbuild"] {
   color: var(--accent);
   text-decoration: underline;
 }

@@ -13,20 +13,30 @@ p {
 }
 
 button {
-  padding: 0.3rem 1.1rem;
-  border: 1px solid var(--fg-1);
-  border-radius: 3px;
-  background: var(--bg-1);
-  color: var(--fg-1);
-  font-weight: 600;
+  padding: 0.4rem 1.2rem;
+  border: 2px solid var(--fg-1);
+  border-radius: 0;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all 0.15s ease;
+  box-shadow: 3px 3px 0 var(--fg-1);
 }
 
 button:hover {
-  color: var(--accent-hover);
-  border-color: var(--accent-hover);
-  background: var(--bg-0);
+  background: var(--gray-0);
+  color: var(--bg-0);
+  transform: translate(-1px, -1px);
+}
+
+button:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--fg-1);
 }
 
 abbr {
@@ -124,22 +134,6 @@ pre {
 .inline-block {
   display: inline-block;
   vertical-align: top;
-}
-
-.version {
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: row;
-  justify-content: left;
-  align-items: stretch;
-  gap: 0 20px;
-  & * {
-    font-size: var(--fsize-xs);
-    font-style: italic;
-  }
-  & #logo {
-    fill: var(--warm);
-  }
 }
 
 /* HTMX animation after element creation */
