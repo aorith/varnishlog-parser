@@ -14,8 +14,10 @@ body {
 
 #content {
   grid-area: content;
-  display: grid;
+  display: flex;
   margin: 0 auto;
+  width: 100%;
+  justify-content: center;
 }
 
 footer {
@@ -48,7 +50,7 @@ footer {
 
 nav div {
   color: var(--gray-0);
-  width: var(--view-width);
+  width: 100%;
   max-width: var(--view-width);
   margin: 0 auto;
   padding-left: 0.8rem;
@@ -74,16 +76,18 @@ input[type="radio"].nav {
 
 .view,
 .error {
-  grid-area: 1 / 1;
+  width: 100%;
+  max-width: var(--view-width);
 }
 
 .view {
   display: none;
+  width: 100%;
+  max-width: var(--view-width);
 }
 
 .view-content {
-  width: var(--view-width);
-  max-width: var(--view-width);
+  width: 100%;
   padding: 1rem;
 }
 

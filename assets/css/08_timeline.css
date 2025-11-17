@@ -1,6 +1,6 @@
 div.timeline {
   display: inline-block;
-  width: var(--view-width);
+  width: 100%;
   max-width: var(--view-width);
 }
 
