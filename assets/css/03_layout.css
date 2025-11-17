@@ -18,8 +18,22 @@ body {
   margin: 0 auto;
 }
 
+footer {
+  grid-area: footer;
+  gap: 2px;
+  font-size: var(--fsize-xxs);
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  font-style: italic;
+  color: var(--fg-1);
+}
+
 nav {
   grid-area: nav;
+}
+
+nav,
+footer {
   display: flex;
   gap: 6px;
   flex-direction: row;
@@ -30,23 +44,6 @@ nav {
   padding: 0.5rem 0.5rem 0.5rem 1rem;
   background-color: var(--bg-1);
   border-bottom: 1px solid var(--border);
-}
-
-footer {
-  grid-area: footer;
-  display: flex;
-  gap: 18px;
-  flex-direction: row;
-  align-content: center; /* vertical align */
-  align-items: center;
-  justify-content: center;
-  justify-items: stretch;
-  padding: 0.5rem 0.5rem 0.5rem 1rem;
-  font-size: var(--fsize-xxs);
-  background-color: var(--bg-1);
-  border-top: 1px solid var(--border);
-  font-style: italic;
-  color: var(--fg-1);
 }
 
 nav div {

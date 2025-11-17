@@ -12,7 +12,7 @@
 		<link rel="stylesheet" href="/static/style.css">
 		<link rel="stylesheet" href="/static/vendor/prism.css">
 		<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-		<title>{{ .Title }}</title>
+		<title>{{- if .Title -}}{{- .Title -}}{{ else }}Varnishlog Parser{{- end -}}</title>
 	</head>
 
 	<body hx-ext="response-targets">
@@ -49,9 +49,9 @@
 		</div>
 
 		<footer>
-			<div>Varnishlog Parser</div>
-
 			<div>
+				Varnishlog Parser
+
 				<a rel="nofollow noopener"
 				   target="_blank"
 				   href="https://github.com/aorith/varnishlog-parser"

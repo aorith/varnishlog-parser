@@ -4,6 +4,7 @@ package html
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -103,6 +104,7 @@ func Parsed(w http.ResponseWriter, data PageData) error {
 	}
 	data.Transactions.GroupCount = len(ts.GroupRelatedTransactions())
 	data.Logs.Raw = ts.RawLog()
+	data.Title = fmt.Sprintf("%d txs parsed", data.Transactions.Count)
 
 	return executeTemplate(w, parsed, "main_layout.html", data)
 }
