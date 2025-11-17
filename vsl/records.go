@@ -360,6 +360,33 @@ func NewBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
 	}, nil
 }
 
+// BackendReuseRecord holds information about a backend reuse (keep-alive)
+//
+// Note that this record was deprecated in favor of BackendClose
+type BackendReuseRecord struct {
+	BaseRecord
+	FileDescriptor int    // Connection file descriptor
+	Name           string // Backend display name
+}
+
+func NewBackendReuseRecord(blr BaseRecord) (BackendReuseRecord, error) {
+	record := BackendReuseRecord{BaseRecord: blr}
+
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) < 2 {
+		return record, nil
+	}
+
+	fileDesc, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return record, nil
+	}
+
+	record.FileDescriptor = fileDesc
+	record.Name = parts[1]
+	return record, nil
+}
+
 // AcctRecord holds accounting information for ReqAcct and BereqAcct tags
 type AcctRecord struct {
 	BaseRecord

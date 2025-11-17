@@ -133,7 +133,7 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 func collectAndSortRecords(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) (events []TimelineEvent) {
 	if visited[tx.VXID] {
 		slog.Info("collectAndSortRecords(): loop detected", "txid", tx.TXID)
-		return
+		return events
 	}
 	visited[tx.VXID] = true
 
