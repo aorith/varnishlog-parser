@@ -17,3 +17,7 @@ fmt:
 .PHONY: ensure-spdx
 ensure-spdx:
 	find . -type f -name "*.go" -exec sh -c 'head -1 {} | grep -q SPDX || echo "Missing SPDX on file {}"' \;
+
+.PHONY: generate-chroma-style
+generate-chroma-style:
+	go run cmd/chroma/generate-style.go > /tmp/chroma-style.css && mv /tmp/chroma-style.css assets/css/99_chroma.css

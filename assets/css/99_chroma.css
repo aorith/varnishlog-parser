@@ -1,0 +1,63 @@
+.chr_bg { color: #f8f8f2; background-color: #272822; }
+.chr_chroma { color: #f8f8f2; background-color: #272822; }
+.chr_chroma .chr_err { color: #960050; background-color: #1e0010 }
+.chr_chroma .chr_lnlinks { outline: none; text-decoration: none; color: inherit }
+.chr_chroma .chr_lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
+.chr_chroma .chr_lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
+.chr_chroma .chr_hl { background-color: #3c3d38 }
+.chr_chroma .chr_lnt { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #7f7f7f }
+.chr_chroma .chr_ln { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #7f7f7f }
+.chr_chroma .chr_line { display: flex; }
+.chr_chroma .chr_k { color: #66d9ef }
+.chr_chroma .chr_kc { color: #66d9ef }
+.chr_chroma .chr_kd { color: #66d9ef }
+.chr_chroma .chr_kn { color: #f92672 }
+.chr_chroma .chr_kp { color: #66d9ef }
+.chr_chroma .chr_kr { color: #66d9ef }
+.chr_chroma .chr_kt { color: #66d9ef }
+.chr_chroma .chr_na { color: #a6e22e }
+.chr_chroma .chr_nc { color: #a6e22e }
+.chr_chroma .chr_no { color: #66d9ef }
+.chr_chroma .chr_nd { color: #a6e22e }
+.chr_chroma .chr_ne { color: #a6e22e }
+.chr_chroma .chr_nx { color: #a6e22e }
+.chr_chroma .chr_nt { color: #f92672 }
+.chr_chroma .chr_nf { color: #a6e22e }
+.chr_chroma .chr_fm { color: #a6e22e }
+.chr_chroma .chr_l { color: #ae81ff }
+.chr_chroma .chr_ld { color: #e6db74 }
+.chr_chroma .chr_s { color: #e6db74 }
+.chr_chroma .chr_sa { color: #e6db74 }
+.chr_chroma .chr_sb { color: #e6db74 }
+.chr_chroma .chr_sc { color: #e6db74 }
+.chr_chroma .chr_dl { color: #e6db74 }
+.chr_chroma .chr_sd { color: #e6db74 }
+.chr_chroma .chr_s2 { color: #e6db74 }
+.chr_chroma .chr_se { color: #ae81ff }
+.chr_chroma .chr_sh { color: #e6db74 }
+.chr_chroma .chr_si { color: #e6db74 }
+.chr_chroma .chr_sx { color: #e6db74 }
+.chr_chroma .chr_sr { color: #e6db74 }
+.chr_chroma .chr_s1 { color: #e6db74 }
+.chr_chroma .chr_ss { color: #e6db74 }
+.chr_chroma .chr_m { color: #ae81ff }
+.chr_chroma .chr_mb { color: #ae81ff }
+.chr_chroma .chr_mf { color: #ae81ff }
+.chr_chroma .chr_mh { color: #ae81ff }
+.chr_chroma .chr_mi { color: #ae81ff }
+.chr_chroma .chr_il { color: #ae81ff }
+.chr_chroma .chr_mo { color: #ae81ff }
+.chr_chroma .chr_o { color: #f92672 }
+.chr_chroma .chr_ow { color: #f92672 }
+.chr_chroma .chr_c { color: #75715e }
+.chr_chroma .chr_ch { color: #75715e }
+.chr_chroma .chr_cm { color: #75715e }
+.chr_chroma .chr_c1 { color: #75715e }
+.chr_chroma .chr_cs { color: #75715e }
+.chr_chroma .chr_cp { color: #75715e }
+.chr_chroma .chr_cpf { color: #75715e }
+.chr_chroma .chr_gd { color: #f92672 }
+.chr_chroma .chr_ge { font-style: italic }
+.chr_chroma .chr_gi { color: #a6e22e }
+.chr_chroma .chr_gs { font-weight: bold }
+.chr_chroma .chr_gu { color: #75715e }

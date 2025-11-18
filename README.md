@@ -2,7 +2,6 @@
 
 > Varnishlog Parser is a small Go library built to parse and analyze `varnishlog`
 > output, just like the name suggests.
-> It doesn’t rely on any external Go dependencies.
 
 A frontend to easily parse the logs is implemented using this library.
 

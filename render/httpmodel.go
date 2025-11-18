@@ -146,7 +146,6 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 		// Default
 	case "POST", "PUT", "PATCH":
 		s.WriteString("    -X " + r.method + " \\\n")
-		s.WriteString("    -d '<body-unavailable>' \\\n")
 	case "HEAD":
 		s.WriteString("    --head \\\n")
 	default:
@@ -159,6 +158,11 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 			continue
 		}
 		s.WriteString(fmt.Sprintf(`    -H "%s: %s"`+" \\\n", escapeDoubleQuotes(h.name), escapeDoubleQuotes(h.value)))
+	}
+
+	// Body
+	if r.method == "POST" || r.method == "PUT" || r.method == "PATCH" {
+		s.WriteString("    -d '<body-unavailable>' \\\n")
 	}
 
 	// Default parameters
@@ -219,6 +223,11 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	// Options
 	if scheme == "https://" {
 		s.WriteString("\n[Options]\ninsecure: true\n")
+	}
+
+	// Body
+	if r.method == "POST" || r.method == "PUT" || r.method == "PATCH" {
+		s.WriteString("\n# Body is not available within varnishlog, add it manually.\n")
 	}
 
 	// Connect-to

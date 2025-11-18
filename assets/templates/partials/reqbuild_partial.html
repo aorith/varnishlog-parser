@@ -6,10 +6,8 @@
 	{{ if isTxTypeSession . }}{{ continue }}{{ end }}
 	<h3>{{ .TXID }}</h3>
 	<h4>curl</h4>
-	<pre><code class="language-bash">{{- curlCommand . $data -}}</code></pre>
+	{{- curlCommand . $data -}}
 	<h4>hurl</h4>
-	<pre><code class="language-http">{{- hurlFile . $data -}}</code></pre>
+	{{- hurlFile . $data -}}
 	{{- end }}
 </div>
-
-<script src="/static/vendor/prism.js"></script>
