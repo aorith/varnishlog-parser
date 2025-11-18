@@ -8,7 +8,7 @@
 
   & table {
     margin-top: 10px;
-    min-width: 850px;
+    width: 100%;
     max-width: var(--view-width);
   }
 

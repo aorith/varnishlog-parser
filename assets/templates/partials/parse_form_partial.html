@@ -1,14 +1,12 @@
 <!-- templates/partials/parse_form_partial.html -->
 
-<form action="/" method="POST">
+<form id="parse-form" action="/" method="POST">
 	<fieldset>
-		<div class="inline-block">
-			{{ if .Logs.Textinput -}}
-			<textarea id="logsInput" name="logs" placeholder="Paste varnishlog logs here">{{ .Logs.Textinput }}</textarea>
-			{{ else }}
-			<textarea id="logsInput" name="logs" placeholder="Paste varnishlog logs here"></textarea>
-			{{ end }}
-		</div>
+		{{ if .Logs.Textinput -}}
+		<textarea id="logsInput" name="logs" placeholder="Paste varnishlog logs here">{{ .Logs.Textinput }}</textarea>
+		{{ else }}
+		<textarea id="logsInput" name="logs" placeholder="Paste varnishlog logs here"></textarea>
+		{{ end }}
 
 		<div class="inline-block">
 			<!-- Sequence settings -->

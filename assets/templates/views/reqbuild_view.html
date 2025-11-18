@@ -19,7 +19,7 @@
 			<fieldset>
 				<div class="form-row">
 					<label>
-						Scheme
+						Scheme:
 						<select name="scheme">
 							<option value="auto">-- Auto --</option>
 							<option value="http://">HTTP</option>
@@ -28,7 +28,7 @@
 					</label>
 
 					<label>
-						Headers
+						Headers:
 						<select name="headers">
 							<option value="received">Received</option>
 							<option value="processed">After VCL Processing</option>
@@ -38,7 +38,7 @@
 
 				<div class="form-row">
 					<label>
-						Excluded headers
+						Excluded headers:
 						<input type="text" name="excluded" value="Via, X-Forwarded-For">
 					</label>
 				</div>
@@ -48,7 +48,7 @@
 					<div class="form-row">
 						<label>
 							<input type="radio" name="connectTo" value="backend" checked>
-							Backend
+							Backend:
 							<select id="backend" name="backend">
 								<option value="auto">-- Auto --</option>
 								<option value="none">-- None --</option>
@@ -64,7 +64,7 @@
 					<div class="form-row">
 						<label>
 							<input type="radio" name="connectTo" value="custom">
-							Custom backend
+							Custom backend:
 							<input type="text" name="custom" pattern="^.+:[0-9]+$" placeholder="<HOST/IP>:<PORT>">
 						</label>
 					</div>

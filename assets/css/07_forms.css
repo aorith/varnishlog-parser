@@ -5,13 +5,27 @@
   margin-bottom: 6px;
 }
 
-#parse-view textarea {
-  width: 600px;
-  height: 220px;
+#parse-form {
+  width: 100%;
+
+  & fieldset {
+    width: 100%;
+
+    & fieldset {
+      width: auto;
+    }
+
+    & textarea {
+      width: 100%;
+      max-width: 450px;
+      height: 220px;
+    }
+  }
 }
 
 #parse-submit-btn {
-  width: 610px;
+  width: 100%;
+  max-width: 450px;
   padding: 10px;
 }
 
@@ -53,7 +67,6 @@ form {
   & input,
   & textarea,
   & select {
-    margin-left: 0.3rem;
     padding: 0.25rem 0.4rem;
     border: 1px solid var(--border);
     border-radius: 4px;
