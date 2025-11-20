@@ -2,11 +2,13 @@
   --bg-0: #ffffff;
   --bg-1: #f5f5f5;
   --fg-0: #000000;
-  --fg-1: #333333;
+  --fg-1: #212529;
+  --fg-2: #333333;
 
   --nav-bg: #f1f1f1;
   --border: #e0e0e0;
   --view-bg: #ffffff;
+  --table-bg-hover: #f8f9fa;
   --calm: #61284e;
   --cold: #093060;
   --mild: #184033;
@@ -48,4 +50,37 @@
   --font-mono:
     SFMono-Regular, Menlo, Consolas, Monaco, "Liberation Mono",
     "Lucida Console", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-0: #1a1a1a;
+    --bg-1: #252525;
+    --fg-0: #ffffff;
+    --fg-1: #e8e8e8;
+    --fg-2: #d0d0d0;
+
+    --nav-bg: #2a2a2a;
+    --border: #404040;
+    --view-bg: #1e1e1e;
+    --table-bg-hover: #2d2d2d;
+    --calm: #c77aaf;
+    --cold: #5a9bd5;
+    --mild: #5eb89a;
+    --warm: #d4927e;
+
+    --gray-0: #a0a0a0;
+    --red-0: #ff6b6b;
+    --green-0: #51cf66;
+    --yellow-0: #ffd43b;
+    --brown-0: #c9a89b;
+    --blue-0: #4dabf7;
+
+    --added: #1a4d1a;
+    --modified: #4d4d1a;
+    --deleted: #4d1a1a;
+
+    --accent: #4da6ff;
+    --accent-hover: #66b3ff;
+  }
 }
