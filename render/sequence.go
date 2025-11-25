@@ -275,7 +275,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			s.AddStep(svgsequence.Step{
 				Source: V,
 				Target: V,
-				Text:   record.String(),
+				Text:   truncateStr(record.String(), truncateLen),
 				Color:  ColorGray,
 			})
 
