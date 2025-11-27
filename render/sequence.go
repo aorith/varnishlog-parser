@@ -40,6 +40,7 @@ type SequenceConfig struct {
 	StepHeight      int  // height between each step
 	IncludeCalls    bool // whether to include all VCL calls
 	IncludeReturns  bool // whether to include all VCL returns
+	IncludeVCLLogs  bool // whether to include all VCL Logs
 	TrackURLAndHost bool // whether to track all modifications to the URL and Host
 }
 
@@ -272,12 +273,14 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			}
 
 		case vsl.VCLLogRecord:
-			s.AddStep(svgsequence.Step{
-				Source: V,
-				Target: V,
-				Text:   truncateStr(record.String(), truncateLen),
-				Color:  ColorGray,
-			})
+			if cfg.IncludeVCLLogs {
+				s.AddStep(svgsequence.Step{
+					Source: V,
+					Target: V,
+					Text:   truncateStr(record.String(), truncateLen),
+					Color:  ColorGray,
+				})
+			}
 
 		case vsl.LinkRecord:
 			childTx := ts.GetTX(record.VXID)

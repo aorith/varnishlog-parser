@@ -21,6 +21,10 @@
 					Include VCL returns
 				</label>
 				<label class="form-row">
+					<input type="checkbox" name="includeVCLLogs" value="yes" {{ if .Sequence.IncludeVCLLogs }}checked{{ end -}}>
+					Include VCL logs
+				</label>
+				<label class="form-row">
 					<input type="checkbox" name="trackURLAndHost" value="yes" {{ if .Sequence.TrackURLAndHost }}checked{{ end -}}>
 					Track URL and Host
 				</label>
