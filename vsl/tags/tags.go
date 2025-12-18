@@ -90,6 +90,8 @@ const (
 	Link = "Link"
 	// Failed attempt to set HTTP header
 	LostHeader = "LostHeader"
+	// MSE4 new object timing data
+	MSE4NewObject = "MSE4_NewObject"
 	// Informational messages about request handling
 	Notice = "Notice"
 	// Object protocol

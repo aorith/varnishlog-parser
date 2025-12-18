@@ -1164,6 +1164,105 @@ func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
 	return record, nil
 }
 
+// MSE4NewObjectRecord holds MSE4 new object timing data
+type MSE4NewObjectRecord struct {
+	BaseRecord
+	AllocationChunks     int64         // Number of allocation chunks created
+	BytesProcessed       SizeValue     // Number of bytes processed
+	TimeElapsed          time.Duration // Time elapsed between object creation and finalization (seconds)
+	TimeMSE4Processing   time.Duration // Total time spent on MSE4 processing (seconds)
+	TimeMemoryAllocation time.Duration // Time spent allocating memory (seconds)
+	TimeResourceWait     time.Duration // Time spent waiting for resource acquisition (seconds) [persisted only]
+	TimeDiskIOFetch      time.Duration // Time spent waiting for disk IO during fetch (seconds) [persisted only]
+	TimeDiskIOFinalize   time.Duration // Time spent waiting for disk IO during finalization (seconds) [persisted only]
+	IsPersisted          bool          // Whether this object was persisted to disk
+}
+
+func (r MSE4NewObjectRecord) String() string {
+	s := fmt.Sprintf(
+		"%d chunks | %s processed | %s elapsed | %s MSE4 | %s mem alloc",
+		r.AllocationChunks,
+		r.BytesProcessed.String(),
+		r.TimeElapsed,
+		r.TimeMSE4Processing,
+		r.TimeMemoryAllocation,
+	)
+
+	if r.IsPersisted {
+		s += fmt.Sprintf(
+			" | %s resource wait | %s disk IO fetch | %s disk IO finalize",
+			r.TimeResourceWait,
+			r.TimeDiskIOFetch,
+			r.TimeDiskIOFinalize,
+		)
+	}
+
+	return s
+}
+
+func NewMSE4NewObjectRecord(blr BaseRecord) (MSE4NewObjectRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 5 && len(parts) != 8 {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, expected 5 or 8 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	}
+
+	record := MSE4NewObjectRecord{BaseRecord: blr}
+	record.IsPersisted = len(parts) == 8
+
+	allocationChunks, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for allocationChunks on line %q", blr.GetRawLog())
+	}
+	record.AllocationChunks = allocationChunks
+
+	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
+	}
+	record.BytesProcessed = SizeValue(bytesProcessed)
+
+	timeElapsed, err := strconv.ParseFloat(parts[2], 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
+	}
+	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
+
+	timeMSE4Processing, err := strconv.ParseFloat(parts[3], 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMSE4Processing on line %q", blr.GetRawLog())
+	}
+	record.TimeMSE4Processing = time.Duration(timeMSE4Processing * float64(time.Second))
+
+	timeMemoryAllocation, err := strconv.ParseFloat(parts[4], 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMemoryAllocation on line %q", blr.GetRawLog())
+	}
+	record.TimeMemoryAllocation = time.Duration(timeMemoryAllocation * float64(time.Second))
+
+	// Parse optional persisted object fields
+	if record.IsPersisted {
+		timeResourceWait, err := strconv.ParseFloat(parts[5], 64)
+		if err != nil {
+			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeResourceWait on line %q", blr.GetRawLog())
+		}
+		record.TimeResourceWait = time.Duration(timeResourceWait * float64(time.Second))
+
+		timeDiskIOFetch, err := strconv.ParseFloat(parts[6], 64)
+		if err != nil {
+			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFetch on line %q", blr.GetRawLog())
+		}
+		record.TimeDiskIOFetch = time.Duration(timeDiskIOFetch * float64(time.Second))
+
+		timeDiskIOFinalize, err := strconv.ParseFloat(parts[7], 64)
+		if err != nil {
+			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFinalize on line %q", blr.GetRawLog())
+		}
+		record.TimeDiskIOFinalize = time.Duration(timeDiskIOFinalize * float64(time.Second))
+	}
+
+	return record, nil
+}
+
 /* BaseRecord aliases */
 
 // EndRecord marks the end of a transaction

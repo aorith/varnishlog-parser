@@ -254,6 +254,8 @@ func processRecord(line string) (Record, error) {
 		return NewStatusRecord(blr)
 	case tags.Length:
 		return NewLengthRecord(blr)
+	case tags.MSE4NewObject:
+		return NewMSE4NewObjectRecord(blr)
 	case tags.Hit, tags.HitMiss, tags.HitPass:
 		return NewHitRecord(blr)
 	case tags.TTL:

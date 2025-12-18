@@ -62,6 +62,8 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.LengthRecord:
 			s.addRow(r.GetTag(), "", record.Size.String(), "")
+		case vsl.MSE4NewObjectRecord:
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.VCLLogRecord:
 			s.addRow(r.GetTag(), "", record.String(), "logMsg")
 		case vsl.StatusRecord:
