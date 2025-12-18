@@ -176,7 +176,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	// --connect-to HOST1:PORT1:HOST2:PORT2
 	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
 	if backend != nil {
-		s.WriteString(fmt.Sprintf(" \\\n    "+`--connect-to "%s:%s:%s"`, hostURL, escapeDoubleQuotes(backend.host), backend.port))
+		s.WriteString(fmt.Sprintf(" \\\n    "+`--connect-to "::%s:%s"`, escapeDoubleQuotes(backend.host), backend.port))
 	}
 
 	return s.String()
@@ -235,8 +235,8 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
 	if backend != nil {
 		s.WriteString("\n# To connect to the backend run the hurl file as:\n")
-		s.WriteString(fmt.Sprintf(`# hurl --connect-to "%s:%s:%s" file.hurl`,
-			escapeDoubleQuotes(hostURL), escapeDoubleQuotes(backend.host), backend.port,
+		s.WriteString(fmt.Sprintf(`# hurl --connect-to "::%s:%s" file.hurl`,
+			escapeDoubleQuotes(backend.host), backend.port,
 		))
 	}
 
