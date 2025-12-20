@@ -139,7 +139,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	hostURL = escapeDoubleQuotes(hostURL)
 
 	// Initial command
-	s.WriteString(fmt.Sprintf(`curl "%s%s%s"`+" \\\n", scheme, hostURL, escapeDoubleQuotes(r.url)))
+	fmt.Fprintf(&s, `curl "%s%s%s"`+" \\\n", scheme, hostURL, escapeDoubleQuotes(r.url))
 
 	switch r.method {
 	case "GET":
@@ -157,7 +157,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 		if h.name == vsl.HdrNameHost {
 			continue
 		}
-		s.WriteString(fmt.Sprintf(`    -H "%s: %s"`+" \\\n", escapeDoubleQuotes(h.name), escapeDoubleQuotes(h.value)))
+		fmt.Fprintf(&s, `    -H "%s: %s"`+" \\\n", escapeDoubleQuotes(h.name), escapeDoubleQuotes(h.value))
 	}
 
 	// Body
@@ -176,7 +176,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	// --connect-to HOST1:PORT1:HOST2:PORT2
 	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
 	if backend != nil {
-		s.WriteString(fmt.Sprintf(" \\\n    "+`--connect-to "::%s:%s"`, escapeDoubleQuotes(backend.host), backend.port))
+		fmt.Fprintf(&s, " \\\n    "+`--connect-to "::%s:%s"`, escapeDoubleQuotes(backend.host), backend.port)
 	}
 
 	return s.String()
@@ -210,14 +210,14 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	}
 
 	// Start hurl file
-	s.WriteString(fmt.Sprintf("%s %s%s%s\n", r.method, scheme, hostURL, r.url))
+	fmt.Fprintf(&s, "%s %s%s%s\n", r.method, scheme, hostURL, r.url)
 
 	// Headers
 	for _, h := range r.headers {
 		if h.name == vsl.HdrNameHost {
 			continue
 		}
-		s.WriteString(fmt.Sprintf("%s: %s\n", h.name, h.value))
+		fmt.Fprintf(&s, "%s: %s\n", h.name, h.value)
 	}
 
 	// Options
@@ -235,9 +235,7 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
 	if backend != nil {
 		s.WriteString("\n# To connect to the backend run the hurl file as:\n")
-		s.WriteString(fmt.Sprintf(`# hurl --connect-to "::%s:%s" file.hurl`,
-			escapeDoubleQuotes(backend.host), backend.port,
-		))
+		fmt.Fprintf(&s, `# hurl --connect-to "::%s:%s" file.hurl`, escapeDoubleQuotes(backend.host), backend.port)
 	}
 
 	return s.String()

@@ -92,7 +92,7 @@ func applyChromaStyle(text, lang string) string {
 func curlCommand(tx *vsl.Transaction, cfg PageData) string {
 	httpReq, backend, err := processReqBuildForm(tx, cfg)
 	if err != nil {
-		return err.Error()
+		return fmt.Sprintf(`<pre>%s</pre>`, err.Error())
 	}
 	return applyChromaStyle(httpReq.CurlCommand(cfg.ReqBuild.Scheme, backend), "bash")
 }
@@ -100,7 +100,7 @@ func curlCommand(tx *vsl.Transaction, cfg PageData) string {
 func hurlFile(tx *vsl.Transaction, cfg PageData) string {
 	httpReq, backend, err := processReqBuildForm(tx, cfg)
 	if err != nil {
-		return err.Error()
+		return fmt.Sprintf(`<pre>%s</pre>`, err.Error())
 	}
 	return applyChromaStyle(httpReq.HurlFile(cfg.ReqBuild.Scheme, backend), "properties")
 }
