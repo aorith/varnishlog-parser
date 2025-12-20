@@ -25,8 +25,8 @@ const (
 
 // Colors
 const (
-	ColorReq    = "#ADAD00"
-	ColorBereq  = "#EE9900"
+	ColorReq    = "#998800"
+	ColorBereq  = "#008899"
 	ColorError  = "#991111"
 	ColorCall   = "#555599"
 	ColorReturn = "#995599"
@@ -122,7 +122,8 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 	for i, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
-			s.OpenSection(string(tx.TXID), getTxTypeColor(tx.TXType))
+			secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true}
+			s.OpenSection(string(tx.TXID), &secCfg)
 
 		case vsl.EndRecord:
 			s.CloseSection()
@@ -287,7 +288,8 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			if childTx != nil {
 				s.CloseSection()
 				addTransactionLogs(s, ts, childTx, cfg, visited)
-				s.OpenSection(string(tx.TXID), getTxTypeColor(tx.TXType))
+				secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true}
+				s.OpenSection(string(tx.TXID), &secCfg)
 			} else {
 				actor := V
 				if record.TXType == vsl.LinkTypeBereq {
