@@ -27,7 +27,7 @@ func headersView(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXI
 		switch record := r.(type) {
 		case vsl.BeginRecord:
 			if tx.TXType != vsl.TxTypeSession {
-				lines = append(lines, fmt.Sprintf(`<div class="hdr-tx">Request of %s</div>`, tx.TXID))
+				lines = append(lines, fmt.Sprintf(`<div class="hdr-tx hdr-tx-req">Request of %s</div>`, tx.TXID))
 				lines = append(lines, renderHeaders(tx.ReqHeaders)...)
 			}
 
@@ -39,7 +39,7 @@ func headersView(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXI
 
 		case vsl.EndRecord:
 			if tx.TXType != vsl.TxTypeSession {
-				lines = append(lines, fmt.Sprintf(`<div class="hdr-tx">Response of %s</div>`, tx.TXID))
+				lines = append(lines, fmt.Sprintf(`<div class="hdr-tx hdr-tx-resp">Response of %s</div>`, tx.TXID))
 				lines = append(lines, renderHeaders(tx.RespHeaders)...)
 			}
 		}

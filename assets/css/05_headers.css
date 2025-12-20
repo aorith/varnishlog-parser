@@ -1,3 +1,8 @@
+#headers-view h2 {
+  font-size: var(--fsize-xxl);
+  color: var(--fg-2);
+}
+
 .hdr-legend {
   display: flex;
   flex-direction: column;
@@ -55,8 +60,16 @@ div.hdr-table {
     font-size: var(--fsize-normal);
     font-weight: bold;
     padding: 8px 0 8px 0;
-    border-bottom: 1px solid var(--mild);
+  }
+
+  & div.hdr-tx-req {
     color: var(--mild);
+    border-bottom: 1px solid var(--mild);
+  }
+
+  & div.hdr-tx-resp {
+    color: var(--calm);
+    border-bottom: 1px solid var(--calm);
   }
 
   & div.hdr-title {
