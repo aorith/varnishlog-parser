@@ -315,7 +315,7 @@ func NewBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
 		return BackendStartRecord{}, fmt.Errorf("conversion to BackendStartRecord failed, incorrect len on line %q", blr.GetRawLog())
 	}
 
-	remoteAddr := net.ParseIP(strings.Trim(parts[2], "[]"))
+	remoteAddr := net.ParseIP(strings.Trim(parts[0], "[]"))
 	if remoteAddr == nil {
 		return BackendStartRecord{}, fmt.Errorf("conversion to BackendStartRecord failed, bad remoteAddr on line %q", blr.GetRawLog())
 	}
