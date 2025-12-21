@@ -112,7 +112,7 @@ func (t *Transaction) GetBackendConnStr() string {
 		return ""
 	}
 	record := r.(BackendOpenRecord)
-	return fmt.Sprintf("%s:%d", record.RemoteAddr.String(), record.RemotePort)
+	return record.ConnStr()
 }
 
 // StartTime is a helper function that returns the approximate start time of the transaction
@@ -287,10 +287,10 @@ func (t TransactionSet) RawLog() string {
 			s.WriteString("\n")
 		}
 
-		s.WriteString(fmt.Sprintf("%s\n", tx.RawLog))
+		fmt.Fprintf(&s, "%s\n", tx.RawLog)
 
 		for _, r := range tx.Records {
-			s.WriteString(fmt.Sprintf("%s\n", r.GetRawLog()))
+			fmt.Fprintf(&s, "%s\n", r.GetRawLog())
 		}
 		s.WriteString("\n")
 	}
@@ -311,10 +311,10 @@ func (t TransactionSet) RawLogForTx(tx *Transaction, includeChildrenTxs bool) st
 			s.WriteString("\n")
 		}
 
-		s.WriteString(fmt.Sprintf("%s\n", tx.RawLog))
+		fmt.Fprintf(&s, "%s\n", tx.RawLog)
 
 		for _, r := range tx.Records {
-			s.WriteString(fmt.Sprintf("%s\n", r.GetRawLog()))
+			fmt.Fprintf(&s, "%s\n", r.GetRawLog())
 		}
 		s.WriteString("\n")
 	}
