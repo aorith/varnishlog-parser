@@ -1285,6 +1285,231 @@ func NewMSE4NewObjectRecord(blr BaseRecord) (MSE4NewObjectRecord, error) {
 	return record, nil
 }
 
+// MSE4ObjIterRecord holds MSE4 object payload iteration timing data
+type MSE4ObjIterRecord struct {
+	BaseRecord
+	TimeElapsed          time.Duration // Time elapsed between start and end of iteration (seconds)
+	BytesProcessed       SizeValue     // Number of bytes processed
+	TimeProcessing       time.Duration // Total time spent processing (seconds)
+	TimeBackendWait      time.Duration // Time spent waiting for backend data (seconds)
+	DiskIOBytes          SizeValue     // Disk IO bytes processed [persisted only]
+	TimeDiskIOProcessing time.Duration // Time spent on processing disk IO (seconds) [persisted only]
+	IsPersisted          bool          // Whether this object was persisted to disk
+}
+
+func (r MSE4ObjIterRecord) String() string {
+	s := fmt.Sprintf(
+		"%s elapsed | %s processed | %s processing | %s backend wait",
+		r.TimeElapsed,
+		r.BytesProcessed.String(),
+		r.TimeProcessing,
+		r.TimeBackendWait,
+	)
+
+	if r.IsPersisted {
+		s += fmt.Sprintf(
+			" | %s disk IO bytes | %s disk IO processing",
+			r.DiskIOBytes.String(),
+			r.TimeDiskIOProcessing,
+		)
+	}
+
+	return s
+}
+
+func NewMSE4ObjIterRecord(blr BaseRecord) (MSE4ObjIterRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 4 && len(parts) != 6 {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, expected 4 or 6 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	}
+
+	record := MSE4ObjIterRecord{BaseRecord: blr}
+	record.IsPersisted = len(parts) == 6
+
+	timeElapsed, err := strconv.ParseFloat(parts[0], 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
+	}
+	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
+
+	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
+	}
+	record.BytesProcessed = SizeValue(bytesProcessed)
+
+	timeProcessing, err := strconv.ParseFloat(parts[2], 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeProcessing on line %q", blr.GetRawLog())
+	}
+	record.TimeProcessing = time.Duration(timeProcessing * float64(time.Second))
+
+	timeBackendWait, err := strconv.ParseFloat(parts[3], 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeBackendWait on line %q", blr.GetRawLog())
+	}
+	record.TimeBackendWait = time.Duration(timeBackendWait * float64(time.Second))
+
+	// Parse optional persisted object fields
+	if record.IsPersisted {
+		diskIOBytes, err := strconv.ParseInt(parts[4], 10, 64)
+		if err != nil {
+			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for diskIOBytes on line %q", blr.GetRawLog())
+		}
+		record.DiskIOBytes = SizeValue(diskIOBytes)
+
+		timeDiskIOProcessing, err := strconv.ParseFloat(parts[5], 64)
+		if err != nil {
+			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeDiskIOProcessing on line %q", blr.GetRawLog())
+		}
+		record.TimeDiskIOProcessing = time.Duration(timeDiskIOProcessing * float64(time.Second))
+	}
+
+	return record, nil
+}
+
+// MSE4ChunkFaultRecord holds MSE4 persisted chunk memory fault timing data
+type MSE4ChunkFaultRecord struct {
+	BaseRecord
+	ChunksProcessed      int64         // Number of chunks processed
+	BytesProcessed       SizeValue     // Number of bytes processed
+	TimeProcessing       time.Duration // Total time spent on processing (seconds)
+	TimeMemoryAllocation time.Duration // Time spent allocating memory (seconds)
+	TimeDiskIOWait       time.Duration // Time spent waiting for disk IO (seconds)
+}
+
+func (r MSE4ChunkFaultRecord) String() string {
+	return fmt.Sprintf(
+		"%d chunks | %s processed | %s processing | %s mem alloc | %s disk IO wait",
+		r.ChunksProcessed,
+		r.BytesProcessed.String(),
+		r.TimeProcessing,
+		r.TimeMemoryAllocation,
+		r.TimeDiskIOWait,
+	)
+}
+
+func NewMSE4ChunkFaultRecord(blr BaseRecord) (MSE4ChunkFaultRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 5 {
+		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, expected 5 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	}
+
+	record := MSE4ChunkFaultRecord{BaseRecord: blr}
+
+	chunksProcessed, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for chunksProcessed on line %q", blr.GetRawLog())
+	}
+	record.ChunksProcessed = chunksProcessed
+
+	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
+	}
+	record.BytesProcessed = SizeValue(bytesProcessed)
+
+	timeProcessing, err := strconv.ParseFloat(parts[2], 64)
+	if err != nil {
+		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeProcessing on line %q", blr.GetRawLog())
+	}
+	record.TimeProcessing = time.Duration(timeProcessing * float64(time.Second))
+
+	timeMemoryAllocation, err := strconv.ParseFloat(parts[3], 64)
+	if err != nil {
+		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeMemoryAllocation on line %q", blr.GetRawLog())
+	}
+	record.TimeMemoryAllocation = time.Duration(timeMemoryAllocation * float64(time.Second))
+
+	timeDiskIOWait, err := strconv.ParseFloat(parts[4], 64)
+	if err != nil {
+		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeDiskIOWait on line %q", blr.GetRawLog())
+	}
+	record.TimeDiskIOWait = time.Duration(timeDiskIOWait * float64(time.Second))
+
+	return record, nil
+}
+
+// BrotliRecord holds Brotli compression/decompression operation data
+type BrotliRecord struct {
+	BaseRecord
+	Operation   rune      // 'B': Brotli, 'U': Unbrotli, 'u': Unbrotli-test
+	Direction   rune      // 'F': Fetch, 'D': Deliver
+	BytesInput  SizeValue // Bytes input
+	BytesOutput SizeValue // Bytes output
+}
+
+func (r BrotliRecord) String() string {
+	var operation string
+	switch r.Operation {
+	case 'B':
+		operation = "Brotli"
+	case 'U':
+		operation = "Unbrotli"
+	case 'u':
+		operation = "Unbrotli-test"
+	default:
+		operation = string(r.Operation)
+	}
+
+	var direction string
+	switch r.Direction {
+	case 'F':
+		direction = "Fetch"
+	case 'D':
+		direction = "Deliver"
+	default:
+		direction = string(r.Direction)
+	}
+
+	return fmt.Sprintf(
+		"%s | %s | %s input | %s output",
+		operation,
+		direction,
+		r.BytesInput.String(),
+		r.BytesOutput.String(),
+	)
+}
+
+func NewBrotliRecord(blr BaseRecord) (BrotliRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 4 {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, expected 4 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	}
+
+	record := BrotliRecord{BaseRecord: blr}
+
+	if len(parts[0]) != 1 {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for operation on line %q", blr.GetRawLog())
+	}
+	record.Operation = rune(parts[0][0])
+	if record.Operation != 'B' && record.Operation != 'U' && record.Operation != 'u' {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid operation '%c' on line %q", record.Operation, blr.GetRawLog())
+	}
+
+	if len(parts[1]) != 1 {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for direction on line %q", blr.GetRawLog())
+	}
+	record.Direction = rune(parts[1][0])
+	if record.Direction != 'F' && record.Direction != 'D' {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid direction '%c' on line %q", record.Direction, blr.GetRawLog())
+	}
+
+	bytesInput, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesInput on line %q", blr.GetRawLog())
+	}
+	record.BytesInput = SizeValue(bytesInput)
+
+	bytesOutput, err := strconv.ParseInt(parts[3], 10, 64)
+	if err != nil {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesOutput on line %q", blr.GetRawLog())
+	}
+	record.BytesOutput = SizeValue(bytesOutput)
+
+	return record, nil
+}
+
 /* BaseRecord aliases */
 
 // EndRecord marks the end of a transaction

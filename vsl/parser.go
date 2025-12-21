@@ -238,6 +238,8 @@ func processRecord(line string) (Record, error) {
 		return NewBackendCloseRecord(blr)
 	case tags.BackendReuse:
 		return NewBackendReuseRecord(blr)
+	case tags.Brotli:
+		return NewBrotliRecord(blr)
 	case tags.ReqAcct, tags.BereqAcct:
 		return NewAcctRecord(blr)
 	case tags.PipeAcct:
@@ -256,6 +258,10 @@ func processRecord(line string) (Record, error) {
 		return NewLengthRecord(blr)
 	case tags.MSE4NewObject:
 		return NewMSE4NewObjectRecord(blr)
+	case tags.MSE4ObjIter:
+		return NewMSE4ObjIterRecord(blr)
+	case tags.MSE4ChunkFault:
+		return NewMSE4ChunkFaultRecord(blr)
 	case tags.Hit, tags.HitMiss, tags.HitPass:
 		return NewHitRecord(blr)
 	case tags.TTL:

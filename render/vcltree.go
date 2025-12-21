@@ -58,11 +58,17 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.GzipRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
+		case vsl.BrotliRecord:
+			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.BackendOpenRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.LengthRecord:
 			s.addRow(r.GetTag(), "", record.Size.String(), "")
 		case vsl.MSE4NewObjectRecord:
+			s.addRow(r.GetTag(), "", record.String(), "")
+		case vsl.MSE4ObjIterRecord:
+			s.addRow(r.GetTag(), "", record.String(), "")
+		case vsl.MSE4ChunkFaultRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.VCLLogRecord:
 			s.addRow(r.GetTag(), "", record.String(), "logMsg")

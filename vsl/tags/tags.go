@@ -60,6 +60,8 @@ const (
 	BerespStatus = "BerespStatus"
 	// Bogus HTTP received
 	BogoHeader = "BogoHeader"
+	// Brotli - (un)Brotli performed on object
+	Brotli = "Brotli"
 	// ESI parser error or warning message
 	ESIXMLError = "ESI_xmlerror"
 	// Error messages
@@ -92,6 +94,10 @@ const (
 	LostHeader = "LostHeader"
 	// MSE4 new object timing data
 	MSE4NewObject = "MSE4_NewObject"
+	// MSE4 object payload iteration timing summary
+	MSE4ObjIter = "MSE4_ObjIter"
+	// MSE4 persisted chunk memory fault
+	MSE4ChunkFault = "MSE4_ChunkFault"
 	// Informational messages about request handling
 	Notice = "Notice"
 	// Object protocol
