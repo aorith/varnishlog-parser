@@ -220,12 +220,11 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			s.AddStep(svgsequence.Step{
 				Source: B, Target: B,
 				Text: fmt.Sprintf(
-					"%s\n%s\n%s %s:%d",
+					"%s\n%s\n%s %s",
 					record.GetTag(),
 					truncateStrMiddle(record.Name, truncateLen),
 					record.Reason,
-					record.RemoteAddr.String(),
-					record.RemotePort,
+					record.ConnStr(),
 				),
 			})
 

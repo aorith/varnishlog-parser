@@ -72,9 +72,8 @@ func NewBaseRecord(rawLog string) (BaseRecord, error) {
 	}
 
 	tag := fields[1] // e.g: Begin
-	firstIndex := strings.Index(rawLog, tag)
-	value := rawLog[firstIndex+len(tag):]
-	value = strings.TrimLeft(value, " \t")
+	_, after, _ := strings.Cut(rawLog, tag)
+	value := strings.TrimLeft(after, " \t")
 
 	return BaseRecord{Tag: tag, RawValue: value, rawLog: rawLog}, nil
 }
@@ -239,8 +238,12 @@ type BackendOpenRecord struct {
 	Reason         string // connect or reuse
 }
 
+func (r BackendOpenRecord) ConnStr() string {
+	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort))
+}
+
 func (r BackendOpenRecord) String() string {
-	return fmt.Sprintf("%s (%s:%d) %s", r.Name, r.RemoteAddr.String(), r.RemotePort, r.Reason)
+	return fmt.Sprintf("%s (%s) %s", r.Name, r.ConnStr(), r.Reason)
 }
 
 func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
@@ -254,7 +257,7 @@ func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
 		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad file descriptor on line %q", blr.GetRawLog())
 	}
 
-	remoteAddr := net.ParseIP(parts[2])
+	remoteAddr := net.ParseIP(strings.Trim(parts[2], "[]"))
 	if remoteAddr == nil {
 		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad remoteAddr on line %q", blr.GetRawLog())
 	}
@@ -264,7 +267,7 @@ func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
 		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad remotePort on line %q", blr.GetRawLog())
 	}
 
-	localAddr := net.ParseIP(parts[4])
+	localAddr := net.ParseIP(strings.Trim(parts[4], "[]"))
 	if localAddr == nil {
 		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad localAddr on line %q", blr.GetRawLog())
 	}
@@ -298,13 +301,21 @@ type BackendStartRecord struct {
 	RemotePort int    // Remote port
 }
 
+func (r BackendStartRecord) ConnStr() string {
+	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort))
+}
+
+func (r BackendStartRecord) String() string {
+	return r.ConnStr()
+}
+
 func NewBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
 	parts := strings.Fields(blr.GetRawValue())
 	if len(parts) < 2 {
 		return BackendStartRecord{}, fmt.Errorf("conversion to BackendStartRecord failed, incorrect len on line %q", blr.GetRawLog())
 	}
 
-	remoteAddr := net.ParseIP(parts[0])
+	remoteAddr := net.ParseIP(strings.Trim(parts[2], "[]"))
 	if remoteAddr == nil {
 		return BackendStartRecord{}, fmt.Errorf("conversion to BackendStartRecord failed, bad remoteAddr on line %q", blr.GetRawLog())
 	}
@@ -536,13 +547,21 @@ type ReqStartRecord struct {
 	Listener   string // Listener name (from -a)
 }
 
+func (r ReqStartRecord) ConnStr() string {
+	return net.JoinHostPort(r.ClientIP.String(), fmt.Sprintf("%d", r.ClientPort))
+}
+
+func (r ReqStartRecord) String() string {
+	return r.ConnStr() + " " + r.Listener
+}
+
 func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
 	parts := strings.Fields(blr.GetRawValue())
 	if len(parts) != 3 {
 		return ReqStartRecord{}, fmt.Errorf("conversion to ReqStartRecord failed, incorrect len on line %q", blr.GetRawLog())
 	}
 
-	clientIP := net.ParseIP(parts[0])
+	clientIP := net.ParseIP(strings.Trim(parts[0], "[]"))
 	if clientIP == nil {
 		return ReqStartRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad clientAddr on line %q", blr.GetRawLog())
 	}
@@ -982,11 +1001,14 @@ type SessOpenRecord struct {
 	FileDescriptor int       // File descriptor number
 }
 
+func (r SessOpenRecord) ConnStr() string {
+	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort))
+}
+
 func (r SessOpenRecord) String() string {
 	return fmt.Sprintf(
-		"%s:%d %s %s:%d (%s) %d",
-		r.RemoteAddr,
-		r.RemotePort,
+		"%s %s %s:%d (%s) %d",
+		r.ConnStr(),
 		r.SocketName,
 		r.LocalAddr,
 		r.LocalPort,
@@ -1001,7 +1023,7 @@ func NewSessOpenRecord(blr BaseRecord) (SessOpenRecord, error) {
 		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, incorrect len on line %q", blr.GetRawLog())
 	}
 
-	remoteAddr := net.ParseIP(parts[0])
+	remoteAddr := net.ParseIP(strings.Trim(parts[0], "[]"))
 	if remoteAddr == nil {
 		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad remoteAddr on line %q", blr.GetRawLog())
 	}
@@ -1011,7 +1033,7 @@ func NewSessOpenRecord(blr BaseRecord) (SessOpenRecord, error) {
 		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad remotePort on line %q", blr.GetRawLog())
 	}
 
-	localAddr := net.ParseIP(parts[3])
+	localAddr := net.ParseIP(strings.Trim(parts[3], "[]"))
 	if localAddr == nil {
 		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad localAddr on line %q", blr.GetRawLog())
 	}
