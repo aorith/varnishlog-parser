@@ -38,13 +38,17 @@
 		<br>
 
 		{{ $set := .Transactions.Set }}
+		{{ $state := "open" }}
 		{{ range .Transactions.Set.UniqueRootParents false }}
-		<h2>{{ .TXID }}</h2>
-		<div class="hdr-table">
-			{{ range headersView $set . }}
-			{{ . }}
-			{{ end }}
-		</div>
+			<details {{ $state }}>
+				<summary>{{ .TXID }}</summary>
+				<div class="hdr-table">
+					{{ range headersView $set . }}
+					{{ . }}
+					{{ end }}
+				</div>
+			</details>
+			{{ $state = "" }}
 		{{ end }}
 	</div>
 </div>

@@ -14,13 +14,17 @@
 			tags display elapsed time in a human-readable format, and unset headers are shown with strikethrough text.</p>
 
 		{{ $set := .Transactions.Set }}
+		{{ $state := "open" }}
 		{{ range .Transactions.Set.UniqueRootParents true }}
-		<h2>Tree for {{ .TXID }}</h2>
-		<div class="txtree">
-			{{ renderTXLogTree $set . }}
-		</div>
-		<br>
-		<br>
+			<details {{ $state }}>
+				<summary>Tree for {{ .TXID }}</summary>
+				<div class="txtree">
+					{{ renderTXLogTree $set . }}
+				</div>
+				<br>
+				<br>
+			</details>
+			{{ $state = "" }}
 		{{ end }}
 	</div>
 </div>

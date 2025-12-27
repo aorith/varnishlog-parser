@@ -17,13 +17,17 @@
 
 		{{ $set := .Transactions.Set }}
 		{{ $cfg := .Sequence }}
+		{{ $state := "open" }}
 		{{ range .Transactions.Set.UniqueRootParents false }}
-		<h3>{{ .TXID }}</h3>
-		<h4>Sequence Diagram</h4>
-		<div class="sequence">{{ sequence $set . $cfg }}</div>
-		<h4>VSL Log</h4>
-		<pre>{{ $set.RawLogForTx . true }}</pre>
-		<br>
+			<details {{ $state }}>
+				<summary>{{ .TXID }}</summary>
+				<h4>Sequence Diagram</h4>
+				<div class="sequence">{{ sequence $set . $cfg }}</div>
+				<h4>VSL Log</h4>
+				<pre>{{ $set.RawLogForTx . true }}</pre>
+				<br>
+			</details>
+			{{ $state = "" }}
 		{{ end }}
 	</div>
 </div>

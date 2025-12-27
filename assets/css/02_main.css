@@ -136,6 +136,13 @@ pre {
   vertical-align: top;
 }
 
+.view details summary {
+  font-weight: bold;
+  font-size: var(--fsize-xl);
+  color: var(--calm);
+  margin: 0.5rem 0 0.5rem 0;
+}
+
 /* HTMX animation after element creation */
 .fade-me-in.htmx-added {
   opacity: 0;
