@@ -15,7 +15,7 @@ func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
 	data := html.PageData{Version: version}
 
 	// Default values
-	data.Sequence.Distance = 200
+	data.Sequence.Distance = 350
 	data.Sequence.StepHeight = 40
 	data.Sequence.IncludeCalls = false
 	data.Sequence.IncludeReturns = false

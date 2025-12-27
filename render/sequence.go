@@ -190,13 +190,29 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			case "deliver":
 				switch tx.TXType {
 				case vsl.TxTypeRequest:
-					lastStatus := tx.LastRecordByTag(tags.RespStatus, i)
+					status := tx.LastRecordByTag(tags.RespStatus, i)
+					reason := tx.LastRecordByTag(tags.RespReason, i)
 					// If a RespStatus is not found, we are probably serving a cache hit
-					if lastStatus != nil {
-						s1 := "DELIVER\n" + lastStatus.GetRawValue()
-						lastReason := tx.LastRecordByTag(tags.RespReason, i)
-						if lastReason != nil {
-							s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
+					if status != nil {
+						s1 := "DELIVER\n" + status.GetRawValue()
+						if reason != nil {
+							s1 += " " + wrapAndTruncate(reason.GetRawValue(), truncateLen, 100)
+						}
+						s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
+					}
+
+					// Handle 200 --> 206 (partial content) by checking the next status
+					status = tx.NextRecordByTag(tags.RespStatus, i)
+					reason = tx.NextRecordByTag(tags.RespReason, i)
+					contentRange := tx.RespHeaders.Get("Content-Range", false)
+					if status != nil {
+						s1 := "DELIVER\n"
+						if contentRange != "" {
+							s1 += "Content-Range: " + contentRange + "\n"
+						}
+						s1 += status.GetRawValue()
+						if reason != nil {
+							s1 += " " + wrapAndTruncate(reason.GetRawValue(), truncateLen, 100)
 						}
 						s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
 					}
