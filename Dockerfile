@@ -3,8 +3,9 @@ FROM golang:1.25 AS builder
 WORKDIR /app
 
 ARG VERSION=dev
+# see 'go tool link' for ldflags
 RUN --mount=type=bind,target=. go mod download \
-            && CGO_ENABLED=0 go build -ldflags="-X main.version=${VERSION}" -o /varnishlog-parser cmd/server/varnishlog-parser.go
+            && CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=${VERSION}" -o /varnishlog-parser cmd/server/varnishlog-parser.go
 
 FROM scratch
 
