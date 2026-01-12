@@ -1,15 +1,11 @@
 github.com/alecthomas/assert/v2 v2.11.0 h1:2Q9r3ki8+JYXvGsDyBXwH3LcJ+WK5D0gc5E8vS6K3D0=
 github.com/alecthomas/assert/v2 v2.11.0/go.mod h1:Bze95FyfUr7x34QZrjL+XP+0qgp/zg8yS+TtBj1WA3k=
-github.com/alecthomas/chroma/v2 v2.21.1 h1:FaSDrp6N+3pphkNKU6HPCiYLgm8dbe5UXIXcoBhZSWA=
-github.com/alecthomas/chroma/v2 v2.21.1/go.mod h1:NqVhfBR0lte5Ouh3DcthuUCTUpDC9cxBOfyMbMQPs3o=
+github.com/alecthomas/chroma/v2 v2.22.0 h1:PqEhf+ezz5F5owoDeOUKFzW+W3ZJDShNCaHg4sZuItI=
+github.com/alecthomas/chroma/v2 v2.22.0/go.mod h1:NqVhfBR0lte5Ouh3DcthuUCTUpDC9cxBOfyMbMQPs3o=
 github.com/alecthomas/repr v0.5.2 h1:SU73FTI9D1P5UNtvseffFSGmdNci/O6RsqzeXJtP0Qs=
 github.com/alecthomas/repr v0.5.2/go.mod h1:Fr0507jx4eOXV7AlPV6AVZLYrLIuIeSOWtW57eE/O/4=
-github.com/aorith/svg-sequence v0.0.15 h1:E9kH4/WE9+BiQFmOqP3oCuP6e79Cqg1MygetofqTZTs=
-github.com/aorith/svg-sequence v0.0.15/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
 github.com/aorith/svg-sequence v0.0.16 h1:nqKkFY8w9Opg/U85BFicSTU7YeEqwNF1QzekrYIZjQo=
 github.com/aorith/svg-sequence v0.0.16/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
-github.com/aorith/svg-timeline v0.2.1 h1:BKog2X8drlpTeIXZXa89OnxVaFr4IUhVA4/9q3BUsHE=
-github.com/aorith/svg-timeline v0.2.1/go.mod h1:haohFRiwc0+Po6714AgYlsoeolDqRTNkI+d62k51qjo=
 github.com/aorith/svg-timeline v0.2.2 h1:nQ5zn9mAPy+insAIsY3M9gNlrjluRHaQJdDJpI9Es9Y=
 github.com/aorith/svg-timeline v0.2.2/go.mod h1:haohFRiwc0+Po6714AgYlsoeolDqRTNkI+d62k51qjo=
 github.com/dlclark/regexp2 v1.11.5 h1:Q/sSnsKerHeCkc/jSTNq1oCm7KiVgUMZRDUoRu0JQZQ=
