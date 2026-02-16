@@ -14,6 +14,10 @@ fmt:
 	@goimports -local $(shell go list -m) -w .
 	@gofumpt -l -w .
 
+.PHONY: static-check
+static-check:
+	golangci-lint run
+
 .PHONY: ensure-spdx
 ensure-spdx:
 	find . -type f -name "*.go" -exec sh -c 'head -1 {} | grep -q SPDX || echo "Missing SPDX on file {}"' \;
