@@ -22,7 +22,7 @@ type TimelineEvent struct {
 	duration  time.Duration
 }
 
-// Timeline generates an SVG timeline
+// Timeline generates an SVG timeline.
 func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks int) string {
 	tl := svgtimeline.NewTimeline()
 
@@ -31,24 +31,25 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 	events := collectAndSortRecords(ts, root, visited)
 
 	var lastTx *vsl.Transaction
+
 	txRows := make(map[vsl.VXID]int)
 	currentIndex := -1
+
 	for _, e := range events {
 		switch record := e.record.(type) {
-
 		case vsl.BeginRecord:
 			if e.startTime.IsZero() || e.endTime.IsZero() {
 				continue
 			}
 
-			currentIndex += 1
+			currentIndex++
 
 			if currentIndex-1 >= 0 {
 				lastRow := tl.GetRowByIndex(currentIndex - 1)
 				if lastRow != nil {
 					rowEndTime := lastRow.EndTime()
 					if e.startTime.After(rowEndTime) {
-						currentIndex -= 1
+						currentIndex--
 					}
 				}
 			}
@@ -56,6 +57,7 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 			if lastTx != nil {
 				thisTxRoot := ts.RootParent(e.tx, false)
 				lastTxRoot := ts.RootParent(lastTx, false)
+
 				if thisTxRoot != nil && lastTxRoot != nil && thisTxRoot != lastTxRoot {
 					// If the root tx excluding sessions is not the same, we are processing a different request transaction in the same session
 					// and we should reset the row index or they will appear below in the timeline
@@ -67,6 +69,7 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 					}
 				}
 			}
+
 			lastTx = e.tx
 
 			eraRow := tl.GetRowByIndex(currentIndex)
@@ -88,11 +91,12 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 
 			if e.tx.TXType != vsl.TxTypeSession {
 				// Increase the index if the current tx is not a session, since we expect timestamps records next
-				currentIndex += 1
+				currentIndex++
 			}
 
 		case vsl.TimestampRecord:
-			var row *svgtimeline.Row = nil
+			var row *svgtimeline.Row
+
 			rowIndex, ok := txRows[e.tx.VXID]
 			if ok {
 				row = tl.GetRowByIndex(rowIndex)
@@ -100,9 +104,11 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 				txRows[e.tx.VXID] = currentIndex
 				row = tl.GetRowByIndex(currentIndex)
 			}
+
 			if row == nil {
 				row = tl.AddRow(32, 5)
 			}
+
 			row.AddEvent(
 				svgtimeline.Event{
 					Class: "ctl-e-" + strings.ToLower(record.EventLabel),
@@ -114,6 +120,8 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 					Duration: record.SinceLast,
 					Time:     record.StartTime,
 				})
+
+		default:
 		}
 	}
 
@@ -130,16 +138,19 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 	return svg
 }
 
-func collectAndSortRecords(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) (events []TimelineEvent) {
+func collectAndSortRecords(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) []TimelineEvent {
+	var events []TimelineEvent
+
 	if visited[tx.VXID] {
 		slog.Info("collectAndSortRecords(): loop detected", "txid", tx.TXID)
+
 		return events
 	}
+
 	visited[tx.VXID] = true
 
 	for _, r := range tx.Records {
 		switch record := r.(type) {
-
 		case vsl.BeginRecord:
 			events = append(events, TimelineEvent{tx: tx, record: record, startTime: tx.StartTime(), endTime: tx.EndTime(), duration: tx.Duration()})
 
@@ -151,6 +162,8 @@ func collectAndSortRecords(ts vsl.TransactionSet, tx *vsl.Transaction, visited m
 			if childTx != nil {
 				events = append(events, collectAndSortRecords(ts, childTx, visited)...)
 			}
+
+		default:
 		}
 	}
 

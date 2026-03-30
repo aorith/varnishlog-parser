@@ -83,6 +83,7 @@ var (
 
 func Index(w http.ResponseWriter, data PageData) error {
 	data.Views.Parse = "checked"
+
 	return executeTemplate(w, index, "main_layout.html", data)
 }
 
@@ -90,18 +91,22 @@ func Parsed(w http.ResponseWriter, data PageData) error {
 	parser := vsl.NewTransactionParser(strings.NewReader(data.Logs.Textinput))
 	ts, err := parser.Parse()
 	slog.Info("txs", "count", len(ts.Transactions()))
+
 	if err != nil {
 		slog.Warn("failed to parse logs", "error", err)
+
 		return err
 	}
 
 	data.Transactions.Set = ts
 	data.Transactions.Count = len(ts.Transactions())
+
 	if data.Transactions.Count > 0 {
 		data.Views.Overview = "checked"
 	} else {
 		data.Views.Parse = "checked"
 	}
+
 	data.Transactions.GroupCount = len(ts.GroupRelatedTransactions())
 	data.Logs.Raw = ts.RawLog()
 	data.Title = fmt.Sprintf("%d txs parsed", data.Transactions.Count)
@@ -112,6 +117,7 @@ func Parsed(w http.ResponseWriter, data PageData) error {
 func Error(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusBadRequest)
+
 	err2 := executeTemplate(w, errorTmpl, "main_layout.html", PageData{Title: "Error", Error: err})
 	if err2 != nil {
 		panic(err2)
@@ -121,6 +127,7 @@ func Error(w http.ResponseWriter, err error) {
 func PartialError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusBadRequest)
+
 	err2 := executeTemplate(w, errorPartialTmpl, "error_partial.html", PageData{Title: "Error", Error: err})
 	if err2 != nil {
 		panic(err2)
@@ -129,12 +136,16 @@ func PartialError(w http.ResponseWriter, err error) {
 
 func ReqBuild(w http.ResponseWriter, data PageData) error {
 	parser := vsl.NewTransactionParser(strings.NewReader(data.Logs.Textinput))
+
 	ts, err := parser.Parse()
 	if err != nil {
 		slog.Warn("failed to parse logs", "error", err)
+
 		return err
 	}
+
 	data.Transactions.Set = ts
+
 	return executeTemplate(w, reqBuildPartial, "reqbuild_partial.html", data)
 }
 
@@ -143,9 +154,10 @@ func parseTemplate(files ...string) *template.Template {
 }
 
 // executeTemplate is a wrapper around *template.Template
-// it avoids writing directly to 'w' to handle errors
+// it avoids writing directly to 'w' to handle errors.
 func executeTemplate(w io.Writer, tmpl *template.Template, name string, data any) error {
 	buf := &bytes.Buffer{}
+
 	err := tmpl.ExecuteTemplate(buf, name, data)
 	if err == nil {
 		_, err = buf.WriteTo(w)
@@ -153,5 +165,6 @@ func executeTemplate(w io.Writer, tmpl *template.Template, name string, data any
 			panic(err)
 		}
 	}
+
 	return err
 }

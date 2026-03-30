@@ -53,21 +53,26 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
 	names := make([]string, len(files))
 	for i, f := range files {
 		names[i] = f.Name()
 	}
+
 	slices.Sort(names)
 
 	// Read and join all files
 	var sb strings.Builder
+
 	for _, name := range names {
 		data, err := cssFiles.ReadFile("css/" + name)
 		if err != nil {
 			panic(err)
 		}
+
 		sb.Write(data)
 		sb.WriteByte('\n')
 	}
+
 	CombinedCSS = []byte(sb.String())
 }

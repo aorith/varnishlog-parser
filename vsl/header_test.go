@@ -14,26 +14,31 @@ func TestHeadersAddAndValues(t *testing.T) {
 
 	// Add a single value
 	headers.Add("x-test", "val1", HdrStateReceived)
+
 	values := headers.Values("x-test", false)
 	if len(values) != 1 {
 		t.Fatalf("expected 1 value, got %d", len(values))
 	}
+
 	if values[0].Value() != "val1" || values[0].State() != HdrStateReceived {
 		t.Errorf("unexpected value or state: %+v", values[0])
 	}
 
 	// Add a second value for the same header
 	headers.Add("x-test", "val2", HdrStateAdded)
+
 	values = headers.Values("x-test", false)
 	if len(values) != 2 {
 		t.Fatalf("expected 2 values, got %d", len(values))
 	}
+
 	if values[1].Value() != "val2" || values[1].State() != HdrStateAdded {
 		t.Errorf("unexpected second value: %+v", values[1])
 	}
 
 	// Add a header with HdrStateModified (should replace existing values)
 	headers.Add("x-test", "val3", HdrStateModified)
+
 	values = headers.Values("x-test", false)
 	if len(values) != 1 || values[0].Value() != "val3" || values[0].State() != HdrStateModified {
 		t.Errorf("HdrStateModified did not replace previous values: %+v", values)
@@ -42,6 +47,7 @@ func TestHeadersAddAndValues(t *testing.T) {
 	// Add Host header (should always have unique value)
 	headers.Add("Host", "example.org", HdrStateAdded)
 	headers.Add("Host", "other.com", HdrStateAdded)
+
 	values = headers.Values(HdrNameHost, false)
 	if len(values) != 1 || values[0].Value() != "other.com" {
 		t.Errorf("Host header did not keep unique value: %+v", values)
@@ -59,6 +65,7 @@ func TestHeadersDelete(t *testing.T) {
 	headers.Add("X-Test", "value2", HdrStateAdded)
 
 	headers.Delete("X-Test")
+
 	values := headers.Values("X-Test", false)
 	if len(values) != 2 {
 		t.Fatalf("expected 2 values after delete, got %d", len(values))
@@ -181,10 +188,12 @@ func TestHeadersFromCompleteVCL(t *testing.T) {
 }
 
 func testHeaders(t *testing.T, tt []testHeader, headers []Header, received bool) {
-	want := []testHeader{}
-	for _, v := range headers {
+	t.Helper()
+
+	want := make([]testHeader, len(headers))
+	for i, v := range headers {
 		th := testHeader{name: v.name, values: v.Values(received)}
-		want = append(want, th)
+		want[i] = th
 	}
 
 	if len(want) != len(tt) {
@@ -195,9 +204,11 @@ func testHeaders(t *testing.T, tt []testHeader, headers []Header, received bool)
 		if want[i].name != tt[i].name {
 			t.Errorf("ReqHeaders; want %v, got %v", want[i].name, tt[i].name)
 		}
+
 		if len(want[i].values) != len(tt[i].values) {
 			t.Fatalf("ReqHeaders values len; %s; want %d, got %d", want[i].name, len(want[i].values), len(tt[i].values))
 		}
+
 		for j := range want[i].values {
 			if want[i].values[j].value != tt[i].values[j].value || want[i].values[j].state != tt[i].values[j].state {
 				t.Errorf("ReqHeaders; values[%d] %s; want %v, got %v", j, want[i].name, want[i].values[j], tt[i].values[j])

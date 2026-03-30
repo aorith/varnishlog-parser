@@ -14,12 +14,14 @@ import (
 
 func TestParse(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
+
 	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
 	txs := ts.Transactions()
+
 	const expectedTxCount = 25
 	if len(txs) != expectedTxCount {
 		t.Fatalf("incorrect transaction count, wanted: %d, got: %d", expectedTxCount, len(txs))
@@ -33,6 +35,7 @@ func TestParse(t *testing.T) {
 		if first != tags.Begin {
 			t.Errorf("tx[%d]: first logRecord tag, wanted: %v, got: %v", i, tags.Begin, first)
 		}
+
 		if last != tags.End {
 			t.Errorf("tx[%d]: last logRecord tag, wanted: %v, got: %v", i, tags.End, last)
 		}
@@ -56,9 +59,11 @@ func TestParse(t *testing.T) {
 		if tx.TXType != tt.txType {
 			t.Errorf("tx[%d]: type wanted: %v, got: %v", tt.vxid, tt.txType, tx.TXType)
 		}
+
 		if tx.ESILevel != tt.esi {
 			t.Errorf("tx[%d]: ESILevel wanted: %v, got: %v", tt.vxid, tt.esi, tx.ESILevel)
 		}
+
 		if tt.level != 0 && tx.Level != tt.level {
 			t.Errorf("tx[%d]: Level wanted: %v, got: %v", tt.vxid, tt.level, tx.Level)
 		}
@@ -67,12 +72,14 @@ func TestParse(t *testing.T) {
 
 func TestReceivedHeaders(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
+
 	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
 	txs := ts.Transactions()
+
 	tx := txs[1]
 	if tx.TXType != vsl.TxTypeRequest {
 		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.TXType)
@@ -120,12 +127,15 @@ func TestReceivedHeaders(t *testing.T) {
 	// Compare expected header values
 	for name, want := range expected {
 		var got string
+
 		for _, h := range headers {
 			if h.Name() == name {
 				got = h.Value()
+
 				break
 			}
 		}
+
 		if got != want {
 			t.Errorf("header %q: expected %q, got %q", name, want, got)
 		}
@@ -134,12 +144,14 @@ func TestReceivedHeaders(t *testing.T) {
 
 func TestProcessedHeaders(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLComplete1))
+
 	ts, err := p.Parse()
 	if err != nil {
 		t.Fatalf("Parse() failed: %s", err)
 	}
 
 	txs := ts.Transactions()
+
 	tx := txs[1]
 	if tx.TXType != vsl.TxTypeRequest {
 		t.Fatalf("tx[1] type wanted: %v, got: %v", vsl.TxTypeRequest, tx.TXType)
@@ -168,12 +180,15 @@ func TestProcessedHeaders(t *testing.T) {
 	// Compare expected header values
 	for name, want := range expected {
 		var got string
+
 		for _, h := range headers {
 			if h.Name() == name {
 				got = h.Value()
+
 				break
 			}
 		}
+
 		if got != want {
 			t.Errorf("header %q: expected %q, got %q", name, want, got)
 		}

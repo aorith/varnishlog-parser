@@ -4,6 +4,7 @@ package html
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -29,27 +30,31 @@ func processReqBuildForm(tx *vsl.Transaction, cfg PageData) (*render.HTTPRequest
 			if tx.TXType == vsl.TxTypeBereq {
 				host, port, err := render.ParseBackend(tx.GetBackendConnStr())
 				if err != nil {
-					return nil, nil, fmt.Errorf("parsing backend failed: %q", err)
+					return nil, nil, fmt.Errorf("parsing backend failed: %w", err)
 				}
+
 				backend = render.NewBackend(host, port)
 			}
 
 		default:
 			host, port, err := render.ParseBackend(c.Backend)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failure parsing backend string: %q", err)
+				return nil, nil, fmt.Errorf("failure parsing backend string: %w", err)
 			}
+
 			backend = render.NewBackend(host, port)
 		}
 
 	case "custom":
 		if c.ConnectCustom == "" {
-			return nil, nil, fmt.Errorf("parameter ConnectCustom is empty")
+			return nil, nil, errors.New("parameter ConnectCustom is empty")
 		}
+
 		host, port, err := render.ParseBackend(c.ConnectCustom)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error parsing backend: %q", err)
+			return nil, nil, fmt.Errorf("error parsing backend: %w", err)
 		}
+
 		backend = render.NewBackend(host, port)
 
 	default:
@@ -63,7 +68,7 @@ func processReqBuildForm(tx *vsl.Transaction, cfg PageData) (*render.HTTPRequest
 
 	httpReq, err := render.NewHTTPRequest(tx, c.ReceivedHeaders, excludedHeaders)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failure creating HTTPRequest object: %q", err)
+		return nil, nil, fmt.Errorf("failure creating HTTPRequest object: %w", err)
 	}
 
 	return httpReq, backend, nil
@@ -74,6 +79,7 @@ func applyChromaStyle(text, lang string) string {
 
 	lexer := lexers.Get(lang)
 	formatter := chromahtml.New(chromahtml.WithClasses(true), chromahtml.WithCSSComments(false), chromahtml.ClassPrefix("chr_"))
+
 	iterator, err := lexer.Tokenise(nil, text)
 	if err != nil {
 		return fallback
@@ -94,6 +100,7 @@ func curlCommand(tx *vsl.Transaction, cfg PageData) string {
 	if err != nil {
 		return fmt.Sprintf(`<pre>%s</pre>`, err.Error())
 	}
+
 	return applyChromaStyle(httpReq.CurlCommand(cfg.ReqBuild.Scheme, backend), "bash")
 }
 
@@ -102,5 +109,6 @@ func hurlFile(tx *vsl.Transaction, cfg PageData) string {
 	if err != nil {
 		return fmt.Sprintf(`<pre>%s</pre>`, err.Error())
 	}
+
 	return applyChromaStyle(httpReq.HurlFile(cfg.ReqBuild.Scheme, backend), "properties")
 }

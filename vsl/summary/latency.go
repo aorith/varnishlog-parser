@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package summary generates a summary from the VSL transactions
 package summary
 
 import (
@@ -11,54 +12,57 @@ import (
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 
-type latencyCounter struct {
+type LatencyCounter struct {
 	txType string // tx type (request, bereq)
 	label  string // event label
 	values []time.Duration
 }
 
-// String is the string representation of the LatencyCounter
-func (l *latencyCounter) String() string {
+// String is the string representation of the LatencyCounter.
+func (l *LatencyCounter) String() string {
 	p90 := l.Percentile(90.0)
 	p99 := l.Percentile(99.0)
 	avg := l.Average()
+
 	return fmt.Sprintf("[%s, %s] Count: %d | Min: %s | Max: %s | Avg: %s | P90: %s | P99: %s",
 		l.txType, l.label, l.Count(), l.Min(), l.Max(), avg, p90, p99)
 }
 
-// TxType returns the transaction type that generated this event
-func (l *latencyCounter) TxType() string {
+// TxType returns the transaction type that generated this event.
+func (l *LatencyCounter) TxType() string {
 	return l.txType
 }
 
-// Name returns the event label
-func (l *latencyCounter) Label() string {
+// Label returns the event label.
+func (l *LatencyCounter) Label() string {
 	return l.label
 }
 
-// Count returns the count of latencie values stored
-func (l *latencyCounter) Count() int {
+// Count returns the count of latencie values stored.
+func (l *LatencyCounter) Count() int {
 	return len(l.values)
 }
 
-// Min returns the lowest latency
-func (l *latencyCounter) Min() time.Duration {
+// Min returns the lowest latency.
+func (l *LatencyCounter) Min() time.Duration {
 	if l.Count() == 0 {
 		return 0
 	}
+
 	return l.values[0]
 }
 
-// Max returns the highest latency
-func (l *latencyCounter) Max() time.Duration {
+// Max returns the highest latency.
+func (l *LatencyCounter) Max() time.Duration {
 	if l.Count() == 0 {
 		return 0
 	}
+
 	return l.values[len(l.values)-1]
 }
 
-// Add adds a new timestamp event to the counter
-func (l *latencyCounter) Add(t vsl.TimestampRecord, txType string) {
+// Add adds a new timestamp event to the counter.
+func (l *LatencyCounter) Add(t vsl.TimestampRecord, txType string) {
 	l.txType = txType
 	l.label = t.EventLabel
 	lat := t.SinceLast
@@ -66,21 +70,23 @@ func (l *latencyCounter) Add(t vsl.TimestampRecord, txType string) {
 	slices.Sort(l.values) // For min, max and percentile calculations
 }
 
-// Sum computes the sum of durations
-func (l *latencyCounter) Sum() (sum time.Duration) {
+// Sum computes the sum of durations.
+func (l *LatencyCounter) Sum() time.Duration {
+	var sum time.Duration
 	for _, v := range l.values {
 		sum += v
 	}
+
 	return sum
 }
 
-// Average calculates the average of durations
-func (l *latencyCounter) Average() time.Duration {
+// Average calculates the average of durations.
+func (l *LatencyCounter) Average() time.Duration {
 	return l.Sum() / time.Duration(len(l.values))
 }
 
-// Percentile calculates a latency percentile from the stored timestamp events
-func (l *latencyCounter) Percentile(p float64) time.Duration {
+// Percentile calculates a latency percentile from the stored timestamp events.
+func (l *LatencyCounter) Percentile(p float64) time.Duration {
 	n := len(l.values)
 	if n == 0 {
 		return 0
@@ -101,16 +107,18 @@ func (l *latencyCounter) Percentile(p float64) time.Duration {
 
 		// linear interpolation
 		weight := rank - float64(lowerIndex)
+
 		return time.Duration(float64(l.values[lowerIndex]) + float64(weight*float64(l.values[upperIndex]-l.values[lowerIndex])))
 	}
 
 	return getPercentile(p)
 }
 
-func TimestampEventsSummary(ts vsl.TransactionSet) []*latencyCounter {
-	tsEvents := make(map[string]*latencyCounter)
+func TimestampEventsSummary(ts vsl.TransactionSet) []*LatencyCounter {
+	tsEvents := make(map[string]*LatencyCounter)
 
 	var processEvents func(tx *vsl.Transaction)
+
 	processEvents = func(tx *vsl.Transaction) {
 		for _, r := range tx.Records {
 			switch record := r.(type) {
@@ -118,10 +126,12 @@ func TimestampEventsSummary(ts vsl.TransactionSet) []*latencyCounter {
 				if record.SinceLast == 0 {
 					continue
 				}
+
 				name := fmt.Sprintf("%s-%s", tx.TXType, record.EventLabel)
 				if tsEvents[name] == nil {
-					tsEvents[name] = &latencyCounter{}
+					tsEvents[name] = &LatencyCounter{}
 				}
+
 				tsEvents[name].Add(record, string(tx.TXType))
 
 			case vsl.LinkRecord:
@@ -129,6 +139,8 @@ func TimestampEventsSummary(ts vsl.TransactionSet) []*latencyCounter {
 				if child != nil {
 					processEvents(child)
 				}
+
+			default:
 			}
 		}
 	}
@@ -137,15 +149,16 @@ func TimestampEventsSummary(ts vsl.TransactionSet) []*latencyCounter {
 		processEvents(tx)
 	}
 
-	events := []*latencyCounter{}
+	events := []*LatencyCounter{} // nolint
 	for _, e := range tsEvents {
 		events = append(events, e)
 	}
 
-	slices.SortStableFunc(events, func(a, b *latencyCounter) int {
+	slices.SortStableFunc(events, func(a, b *LatencyCounter) int {
 		if c := cmp.Compare(b.txType, a.txType); c != 0 {
 			return c
 		}
+
 		return cmp.Compare(b.Average(), a.Average())
 	})
 

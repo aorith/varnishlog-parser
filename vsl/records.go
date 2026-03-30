@@ -15,11 +15,15 @@ import (
 )
 
 const (
+	// LinkTypeSession is a VSL link from a session.
 	LinkTypeSession = "sess"
+	// LinkTypeRequest is a VSL link from a request.
 	LinkTypeRequest = "req"
-	LinkTypeBereq   = "bereq"
+	// LinkTypeBereq is a VSL link from a backend request.
+	LinkTypeBereq = "bereq"
 )
 
+// nolint
 const (
 	VCLCallRECV            = "RECV"
 	VCLCallHASH            = "HASH"
@@ -33,7 +37,7 @@ const (
 	VCLCallBACKENDERROR    = "BACKEND_ERROR"
 )
 
-// Record interface for all the VSL log records
+// Record interface for all the VSL log records.
 type Record interface {
 	String() string
 	GetTag() string
@@ -41,12 +45,25 @@ type Record interface {
 	GetRawLog() string
 }
 
-// BaseRecord is a single VSL log line split by tag and value
+// BaseRecord is a single VSL log line split by tag and value.
 type BaseRecord struct {
-	Tag      string // VSL Tag (Begin, Timestamp, ReqURL, ReqHeader, ...)
-	RawValue string // Value after the tag
+	Tag      string `json:"tag"`       // VSL Tag (Begin, Timestamp, ReqURL, ReqHeader, ...)
+	RawValue string `json:"raw_value"` // Value after the tag
 
 	rawLog string // Raw log line
+}
+
+func NewBaseRecord(rawLog string) (BaseRecord, error) {
+	fields := strings.Fields(rawLog)
+	if len(fields) < 2 {
+		return BaseRecord{}, fmt.Errorf("could not parse line %q", rawLog)
+	}
+
+	tag := fields[1] // e.g: Begin
+	_, after, _ := strings.Cut(rawLog, tag)
+	value := strings.TrimLeft(after, " \t")
+
+	return BaseRecord{Tag: tag, RawValue: value, rawLog: rawLog}, nil
 }
 
 func (r BaseRecord) String() string {
@@ -65,22 +82,10 @@ func (r BaseRecord) GetRawLog() string {
 	return r.rawLog
 }
 
-func NewBaseRecord(rawLog string) (BaseRecord, error) {
-	fields := strings.Fields(rawLog)
-	if len(fields) < 2 {
-		return BaseRecord{}, fmt.Errorf("could not parse line %q", rawLog)
-	}
-
-	tag := fields[1] // e.g: Begin
-	_, after, _ := strings.Cut(rawLog, tag)
-	value := strings.TrimLeft(after, " \t")
-
-	return BaseRecord{Tag: tag, RawValue: value, rawLog: rawLog}, nil
-}
-
-// BeginRecord represents the start of a transaction log
+// BeginRecord represents the start of a transaction log.
 type BeginRecord struct {
 	BaseRecord
+
 	RecordType string // sess, req, bereq, ...
 	Parent     VXID   // parent ID
 	ESILevel   int    // ESI level, 0 if not an ESI
@@ -92,17 +97,20 @@ func NewBeginRecord(blr BaseRecord) (BeginRecord, error) {
 	if len(parts) != 3 && len(parts) != 4 {
 		return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, incorrect len on line %q", blr.GetRawLog())
 	}
+
 	if len(parts) == 4 {
 		if parts[2] != "esi" {
 			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, len is 4 but it is not an ESI on line %q", blr.GetRawLog())
 		}
+
 		level, err := strconv.Atoi(parts[3])
 		if err != nil {
-			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, extraction of ESI level failed on line %q, error: %s", blr.GetRawLog(), err)
+			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, extraction of ESI level failed on line %q, error: %w", blr.GetRawLog(), err)
 		}
+
 		parentVXID, err := parseVXID(parts[1])
 		if err != nil {
-			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, bad VXID on line %q, error: %s", blr.GetRawLog(), err)
+			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
 		}
 
 		return BeginRecord{BaseRecord: blr, RecordType: parts[0], Parent: parentVXID, ESILevel: level, Reason: parts[2]}, nil
@@ -110,29 +118,22 @@ func NewBeginRecord(blr BaseRecord) (BeginRecord, error) {
 
 	parentVXID, err := parseVXID(parts[1])
 	if err != nil {
-		return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, bad VXID on line %q, error: %s", blr.GetRawLog(), err)
+		return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
 	}
 
 	return BeginRecord{BaseRecord: blr, RecordType: parts[0], Parent: parentVXID, ESILevel: 0, Reason: parts[2]}, nil
 }
 
-// HeaderRecord represents an HTTP header log record
+// HeaderRecord represents an HTTP header log record.
 type HeaderRecord struct {
 	BaseRecord
+
 	Name       string // Name of the header
 	Value      string // Value of the header
 	HeaderType string // Type (ReqHeader, BereqHeader, ...)
 }
 
-func (r HeaderRecord) IsRespHeader() bool {
-	switch r.HeaderType {
-	case tags.RespHeader, tags.BerespHeader:
-		return true
-	}
-	return false
-}
-
-// IsRespHeader returns true if its a response header
+// NewHeaderRecord creates a new header record.
 func NewHeaderRecord(blr BaseRecord) (HeaderRecord, error) {
 	fields := strings.SplitAfterN(blr.GetRawValue(), ":", 2)
 	if len(fields) < 2 {
@@ -148,6 +149,7 @@ func NewHeaderRecord(blr BaseRecord) (HeaderRecord, error) {
 	name = CanonicalHeaderName(name)
 
 	var hdrType string
+
 	switch blr.GetTag() {
 	case tags.ReqHeader:
 		hdrType = tags.ReqHeader
@@ -171,21 +173,22 @@ func NewHeaderRecord(blr BaseRecord) (HeaderRecord, error) {
 	}, nil
 }
 
-// HeaderUnsetRecord represents an HTTP header log record which is being unset
+func (r HeaderRecord) IsRespHeader() bool {
+	switch r.HeaderType {
+	case tags.RespHeader, tags.BerespHeader:
+		return true
+	}
+
+	return false
+}
+
+// HeaderUnsetRecord represents an HTTP header log record which is being unset.
 type HeaderUnsetRecord struct {
 	BaseRecord
+
 	Name       string // Name of the header
 	Value      string // Value of the header
 	HeaderType string // Type (ReqUnset, BereqUnset, ...)
-}
-
-// IsRespHeader returns true if its a response header
-func (r HeaderUnsetRecord) IsRespHeader() bool {
-	switch r.HeaderType {
-	case tags.RespUnset, tags.BerespUnset:
-		return true
-	}
-	return false
 }
 
 func NewHeaderUnsetRecord(blr BaseRecord) (HeaderUnsetRecord, error) {
@@ -203,6 +206,7 @@ func NewHeaderUnsetRecord(blr BaseRecord) (HeaderUnsetRecord, error) {
 	name = CanonicalHeaderName(name)
 
 	var hdrType string
+
 	switch blr.GetTag() {
 	case tags.ReqUnset:
 		hdrType = tags.ReqUnset
@@ -226,9 +230,20 @@ func NewHeaderUnsetRecord(blr BaseRecord) (HeaderUnsetRecord, error) {
 	}, nil
 }
 
-// BackendOpenRecord holds information about a new backend connection
+// IsRespHeader returns true if its a response header.
+func (r HeaderUnsetRecord) IsRespHeader() bool {
+	switch r.HeaderType {
+	case tags.RespUnset, tags.BerespUnset:
+		return true
+	}
+
+	return false
+}
+
+// BackendOpenRecord holds information about a new backend connection.
 type BackendOpenRecord struct {
 	BaseRecord
+
 	FileDescriptor int    // Connection file descriptor
 	Name           string // Backend display name
 	RemoteAddr     net.IP // Remote addr connecting
@@ -236,14 +251,6 @@ type BackendOpenRecord struct {
 	LocalAddr      net.IP // Local addr
 	LocalPort      int    // Local port
 	Reason         string // connect or reuse
-}
-
-func (r BackendOpenRecord) ConnStr() string {
-	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort))
-}
-
-func (r BackendOpenRecord) String() string {
-	return fmt.Sprintf("%s (%s) %s", r.Name, r.ConnStr(), r.Reason)
 }
 
 func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
@@ -294,19 +301,20 @@ func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
 	}, nil
 }
 
-// BackendStartRecord holds information about a new backend connection
+func (r BackendOpenRecord) ConnStr() string {
+	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort)) // nolint:perfsprint
+}
+
+func (r BackendOpenRecord) String() string {
+	return fmt.Sprintf("%s (%s) %s", r.Name, r.ConnStr(), r.Reason)
+}
+
+// BackendStartRecord holds information about a new backend connection.
 type BackendStartRecord struct {
 	BaseRecord
+
 	RemoteAddr net.IP // Remote address
 	RemotePort int    // Remote port
-}
-
-func (r BackendStartRecord) ConnStr() string {
-	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort))
-}
-
-func (r BackendStartRecord) String() string {
-	return r.ConnStr()
 }
 
 func NewBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
@@ -332,9 +340,18 @@ func NewBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
 	}, nil
 }
 
-// BackendCloseRecord holds information about a backend connection close
+func (r BackendStartRecord) ConnStr() string {
+	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort)) // nolint: perfsprint
+}
+
+func (r BackendStartRecord) String() string {
+	return r.ConnStr()
+}
+
+// BackendCloseRecord holds information about a backend connection close.
 type BackendCloseRecord struct {
 	BaseRecord
+
 	FileDescriptor int    // Connection file descriptor
 	Name           string // Backend display name
 	Reason         string // "close" or "recycle"
@@ -373,9 +390,10 @@ func NewBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
 
 // BackendReuseRecord holds information about a backend reuse (keep-alive)
 //
-// Note that this record was deprecated in favor of BackendClose
+// Note that this record was deprecated in favor of BackendClose.
 type BackendReuseRecord struct {
 	BaseRecord
+
 	FileDescriptor int    // Connection file descriptor
 	Name           string // Backend display name
 }
@@ -390,35 +408,25 @@ func NewBackendReuseRecord(blr BaseRecord) (BackendReuseRecord, error) {
 
 	fileDesc, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return record, nil
+		return record, err
 	}
 
 	record.FileDescriptor = fileDesc
 	record.Name = parts[1]
+
 	return record, nil
 }
 
-// AcctRecord holds accounting information for ReqAcct and BereqAcct tags
+// AcctRecord holds accounting information for ReqAcct and BereqAcct tags.
 type AcctRecord struct {
 	BaseRecord
+
 	HeaderTx SizeValue // Header bytes transmitted
 	BodyTx   SizeValue // Body bytes transmitted
 	TotalTx  SizeValue // Total bytes transmitted
 	HeaderRx SizeValue // Header bytes received
 	BodyRx   SizeValue // Body bytes received
 	TotalRx  SizeValue // Total bytes received
-}
-
-func (r AcctRecord) String() string {
-	return fmt.Sprintf(
-		"Tx(hdr %s, body %s, total %s) | Rx(hdr %s, body %s, total %s)",
-		r.HeaderTx.String(),
-		r.BodyTx.String(),
-		r.TotalTx.String(),
-		r.HeaderRx.String(),
-		r.BodyRx.String(),
-		r.TotalRx.String(),
-	)
 }
 
 func NewAcctRecord(blr BaseRecord) (AcctRecord, error) {
@@ -442,29 +450,33 @@ func NewAcctRecord(blr BaseRecord) (AcctRecord, error) {
 		if err != nil {
 			return AcctRecord{}, fmt.Errorf("conversion to AcctRecord failed, bad value in part[%d] on line %q", i, blr.GetRawLog())
 		}
+
 		*fields[i] = SizeValue(value)
 	}
 
 	return record, nil
 }
 
-// PipeAcctRecord holds accounting information for PipeAcct tags
+func (r AcctRecord) String() string {
+	return fmt.Sprintf(
+		"Tx(hdr %s, body %s, total %s) | Rx(hdr %s, body %s, total %s)",
+		r.HeaderTx.String(),
+		r.BodyTx.String(),
+		r.TotalTx.String(),
+		r.HeaderRx.String(),
+		r.BodyRx.String(),
+		r.TotalRx.String(),
+	)
+}
+
+// PipeAcctRecord holds accounting information for PipeAcct tags.
 type PipeAcctRecord struct {
 	BaseRecord
+
 	ClientReqHeaders  SizeValue // Client request headers
 	BackendReqHeaders SizeValue // Backend request headers
 	PipedFrom         SizeValue // Piped bytes from client
 	PipedTo           SizeValue // Piped bytes to client
-}
-
-func (r PipeAcctRecord) String() string {
-	return fmt.Sprintf(
-		"Hdr(client %s, backend %s) | Piped(from %s, to %s)",
-		r.ClientReqHeaders,
-		r.BackendReqHeaders,
-		r.PipedFrom,
-		r.PipedTo,
-	)
 }
 
 func NewPipeAcctRecord(blr BaseRecord) (PipeAcctRecord, error) {
@@ -486,27 +498,31 @@ func NewPipeAcctRecord(blr BaseRecord) (PipeAcctRecord, error) {
 		if err != nil {
 			return PipeAcctRecord{}, fmt.Errorf("conversion to PipeAcctRecord failed, bad value in part[%d] on line %q", i, blr.GetRawLog())
 		}
+
 		*fields[i] = SizeValue(value)
 	}
 
 	return record, nil
 }
 
+func (r PipeAcctRecord) String() string {
+	return fmt.Sprintf(
+		"Hdr(client %s, backend %s) | Piped(from %s, to %s)",
+		r.ClientReqHeaders,
+		r.BackendReqHeaders,
+		r.PipedFrom,
+		r.PipedTo,
+	)
+}
+
 type TimestampRecord struct {
 	BaseRecord
+
 	EventLabel   string        // Start, Req, Fetch, Process, Resp, ...
 	StartTime    time.Time     // Start time of the timestamp (absoluteTime - sinceLast)
 	AbsoluteTime time.Time     // Absolute time of the timestamp (end time, when the record was logged)
 	SinceStart   time.Duration // Duration since the start of the tx
 	SinceLast    time.Duration // Duration since the last timestamp
-}
-
-// String returns the timestamp in a human readable string
-func (r TimestampRecord) String() string {
-	return fmt.Sprintf(
-		"%s | Elapsed: %s, Total: %s, %s",
-		r.EventLabel, r.SinceLast.String(), r.SinceStart.String(), r.AbsoluteTime.String(),
-	)
 }
 
 func NewTimestampRecord(blr BaseRecord) (TimestampRecord, error) {
@@ -524,6 +540,7 @@ func NewTimestampRecord(blr BaseRecord) (TimestampRecord, error) {
 	if err != nil {
 		return TimestampRecord{}, fmt.Errorf("conversion to TimestampRecord failed, bad field since start on line %q", blr.GetRawLog())
 	}
+
 	sinceLast, err := convertStrToDuration(parts[3], time.Second)
 	if err != nil {
 		return TimestampRecord{}, fmt.Errorf("conversion to TimestampRecord failed, bad field since last on line %q", blr.GetRawLog())
@@ -539,20 +556,21 @@ func NewTimestampRecord(blr BaseRecord) (TimestampRecord, error) {
 	}, nil
 }
 
-// ReqStartRecord holds information about the start of request processing
+// String returns the timestamp in a human readable string.
+func (r TimestampRecord) String() string {
+	return fmt.Sprintf(
+		"%s | Elapsed: %s, Total: %s, %s",
+		r.EventLabel, r.SinceLast.String(), r.SinceStart.String(), r.AbsoluteTime.String(),
+	)
+}
+
+// ReqStartRecord holds information about the start of request processing.
 type ReqStartRecord struct {
 	BaseRecord
+
 	ClientIP   net.IP // Client IP4/6 address (0.0.0.0 for UDS)
 	ClientPort int    // Client Port number (0 for Unix domain sockets)
 	Listener   string // Listener name (from -a)
-}
-
-func (r ReqStartRecord) ConnStr() string {
-	return net.JoinHostPort(r.ClientIP.String(), fmt.Sprintf("%d", r.ClientPort))
-}
-
-func (r ReqStartRecord) String() string {
-	return r.ConnStr() + " " + r.Listener
 }
 
 func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
@@ -574,9 +592,18 @@ func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
 	return ReqStartRecord{BaseRecord: blr, ClientIP: clientIP, ClientPort: clientPort, Listener: parts[2]}, nil
 }
 
-// LinkRecord Links to a child transaction
+func (r ReqStartRecord) String() string {
+	return r.ConnStr() + " " + r.Listener
+}
+
+func (r ReqStartRecord) ConnStr() string {
+	return net.JoinHostPort(r.ClientIP.String(), fmt.Sprintf("%d", r.ClientPort)) // nolint:perfsprint
+}
+
+// LinkRecord Links to a child transaction.
 type LinkRecord struct {
 	BaseRecord
+
 	TXID     TXID   // Custom transaction ID
 	VXID     VXID   // Child vxid
 	TXType   string // Child type ("sess", "req" or "bereq")
@@ -589,17 +616,20 @@ func NewLinkRecord(blr BaseRecord) (LinkRecord, error) {
 	if len(parts) != 3 && len(parts) != 4 {
 		return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, incorrect len on line %q", blr.GetRawLog())
 	}
+
 	if len(parts) == 4 {
 		if parts[2] != "esi" {
 			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, len is 4 but it is not an ESI on line %q", blr.GetRawLog())
 		}
+
 		level, err := strconv.Atoi(parts[3])
 		if err != nil {
-			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, extraction of ESI level failed on line %q, error: %s", blr.GetRawLog(), err)
+			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, extraction of ESI level failed on line %q, error: %w", blr.GetRawLog(), err)
 		}
+
 		vxid, err := parseVXID(parts[1])
 		if err != nil {
-			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, bad VXID on line %q, error: %s", blr.GetRawLog(), err)
+			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
 		}
 
 		return LinkRecord{
@@ -614,7 +644,7 @@ func NewLinkRecord(blr BaseRecord) (LinkRecord, error) {
 
 	vxid, err := parseVXID(parts[1])
 	if err != nil {
-		return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, bad VXID on line %q, error: %s", blr.GetRawLog(), err)
+		return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
 	}
 
 	return LinkRecord{
@@ -627,45 +657,49 @@ func NewLinkRecord(blr BaseRecord) (LinkRecord, error) {
 	}, nil
 }
 
-// URLRecord holds request URL from ReqURL and BereqURL tags
+// URLRecord holds request URL from ReqURL and BereqURL tags.
 type URLRecord struct {
 	BaseRecord
+
 	URL url.URL // Request URL
+}
+
+func NewURLRecord(blr BaseRecord) (URLRecord, error) {
+	u, err := url.Parse(blr.GetRawValue())
+	if err != nil {
+		return URLRecord{}, fmt.Errorf("conversion to URLRecord failed, could not parse URL on line %q", blr.GetRawLog())
+	}
+
+	return URLRecord{BaseRecord: blr, URL: *u}, nil
 }
 
 func (u URLRecord) MarshalJSON() ([]byte, error) {
 	aux := struct {
-		BaseRecord
-		Path        string
-		QueryString string
+		BaseRecord `json:"base_record"`
+
+		Path        string `json:"path"`
+		QueryString string `json:"query_string"`
 	}{
 		BaseRecord:  u.BaseRecord,
 		Path:        u.Path(),
 		QueryString: u.QueryString(),
 	}
+
 	return json.Marshal(aux)
 }
 
-func (r URLRecord) Path() string {
-	return r.URL.Path
+func (u URLRecord) Path() string {
+	return u.URL.Path
 }
 
-func (r URLRecord) QueryString() string {
-	return r.URL.Query().Encode()
+func (u URLRecord) QueryString() string {
+	return u.URL.Query().Encode()
 }
 
-func NewURLRecord(blr BaseRecord) (URLRecord, error) {
-	url, err := url.Parse(blr.GetRawValue())
-	if err != nil {
-		return URLRecord{}, fmt.Errorf("conversion to URLRecord failed, could not parse URL on line %q", blr.GetRawLog())
-	}
-
-	return URLRecord{BaseRecord: blr, URL: *url}, nil
-}
-
-// FiltersRecord holds the list of filters applied to the body
+// FiltersRecord holds the list of filters applied to the body.
 type FiltersRecord struct {
 	BaseRecord
+
 	Filters []string // List of filters applied to the body
 }
 
@@ -673,9 +707,10 @@ func NewFiltersRecord(blr BaseRecord) (FiltersRecord, error) {
 	return FiltersRecord{BaseRecord: blr, Filters: strings.Fields(blr.GetRawValue())}, nil
 }
 
-// StatusRecord represents an HTTP code response status
+// StatusRecord represents an HTTP code response status.
 type StatusRecord struct {
 	BaseRecord
+
 	Status int // HTTP Status code
 }
 
@@ -684,12 +719,14 @@ func NewStatusRecord(blr BaseRecord) (StatusRecord, error) {
 	if err != nil {
 		return StatusRecord{}, fmt.Errorf("conversion to StatusRecord failed, bad field status on line %q", blr.GetRawLog())
 	}
+
 	return StatusRecord{BaseRecord: blr, Status: v}, nil
 }
 
-// LengthRecord represents the size of a fetch body
+// LengthRecord represents the size of a fetch body.
 type LengthRecord struct {
 	BaseRecord
+
 	Size SizeValue // Size of the fetch body
 }
 
@@ -698,14 +735,16 @@ func NewLengthRecord(blr BaseRecord) (LengthRecord, error) {
 	if err != nil {
 		return LengthRecord{}, fmt.Errorf("conversion to LengthRecord failed, bad size value on line %q", blr.GetRawLog())
 	}
+
 	return LengthRecord{BaseRecord: blr, Size: SizeValue(size)}, nil
 }
 
 // HitRecord contains information about a hit of an object in the cache
 //
-// It can be either a Hit, HitMiss or HitPass record
+// It can be either a Hit, HitMiss or HitPass record.
 type HitRecord struct {
 	BaseRecord
+
 	ObjVXID       VXID          // object VXID
 	TTL           time.Duration // remaining TTL
 	Grace         time.Duration // grace period
@@ -714,36 +753,9 @@ type HitRecord struct {
 	ContentLength SizeValue     // Content length
 }
 
-func (r HitRecord) String() string {
-	s := fmt.Sprintf(
-		"ObjVXID: %d, TTL: %s",
-		r.ObjVXID,
-		r.TTL.String(),
-	)
-
-	if r.GetTag() == tags.HitMiss || r.GetTag() == tags.HitPass {
-		return s
-	}
-
-	s += fmt.Sprintf(
-		", Grace: %s, Keep: %s",
-		r.Grace.String(),
-		r.Keep.String(),
-	)
-
-	if r.Fetched != 0 {
-		s += fmt.Sprintf(", Fetched: %s", r.Fetched)
-	}
-
-	if r.ContentLength != 0 {
-		s += fmt.Sprintf(", ContentLength: %s", r.ContentLength)
-	}
-
-	return s
-}
-
 func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 	parts := strings.Fields(blr.GetRawValue())
+
 	n := len(parts)
 	if n < 2 || n > 6 {
 		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, incorrect len of %d on line %q", n, blr.GetRawLog())
@@ -794,12 +806,42 @@ func NewHitRecord(blr BaseRecord) (HitRecord, error) {
 	}
 
 	hr.ContentLength = SizeValue(cl)
+
 	return hr, nil
 }
 
-// TTLRecord reprensets the ttl, grace, keep values for an object
+func (r HitRecord) String() string {
+	s := fmt.Sprintf(
+		"ObjVXID: %d, TTL: %s",
+		r.ObjVXID,
+		r.TTL.String(),
+	)
+
+	if r.GetTag() == tags.HitMiss || r.GetTag() == tags.HitPass {
+		return s
+	}
+
+	s += fmt.Sprintf(
+		", Grace: %s, Keep: %s",
+		r.Grace.String(),
+		r.Keep.String(),
+	)
+
+	if r.Fetched != 0 {
+		s += fmt.Sprintf(", Fetched: %s", r.Fetched)
+	}
+
+	if r.ContentLength != 0 {
+		s += fmt.Sprintf(", ContentLength: %s", r.ContentLength)
+	}
+
+	return s
+}
+
+// TTLRecord reprensets the ttl, grace, keep values for an object.
 type TTLRecord struct {
 	BaseRecord
+
 	Source      string        // "RFC", "VCL" or "HFP"
 	TTL         time.Duration // Time-to-live
 	Grace       time.Duration // Grace period
@@ -810,6 +852,91 @@ type TTLRecord struct {
 	Expires     time.Time     // Expires header
 	MaxAge      time.Duration // Max-Age from Cache-Control header
 	CacheStatus string        // "cacheable" or "uncacheable"
+}
+
+func NewTTLRecord(blr BaseRecord) (TTLRecord, error) {
+	// RFC 120 10 0 1606398419 1606398419 1606398419 0 0 cacheable
+	// VCL 120 10 0 1606400537 uncacheable
+	// HFP 10 0 0 1606402666 uncacheable
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) < 6 {
+		return TTLRecord{}, fmt.Errorf("conversion to TTLRecord failed, incorrect len on line %q", blr.GetRawLog())
+	}
+
+	r := TTLRecord{BaseRecord: blr, Source: parts[0]}
+
+	// First 5 parts are common
+	ttl, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field ttl on line %q", blr.GetRawLog())
+	}
+
+	r.TTL = time.Duration(ttl * int(time.Second))
+
+	grace, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field grace on line %q", blr.GetRawLog())
+	}
+
+	r.Grace = time.Duration(grace * int(time.Second))
+
+	keep, err := strconv.Atoi(parts[3])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field keep on line %q", blr.GetRawLog())
+	}
+
+	r.Keep = time.Duration(keep * int(time.Second))
+
+	ref, err := convertToUnixTimestamp(parts[4])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field reference on line %q", blr.GetRawLog())
+	}
+
+	r.Reference = ref
+
+	// Check if we are parsing a VCL or HFP source (6 fields) or a HFP
+	if len(parts) == 6 {
+		r.CacheStatus = parts[5]
+
+		return r, nil
+	}
+
+	if len(parts) != 10 {
+		return TTLRecord{}, fmt.Errorf("conversion to TTLRecord failed, incorrect len (wanted 10) on line %q", blr.GetRawLog())
+	}
+
+	age, err := convertToUnixTimestamp(parts[5])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field age on line %q", blr.GetRawLog())
+	}
+
+	r.Age = age
+
+	date, err := convertToUnixTimestamp(parts[6])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field date on line %q", blr.GetRawLog())
+	}
+
+	r.Date = date
+
+	expires, err := convertToUnixTimestamp(parts[7])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field expires on line %q", blr.GetRawLog())
+	}
+
+	r.Expires = expires
+
+	maxAge, err := strconv.Atoi(parts[8])
+	if err != nil {
+		return r, fmt.Errorf("conversion to TTLRecord failed, bad field maxAge on line %q", blr.GetRawLog())
+	}
+
+	r.MaxAge = time.Duration(maxAge * int(time.Second))
+
+	// Last field
+	r.CacheStatus = parts[9]
+
+	return r, nil
 }
 
 func (r TTLRecord) String() string {
@@ -840,95 +967,13 @@ func (r TTLRecord) String() string {
 	)
 }
 
-func NewTTLRecord(blr BaseRecord) (TTLRecord, error) {
-	// RFC 120 10 0 1606398419 1606398419 1606398419 0 0 cacheable
-	// VCL 120 10 0 1606400537 uncacheable
-	// HFP 10 0 0 1606402666 uncacheable
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 6 {
-		return TTLRecord{}, fmt.Errorf("conversion to TTLRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
-
-	r := TTLRecord{BaseRecord: blr, Source: parts[0]}
-
-	// First 5 parts are common
-	ttl, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field ttl on line %q", blr.GetRawLog())
-	}
-	r.TTL = time.Duration(ttl * int(time.Second))
-
-	grace, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field grace on line %q", blr.GetRawLog())
-	}
-	r.Grace = time.Duration(grace * int(time.Second))
-
-	keep, err := strconv.Atoi(parts[3])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field keep on line %q", blr.GetRawLog())
-	}
-	r.Keep = time.Duration(keep * int(time.Second))
-
-	ref, err := convertToUnixTimestamp(parts[4])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field reference on line %q", blr.GetRawLog())
-	}
-	r.Reference = ref
-
-	// Check if we are parsing a VCL or HFP source (6 fields) or a HFP
-	if len(parts) == 6 {
-		r.CacheStatus = parts[5]
-		return r, nil
-	}
-
-	if len(parts) != 10 {
-		return TTLRecord{}, fmt.Errorf("conversion to TTLRecord failed, incorrect len (wanted 10) on line %q", blr.GetRawLog())
-	}
-
-	age, err := convertToUnixTimestamp(parts[5])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field age on line %q", blr.GetRawLog())
-	}
-	r.Age = age
-
-	date, err := convertToUnixTimestamp(parts[6])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field date on line %q", blr.GetRawLog())
-	}
-	r.Date = date
-
-	expires, err := convertToUnixTimestamp(parts[7])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field expires on line %q", blr.GetRawLog())
-	}
-	r.Expires = expires
-
-	maxAge, err := strconv.Atoi(parts[8])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field maxAge on line %q", blr.GetRawLog())
-	}
-	r.MaxAge = time.Duration(maxAge * int(time.Second))
-
-	// Last field
-	r.CacheStatus = parts[9]
-
-	return r, nil
-}
-
 // VCLLogRecord holds vsl tag VCL_Log
-// key is empty if the log value is not formatted as 'key: value'
+// key is empty if the log value is not formatted as 'key: value'.
 type VCLLogRecord struct {
 	BaseRecord
+
 	Key   string // Only if the format of the log is 'Key: value'
 	Value string
-}
-
-func (r VCLLogRecord) String() string {
-	if r.Key != "" {
-		return r.Key + ": " + r.Value
-	}
-	return r.Value
 }
 
 func NewVCLLogRecord(blr BaseRecord) (VCLLogRecord, error) {
@@ -940,12 +985,22 @@ func NewVCLLogRecord(blr BaseRecord) (VCLLogRecord, error) {
 	key := fields[0]
 	firstIndex := strings.Index(blr.GetRawValue(), key)
 	value := strings.TrimLeft(blr.GetRawValue()[firstIndex+len(key):], " \t")
+
 	return VCLLogRecord{BaseRecord: blr, Key: strings.TrimRight(key, ": \t"), Value: value}, nil
 }
 
-// StorageRecord holds the type and name of the storage backend the object is stored in
+func (r VCLLogRecord) String() string {
+	if r.Key != "" {
+		return r.Key + ": " + r.Value
+	}
+
+	return r.Value
+}
+
+// StorageRecord holds the type and name of the storage backend the object is stored in.
 type StorageRecord struct {
 	BaseRecord
+
 	StorageType string // Type ("malloc", "file", "persistent" etc.)
 	Name        string // Name of storage backend
 }
@@ -959,9 +1014,10 @@ func NewStorageRecord(blr BaseRecord) (StorageRecord, error) {
 	return StorageRecord{BaseRecord: blr, StorageType: parts[0], Name: parts[1]}, nil
 }
 
-// FetchBodyRecord holds information about the mode to fetch the object from the backend
+// FetchBodyRecord holds information about the mode to fetch the object from the backend.
 type FetchBodyRecord struct {
 	BaseRecord
+
 	Mode        int    // Body fetch mode
 	Description string // Description of body fetch mode
 	Stream      bool   // Whether it is a stream fetch
@@ -989,9 +1045,10 @@ func NewFetchBodyRecord(blr BaseRecord) (FetchBodyRecord, error) {
 }
 
 // SessOpenRecord is the first record for a client connection
-// with the socket-endpoints of the connection
+// with the socket-endpoints of the connection.
 type SessOpenRecord struct {
 	BaseRecord
+
 	RemoteAddr     net.IP    // Remote IPv4/6 address / 0.0.0.0 for UDS
 	RemotePort     int       // Remote TCP port / 0 for UDS
 	SocketName     string    // Socket name (from -a argument)
@@ -999,22 +1056,6 @@ type SessOpenRecord struct {
 	LocalPort      int       // Local TCP port / 0 for UDS
 	SessionStart   time.Time // Session start time (unix epoch)
 	FileDescriptor int       // File descriptor number
-}
-
-func (r SessOpenRecord) ConnStr() string {
-	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort))
-}
-
-func (r SessOpenRecord) String() string {
-	return fmt.Sprintf(
-		"%s %s %s:%d (%s) %d",
-		r.ConnStr(),
-		r.SocketName,
-		r.LocalAddr,
-		r.LocalPort,
-		r.SessionStart.UTC(),
-		r.FileDescriptor,
-	)
 }
 
 func NewSessOpenRecord(blr BaseRecord) (SessOpenRecord, error) {
@@ -1065,15 +1106,28 @@ func NewSessOpenRecord(blr BaseRecord) (SessOpenRecord, error) {
 	}, nil
 }
 
-// SessCloseRecord is the last record for any client connection
-type SessCloseRecord struct {
-	BaseRecord
-	Reason   string        // Why the connection closed
-	Duration time.Duration // How long the session was open
+func (r SessOpenRecord) String() string {
+	return fmt.Sprintf(
+		"%s %s %s:%d (%s) %d",
+		r.ConnStr(),
+		r.SocketName,
+		r.LocalAddr,
+		r.LocalPort,
+		r.SessionStart.UTC(),
+		r.FileDescriptor,
+	)
 }
 
-func (r SessCloseRecord) String() string {
-	return r.Reason + " " + r.Duration.String()
+func (r SessOpenRecord) ConnStr() string {
+	return net.JoinHostPort(r.RemoteAddr.String(), fmt.Sprintf("%d", r.RemotePort)) // nolint:perfsprint
+}
+
+// SessCloseRecord is the last record for any client connection.
+type SessCloseRecord struct {
+	BaseRecord
+
+	Reason   string        // Why the connection closed
+	Duration time.Duration // How long the session was open
 }
 
 func NewSessCloseRecord(blr BaseRecord) (SessCloseRecord, error) {
@@ -1081,16 +1135,23 @@ func NewSessCloseRecord(blr BaseRecord) (SessCloseRecord, error) {
 	if len(parts) != 2 {
 		return SessCloseRecord{}, fmt.Errorf("conversion to SessCloseRecord failed, invalid len on line %q", blr.GetRawLog())
 	}
+
 	d, err := convertStrToDuration(parts[1], time.Second)
 	if err != nil {
 		return SessCloseRecord{}, fmt.Errorf("conversion to SessCloseRecord failed, bad field duration on line %q", blr.GetRawLog())
 	}
+
 	return SessCloseRecord{BaseRecord: blr, Reason: parts[0], Duration: d}, nil
 }
 
-// GzipRecord holds G(un)zip performed on object
+func (r SessCloseRecord) String() string {
+	return r.Reason + " " + r.Duration.String()
+}
+
+// GzipRecord holds G(un)zip performed on object.
 type GzipRecord struct {
 	BaseRecord
+
 	Action                    string    // G: Gzip, U: Gunzip, u: Gunzip-test
 	When                      string    // F: Fetch, D: Deliver
 	Object                    string    // E: ESI, -: Plain object
@@ -1099,46 +1160,6 @@ type GzipRecord struct {
 	BitLocFirst               int64     // Bit location of first deflate block
 	BitLocLast                int64     // Bit location of 'last' bit
 	BitLengthOfCompressedData int64     // Bit length of compressed data
-}
-
-func (r GzipRecord) String() string {
-	action := r.Action
-	switch r.Action {
-	case "G":
-		action = "Gzip"
-	case "U":
-		action = "Gunzip"
-	case "u":
-		action = "Gunzip-test"
-	}
-
-	when := r.When
-	switch r.When {
-	case "F":
-		when = "Fetch"
-	case "D":
-		when = "Deliver"
-	}
-
-	object := r.Object
-	switch r.Object {
-	case "E":
-		object = "ESI"
-	case "-":
-		object = "Plain"
-	}
-
-	return fmt.Sprintf(
-		"%s on %s for %s object | %s input | %s output | %d %d %d",
-		action,
-		when,
-		object,
-		r.InputBytes.String(),
-		r.OutputBytes.String(),
-		r.BitLocFirst,
-		r.BitLocLast,
-		r.BitLengthOfCompressedData,
-	)
 }
 
 func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
@@ -1157,38 +1178,93 @@ func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
 	if err != nil {
 		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for inputBytes on line %q", blr.GetRawLog())
 	}
+
 	record.InputBytes = SizeValue(inputBytes)
 
 	outputBytes, err := strconv.Atoi(parts[4])
 	if err != nil {
 		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for outputBytes on line %q", blr.GetRawLog())
 	}
+
 	record.OutputBytes = SizeValue(outputBytes)
 
 	bitLocFirst, err := strconv.ParseInt(parts[5], 10, 64)
 	if err != nil {
 		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for bitLocFirst on line %q", blr.GetRawLog())
 	}
+
 	record.BitLocFirst = bitLocFirst
 
 	bitLocLast, err := strconv.ParseInt(parts[6], 10, 64)
 	if err != nil {
 		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for bitLocLast on line %q", blr.GetRawLog())
 	}
+
 	record.BitLocLast = bitLocLast
 
 	bitLengthOfCompressedData, err := strconv.ParseInt(parts[7], 10, 64)
 	if err != nil {
 		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for bitLengthOfCompressedData on line %q", blr.GetRawLog())
 	}
+
 	record.BitLengthOfCompressedData = bitLengthOfCompressedData
 
 	return record, nil
 }
 
-// MSE4NewObjectRecord holds MSE4 new object timing data
+func (r GzipRecord) String() string {
+	var action string
+
+	switch r.Action {
+	case "G":
+		action = "Gzip"
+	case "U":
+		action = "Gunzip"
+	case "u":
+		action = "Gunzip-test"
+	default:
+		action = "unknown-gzip-action"
+	}
+
+	var when string
+
+	switch r.When {
+	case "F":
+		when = "Fetch"
+	case "D":
+		when = "Deliver"
+	default:
+		when = "unknown-gzip-when"
+	}
+
+	var object string
+
+	switch r.Object {
+	case "E":
+		object = "ESI"
+	case "-":
+		object = "Plain"
+	default:
+		object = "unknown-gzip-object"
+	}
+
+	return fmt.Sprintf(
+		"%s on %s for %s object | %s input | %s output | %d %d %d",
+		action,
+		when,
+		object,
+		r.InputBytes.String(),
+		r.OutputBytes.String(),
+		r.BitLocFirst,
+		r.BitLocLast,
+		r.BitLengthOfCompressedData,
+	)
+}
+
+// MSE4NewObjectRecord holds MSE4 new object timing data.
 type MSE4NewObjectRecord struct {
 	BaseRecord
+
 	AllocationChunks     int64         // Number of allocation chunks created
 	BytesProcessed       SizeValue     // Number of bytes processed
 	TimeElapsed          time.Duration // Time elapsed between object creation and finalization (seconds)
@@ -1198,6 +1274,77 @@ type MSE4NewObjectRecord struct {
 	TimeDiskIOFetch      time.Duration // Time spent waiting for disk IO during fetch (seconds) [persisted only]
 	TimeDiskIOFinalize   time.Duration // Time spent waiting for disk IO during finalization (seconds) [persisted only]
 	IsPersisted          bool          // Whether this object was persisted to disk
+}
+
+func NewMSE4NewObjectRecord(blr BaseRecord) (MSE4NewObjectRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 5 && len(parts) != 8 {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, expected 5 or 8 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	}
+
+	record := MSE4NewObjectRecord{BaseRecord: blr}
+	record.IsPersisted = len(parts) == 8
+
+	allocationChunks, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for allocationChunks on line %q", blr.GetRawLog())
+	}
+
+	record.AllocationChunks = allocationChunks
+
+	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
+	}
+
+	record.BytesProcessed = SizeValue(bytesProcessed)
+
+	timeElapsed, err := strconv.ParseFloat(parts[2], 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
+	}
+
+	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
+
+	timeMSE4Processing, err := strconv.ParseFloat(parts[3], 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMSE4Processing on line %q", blr.GetRawLog())
+	}
+
+	record.TimeMSE4Processing = time.Duration(timeMSE4Processing * float64(time.Second))
+
+	timeMemoryAllocation, err := strconv.ParseFloat(parts[4], 64)
+	if err != nil {
+		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMemoryAllocation on line %q", blr.GetRawLog())
+	}
+
+	record.TimeMemoryAllocation = time.Duration(timeMemoryAllocation * float64(time.Second))
+
+	// Parse optional persisted object fields
+	if record.IsPersisted {
+		timeResourceWait, err := strconv.ParseFloat(parts[5], 64)
+		if err != nil {
+			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeResourceWait on line %q", blr.GetRawLog())
+		}
+
+		record.TimeResourceWait = time.Duration(timeResourceWait * float64(time.Second))
+
+		timeDiskIOFetch, err := strconv.ParseFloat(parts[6], 64)
+		if err != nil {
+			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFetch on line %q", blr.GetRawLog())
+		}
+
+		record.TimeDiskIOFetch = time.Duration(timeDiskIOFetch * float64(time.Second))
+
+		timeDiskIOFinalize, err := strconv.ParseFloat(parts[7], 64)
+		if err != nil {
+			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFinalize on line %q", blr.GetRawLog())
+		}
+
+		record.TimeDiskIOFinalize = time.Duration(timeDiskIOFinalize * float64(time.Second))
+	}
+
+	return record, nil
 }
 
 func (r MSE4NewObjectRecord) String() string {
@@ -1222,72 +1369,10 @@ func (r MSE4NewObjectRecord) String() string {
 	return s
 }
 
-func NewMSE4NewObjectRecord(blr BaseRecord) (MSE4NewObjectRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 5 && len(parts) != 8 {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, expected 5 or 8 fields, got %d on line %q", len(parts), blr.GetRawLog())
-	}
-
-	record := MSE4NewObjectRecord{BaseRecord: blr}
-	record.IsPersisted = len(parts) == 8
-
-	allocationChunks, err := strconv.ParseInt(parts[0], 10, 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for allocationChunks on line %q", blr.GetRawLog())
-	}
-	record.AllocationChunks = allocationChunks
-
-	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
-	}
-	record.BytesProcessed = SizeValue(bytesProcessed)
-
-	timeElapsed, err := strconv.ParseFloat(parts[2], 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
-	}
-	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
-
-	timeMSE4Processing, err := strconv.ParseFloat(parts[3], 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMSE4Processing on line %q", blr.GetRawLog())
-	}
-	record.TimeMSE4Processing = time.Duration(timeMSE4Processing * float64(time.Second))
-
-	timeMemoryAllocation, err := strconv.ParseFloat(parts[4], 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMemoryAllocation on line %q", blr.GetRawLog())
-	}
-	record.TimeMemoryAllocation = time.Duration(timeMemoryAllocation * float64(time.Second))
-
-	// Parse optional persisted object fields
-	if record.IsPersisted {
-		timeResourceWait, err := strconv.ParseFloat(parts[5], 64)
-		if err != nil {
-			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeResourceWait on line %q", blr.GetRawLog())
-		}
-		record.TimeResourceWait = time.Duration(timeResourceWait * float64(time.Second))
-
-		timeDiskIOFetch, err := strconv.ParseFloat(parts[6], 64)
-		if err != nil {
-			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFetch on line %q", blr.GetRawLog())
-		}
-		record.TimeDiskIOFetch = time.Duration(timeDiskIOFetch * float64(time.Second))
-
-		timeDiskIOFinalize, err := strconv.ParseFloat(parts[7], 64)
-		if err != nil {
-			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFinalize on line %q", blr.GetRawLog())
-		}
-		record.TimeDiskIOFinalize = time.Duration(timeDiskIOFinalize * float64(time.Second))
-	}
-
-	return record, nil
-}
-
-// MSE4ObjIterRecord holds MSE4 object payload iteration timing data
+// MSE4ObjIterRecord holds MSE4 object payload iteration timing data.
 type MSE4ObjIterRecord struct {
 	BaseRecord
+
 	TimeElapsed          time.Duration // Time elapsed between start and end of iteration (seconds)
 	BytesProcessed       SizeValue     // Number of bytes processed
 	TimeProcessing       time.Duration // Total time spent processing (seconds)
@@ -1295,6 +1380,63 @@ type MSE4ObjIterRecord struct {
 	DiskIOBytes          SizeValue     // Disk IO bytes processed [persisted only]
 	TimeDiskIOProcessing time.Duration // Time spent on processing disk IO (seconds) [persisted only]
 	IsPersisted          bool          // Whether this object was persisted to disk
+}
+
+func NewMSE4ObjIterRecord(blr BaseRecord) (MSE4ObjIterRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 4 && len(parts) != 6 {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, expected 4 or 6 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	}
+
+	record := MSE4ObjIterRecord{BaseRecord: blr}
+	record.IsPersisted = len(parts) == 6
+
+	timeElapsed, err := strconv.ParseFloat(parts[0], 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
+	}
+
+	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
+
+	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
+	}
+
+	record.BytesProcessed = SizeValue(bytesProcessed)
+
+	timeProcessing, err := strconv.ParseFloat(parts[2], 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeProcessing on line %q", blr.GetRawLog())
+	}
+
+	record.TimeProcessing = time.Duration(timeProcessing * float64(time.Second))
+
+	timeBackendWait, err := strconv.ParseFloat(parts[3], 64)
+	if err != nil {
+		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeBackendWait on line %q", blr.GetRawLog())
+	}
+
+	record.TimeBackendWait = time.Duration(timeBackendWait * float64(time.Second))
+
+	// Parse optional persisted object fields
+	if record.IsPersisted {
+		diskIOBytes, err := strconv.ParseInt(parts[4], 10, 64)
+		if err != nil {
+			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for diskIOBytes on line %q", blr.GetRawLog())
+		}
+
+		record.DiskIOBytes = SizeValue(diskIOBytes)
+
+		timeDiskIOProcessing, err := strconv.ParseFloat(parts[5], 64)
+		if err != nil {
+			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeDiskIOProcessing on line %q", blr.GetRawLog())
+		}
+
+		record.TimeDiskIOProcessing = time.Duration(timeDiskIOProcessing * float64(time.Second))
+	}
+
+	return record, nil
 }
 
 func (r MSE4ObjIterRecord) String() string {
@@ -1317,76 +1459,15 @@ func (r MSE4ObjIterRecord) String() string {
 	return s
 }
 
-func NewMSE4ObjIterRecord(blr BaseRecord) (MSE4ObjIterRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 4 && len(parts) != 6 {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, expected 4 or 6 fields, got %d on line %q", len(parts), blr.GetRawLog())
-	}
-
-	record := MSE4ObjIterRecord{BaseRecord: blr}
-	record.IsPersisted = len(parts) == 6
-
-	timeElapsed, err := strconv.ParseFloat(parts[0], 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
-	}
-	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
-
-	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
-	}
-	record.BytesProcessed = SizeValue(bytesProcessed)
-
-	timeProcessing, err := strconv.ParseFloat(parts[2], 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeProcessing on line %q", blr.GetRawLog())
-	}
-	record.TimeProcessing = time.Duration(timeProcessing * float64(time.Second))
-
-	timeBackendWait, err := strconv.ParseFloat(parts[3], 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeBackendWait on line %q", blr.GetRawLog())
-	}
-	record.TimeBackendWait = time.Duration(timeBackendWait * float64(time.Second))
-
-	// Parse optional persisted object fields
-	if record.IsPersisted {
-		diskIOBytes, err := strconv.ParseInt(parts[4], 10, 64)
-		if err != nil {
-			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for diskIOBytes on line %q", blr.GetRawLog())
-		}
-		record.DiskIOBytes = SizeValue(diskIOBytes)
-
-		timeDiskIOProcessing, err := strconv.ParseFloat(parts[5], 64)
-		if err != nil {
-			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeDiskIOProcessing on line %q", blr.GetRawLog())
-		}
-		record.TimeDiskIOProcessing = time.Duration(timeDiskIOProcessing * float64(time.Second))
-	}
-
-	return record, nil
-}
-
-// MSE4ChunkFaultRecord holds MSE4 persisted chunk memory fault timing data
+// MSE4ChunkFaultRecord holds MSE4 persisted chunk memory fault timing data.
 type MSE4ChunkFaultRecord struct {
 	BaseRecord
+
 	ChunksProcessed      int64         // Number of chunks processed
 	BytesProcessed       SizeValue     // Number of bytes processed
 	TimeProcessing       time.Duration // Total time spent on processing (seconds)
 	TimeMemoryAllocation time.Duration // Time spent allocating memory (seconds)
 	TimeDiskIOWait       time.Duration // Time spent waiting for disk IO (seconds)
-}
-
-func (r MSE4ChunkFaultRecord) String() string {
-	return fmt.Sprintf(
-		"%d chunks | %s processed | %s processing | %s mem alloc | %s disk IO wait",
-		r.ChunksProcessed,
-		r.BytesProcessed.String(),
-		r.TimeProcessing,
-		r.TimeMemoryAllocation,
-		r.TimeDiskIOWait,
-	)
 }
 
 func NewMSE4ChunkFaultRecord(blr BaseRecord) (MSE4ChunkFaultRecord, error) {
@@ -1401,46 +1482,107 @@ func NewMSE4ChunkFaultRecord(blr BaseRecord) (MSE4ChunkFaultRecord, error) {
 	if err != nil {
 		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for chunksProcessed on line %q", blr.GetRawLog())
 	}
+
 	record.ChunksProcessed = chunksProcessed
 
 	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
 		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
 	}
+
 	record.BytesProcessed = SizeValue(bytesProcessed)
 
 	timeProcessing, err := strconv.ParseFloat(parts[2], 64)
 	if err != nil {
 		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeProcessing on line %q", blr.GetRawLog())
 	}
+
 	record.TimeProcessing = time.Duration(timeProcessing * float64(time.Second))
 
 	timeMemoryAllocation, err := strconv.ParseFloat(parts[3], 64)
 	if err != nil {
 		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeMemoryAllocation on line %q", blr.GetRawLog())
 	}
+
 	record.TimeMemoryAllocation = time.Duration(timeMemoryAllocation * float64(time.Second))
 
 	timeDiskIOWait, err := strconv.ParseFloat(parts[4], 64)
 	if err != nil {
 		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeDiskIOWait on line %q", blr.GetRawLog())
 	}
+
 	record.TimeDiskIOWait = time.Duration(timeDiskIOWait * float64(time.Second))
 
 	return record, nil
 }
 
-// BrotliRecord holds Brotli compression/decompression operation data
+func (r MSE4ChunkFaultRecord) String() string {
+	return fmt.Sprintf(
+		"%d chunks | %s processed | %s processing | %s mem alloc | %s disk IO wait",
+		r.ChunksProcessed,
+		r.BytesProcessed.String(),
+		r.TimeProcessing,
+		r.TimeMemoryAllocation,
+		r.TimeDiskIOWait,
+	)
+}
+
+// BrotliRecord holds Brotli compression/decompression operation data.
 type BrotliRecord struct {
 	BaseRecord
+
 	Operation   rune      // 'B': Brotli, 'U': Unbrotli, 'u': Unbrotli-test
 	Direction   rune      // 'F': Fetch, 'D': Deliver
 	BytesInput  SizeValue // Bytes input
 	BytesOutput SizeValue // Bytes output
 }
 
+func NewBrotliRecord(blr BaseRecord) (BrotliRecord, error) {
+	parts := strings.Fields(blr.GetRawValue())
+	if len(parts) != 4 {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, expected 4 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	}
+
+	record := BrotliRecord{BaseRecord: blr}
+
+	if len(parts[0]) != 1 {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for operation on line %q", blr.GetRawLog())
+	}
+
+	record.Operation = rune(parts[0][0])
+	if record.Operation != 'B' && record.Operation != 'U' && record.Operation != 'u' {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid operation '%c' on line %q", record.Operation, blr.GetRawLog())
+	}
+
+	if len(parts[1]) != 1 {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for direction on line %q", blr.GetRawLog())
+	}
+
+	record.Direction = rune(parts[1][0])
+	if record.Direction != 'F' && record.Direction != 'D' {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid direction '%c' on line %q", record.Direction, blr.GetRawLog())
+	}
+
+	bytesInput, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesInput on line %q", blr.GetRawLog())
+	}
+
+	record.BytesInput = SizeValue(bytesInput)
+
+	bytesOutput, err := strconv.ParseInt(parts[3], 10, 64)
+	if err != nil {
+		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesOutput on line %q", blr.GetRawLog())
+	}
+
+	record.BytesOutput = SizeValue(bytesOutput)
+
+	return record, nil
+}
+
 func (r BrotliRecord) String() string {
 	var operation string
+
 	switch r.Operation {
 	case 'B':
 		operation = "Brotli"
@@ -1453,6 +1595,7 @@ func (r BrotliRecord) String() string {
 	}
 
 	var direction string
+
 	switch r.Direction {
 	case 'F':
 		direction = "Fetch"
@@ -1471,70 +1614,31 @@ func (r BrotliRecord) String() string {
 	)
 }
 
-func NewBrotliRecord(blr BaseRecord) (BrotliRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 4 {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, expected 4 fields, got %d on line %q", len(parts), blr.GetRawLog())
-	}
-
-	record := BrotliRecord{BaseRecord: blr}
-
-	if len(parts[0]) != 1 {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for operation on line %q", blr.GetRawLog())
-	}
-	record.Operation = rune(parts[0][0])
-	if record.Operation != 'B' && record.Operation != 'U' && record.Operation != 'u' {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid operation '%c' on line %q", record.Operation, blr.GetRawLog())
-	}
-
-	if len(parts[1]) != 1 {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for direction on line %q", blr.GetRawLog())
-	}
-	record.Direction = rune(parts[1][0])
-	if record.Direction != 'F' && record.Direction != 'D' {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid direction '%c' on line %q", record.Direction, blr.GetRawLog())
-	}
-
-	bytesInput, err := strconv.ParseInt(parts[2], 10, 64)
-	if err != nil {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesInput on line %q", blr.GetRawLog())
-	}
-	record.BytesInput = SizeValue(bytesInput)
-
-	bytesOutput, err := strconv.ParseInt(parts[3], 10, 64)
-	if err != nil {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesOutput on line %q", blr.GetRawLog())
-	}
-	record.BytesOutput = SizeValue(bytesOutput)
-
-	return record, nil
-}
-
 /* BaseRecord aliases */
 
-// EndRecord marks the end of a transaction
+// EndRecord marks the end of a transaction.
 type EndRecord struct{ BaseRecord }
 
-// VCLCallRecord is the VCL method called (RECV, DELIVER, BACKEND_FETCH, ...)
+// VCLCallRecord is the VCL method called (RECV, DELIVER, BACKEND_FETCH, ...).
 type VCLCallRecord struct{ BaseRecord }
 
-// VCLReturnRecord is the VCL method return value (hash, lookup, fetch, deliver, ...)
+// VCLReturnRecord is the VCL method return value (hash, lookup, fetch, deliver, ...).
 type VCLReturnRecord struct{ BaseRecord }
 
-// VCLUseRecord is the VCL name in use
+// VCLUseRecord is the VCL name in use.
 type VCLUseRecord struct{ BaseRecord }
 
-// ReasonRecord is the response reason
+// ReasonRecord is the response reason.
 type ReasonRecord struct{ BaseRecord }
 
-// FetchErrorRecord holds the error msg of an error while fetching the object from the backend
+// FetchErrorRecord holds the error msg of an error while fetching the object from the backend.
 type FetchErrorRecord struct{ BaseRecord }
 
-// MethodRecord holds the method for ReqMethod or BereqMethod tags
+// MethodRecord holds the method for ReqMethod or BereqMethod tags.
 type MethodRecord struct{ BaseRecord }
 
-// ProtocolRecord holds the protocol for the ReqProtocol, RespProtocol, BereqProtocol, ... tags
+// ProtocolRecord holds the protocol for the ReqProtocol, RespProtocol, BereqProtocol, ... tags.
 type ProtocolRecord struct{ BaseRecord }
 
-// ErrorRecord holds error messages
+// ErrorRecord holds error messages.
 type ErrorRecord struct{ BaseRecord }

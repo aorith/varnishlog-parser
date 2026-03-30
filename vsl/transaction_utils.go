@@ -19,10 +19,10 @@ const (
 	sizePB             = sizeTB * 1024
 )
 
-// TXID is an unique identifier for a transaction
+// TXID is an unique identifier for a transaction.
 type TXID string
 
-// VXID in Varnish the vxid is of type "uint32_t"
+// VXID in Varnish the vxid is of type "uint32_t".
 type VXID uint32
 
 // SizeValue is a custom type based on int64 to handle sizes.
@@ -51,7 +51,7 @@ func (s SizeValue) String() string {
 	}
 }
 
-// convertStrToDuration converts a string to a duration value
+// convertStrToDuration converts a string to a duration value.
 func convertStrToDuration(s string, unit time.Duration) (time.Duration, error) {
 	sfl, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -61,7 +61,7 @@ func convertStrToDuration(s string, unit time.Duration) (time.Duration, error) {
 	return time.Duration(sfl * float64(unit)), nil
 }
 
-// convertToUnixTimestamp converts a Unix timestamp string (integer or fractional) to a time.Time object
+// convertToUnixTimestamp converts a Unix timestamp string (integer or fractional) to a time.Time object.
 func convertToUnixTimestamp(s string) (time.Time, error) {
 	unixnano, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -75,20 +75,22 @@ func convertToUnixTimestamp(s string) (time.Time, error) {
 	return time.Unix(seconds, microseconds*1e3), nil
 }
 
-// parseTXID returns an string that represents the transaction ID
+// parseTXID returns an string that represents the transaction ID.
 func parseTXID(vxid VXID, recordType, reason string, esiLevel int) TXID {
 	if recordType == "sess" {
 		return TXID(fmt.Sprintf("%d-%s", vxid, recordType))
 	}
+
 	if esiLevel > 0 {
 		return TXID(fmt.Sprintf("%d-%s-%s-%d", vxid, recordType, reason, esiLevel))
 	}
+
 	return TXID(fmt.Sprintf("%d-%s-%s", vxid, recordType, reason))
 }
 
 // parseLevel returns the level of the transaction parsing the initial transaction header
 // e.g.  '**  << Request  >> 2'
-// it checks the first field of the line ('*', '**', '*3*' ...)
+// it checks the first field of the line ('*', '**', '*3*' ...).
 func parseLevel(s string) (int, error) {
 	stars := strings.Count(s, "*")
 	if stars == len(s) {
@@ -97,6 +99,7 @@ func parseLevel(s string) (int, error) {
 
 	// If we are here, the string must be something like '*5*'
 	var sb strings.Builder
+
 	for _, r := range s {
 		if r != '*' {
 			sb.WriteRune(r)
@@ -104,33 +107,38 @@ func parseLevel(s string) (int, error) {
 	}
 
 	levelStr := sb.String()
+
 	level, err := strconv.Atoi(levelStr)
 	if err != nil {
 		return 0, err
 	}
+
 	return level, nil
 }
 
-// parseVXID parses an string as a VXID
+// parseVXID parses an string as a VXID.
 func parseVXID(s string) (VXID, error) {
 	vxid, err := strconv.ParseUint(s, 10, 32)
 	if err != nil {
-		return VXID(0), fmt.Errorf("VXID parse failed, error: %s", err)
+		return VXID(0), fmt.Errorf("VXID parse failed, error: %w", err)
 	}
+
 	return VXID(vxid), nil
 }
 
-// collectAllChildren is a helper function to recursively collect all children and their descendants
+// collectAllChildren is a helper function to recursively collect all children and their descendants.
 func collectAllChildren(ts *TransactionSet, parent *Transaction) []*Transaction {
 	visited := make(map[TXID]bool)
 
 	var recursiveCollect func(tx *Transaction) []*Transaction
+
 	recursiveCollect = func(tx *Transaction) []*Transaction {
 		var allChildren []*Transaction
 
 		if visited[tx.TXID] {
 			return allChildren
 		}
+
 		visited[tx.TXID] = true
 
 		children := ts.SortedChildren(tx)

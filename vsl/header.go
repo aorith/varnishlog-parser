@@ -12,10 +12,7 @@ import (
 // The RFCs allow multiple headers with the same name, and both set and unset
 // within VCL will remove all headers with the name given.
 
-// Special headers
-var (
-	HdrNameHost = CanonicalHeaderName("Host")
-)
+var HdrNameHost = CanonicalHeaderName("Host")
 
 // HdrState represents the state of an HTTP header within the Varnish lifecycle.
 // It indicates whether a header was originally received, added, modified, or deleted.
@@ -44,7 +41,7 @@ func (s HdrState) String() string {
 	}
 }
 
-// Header represents an HTTP header within the VSL
+// Header represents an HTTP header within the VSL.
 type Header struct {
 	id             int
 	name           string
@@ -60,7 +57,8 @@ func (h Header) MarshalJSON() ([]byte, error) {
 		Values:         h.values,
 		ReceivedValues: h.receivedValues,
 	}
-	return json.Marshal(aux)
+
+	return json.Marshal(aux) // nolint
 }
 
 func (h Header) ID() int {
@@ -72,15 +70,16 @@ func (h Header) Name() string {
 }
 
 // Values returns all the values
-// When received is true, it returns the receivedValues
+// When received is true, it returns the receivedValues.
 func (h Header) Values(received bool) []HdrValue {
 	if received {
 		return h.receivedValues
 	}
+
 	return h.values
 }
 
-// HdrValue represents a single header value and its state
+// HdrValue represents a single header value and its state.
 type HdrValue struct {
 	value string
 	state HdrState
@@ -98,20 +97,21 @@ func (h HdrValue) MarshalJSON() ([]byte, error) {
 		Value: h.value,
 		State: h.state.String(),
 	}
-	return json.Marshal(aux)
+
+	return json.Marshal(aux) // nolint
 }
 
-// Value returns the header value
+// Value returns the header value.
 func (h HdrValue) Value() string {
 	return h.value
 }
 
-// State returns the header state
+// State returns the header state.
 func (h HdrValue) State() HdrState {
 	return h.state
 }
 
-// Headers represents a set of HTTP headers within the VSL
+// Headers represents a set of HTTP headers within the VSL.
 type Headers map[string]Header
 
 // Add adds a header value to the Headers map.
@@ -184,13 +184,16 @@ func (h Headers) Delete(name string) {
 // When received is true, it returns the values from the receivedValues slice.
 func (h Headers) Values(name string, received bool) []HdrValue {
 	name = CanonicalHeaderName(name)
+
 	header, exists := h[name]
 	if !exists {
 		return nil
 	}
+
 	if received {
 		return header.receivedValues
 	}
+
 	return header.values
 }
 
@@ -200,26 +203,30 @@ func (h Headers) Values(name string, received bool) []HdrValue {
 // If there are no values it returns an empty string.
 func (h Headers) Get(name string, received bool) string {
 	name = CanonicalHeaderName(name)
+
 	header, exists := h[name]
 	if !exists {
 		return ""
 	}
+
 	var values []HdrValue
 	if received {
 		values = header.receivedValues
 	} else {
 		values = header.values
 	}
+
 	if len(values) == 0 {
 		return ""
 	}
+
 	return values[0].Value()
 }
 
 // Clear removes all entries from the Headers map.
-func (h *Headers) Clear() {
-	for k := range *h {
-		delete(*h, k)
+func (h Headers) Clear() {
+	for k := range h {
+		delete(h, k)
 	}
 }
 
@@ -235,6 +242,7 @@ func (h Headers) GetSortedHeaders() []Header {
 		} else if a.ID() < b.ID() {
 			return -1
 		}
+
 		return 1
 	})
 

@@ -13,19 +13,23 @@ import (
 
 func TxTreeHTML(ts vsl.TransactionSet, root *vsl.Transaction) string {
 	var s rowBuilder
+
 	visited := make(map[vsl.VXID]bool)
 	renderTxTree(&s, ts, root, visited)
+
 	return s.String()
 }
 
 func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) {
 	if visited[tx.VXID] {
 		slog.Warn("renderTxTree(): loop detected", "transaction", tx.TXID)
+
 		return
 	}
+
 	visited[tx.VXID] = true
 
-	s.WriteString("<tx-logs>")
+	s.WriteString("<tx-logs>") // nolint
 
 	for _, r := range tx.Records {
 		switch record := r.(type) {
@@ -82,6 +86,7 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 			} else {
 				s.addRow(record.GetTag(), "", fmt.Sprintf("%s (%s)", record.GetRawValue(), childTx.TXID), "")
 			}
+
 			renderTxTree(s, ts, childTx, visited)
 
 		default:
@@ -89,7 +94,7 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 		}
 	}
 
-	s.WriteString("</tx-logs>")
+	s.WriteString("</tx-logs>") // nolint
 }
 
 type rowBuilder struct {
@@ -101,6 +106,7 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 		if cls != "" {
 			return fmt.Sprintf(` class="%s"`, cls)
 		}
+
 		return ""
 	}
 
@@ -109,6 +115,7 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 	}
 
 	classA, classB = formatClass(classA), formatClass(classB)
+
 	_, err := fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, a, classB, b)
 	if err != nil {
 		panic(err)
@@ -116,16 +123,18 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 }
 
 func statusCSSClass(s int) string {
-	if s >= 500 {
+	switch {
+	case s >= 500:
 		return "s5xx"
-	} else if s >= 400 {
+	case s >= 400:
 		return "s4xx"
-	} else if s >= 300 {
+	case s >= 300:
 		return "s3xx"
-	} else if s >= 200 {
+	case s >= 200:
 		return "s2xx"
+	default:
+		return ""
 	}
-	return ""
 }
 
 func keywordClass(s string) string {
@@ -137,5 +146,6 @@ func keywordClass(s string) string {
 	case tags.VCLReturn:
 		return "yellow"
 	}
+
 	return ""
 }

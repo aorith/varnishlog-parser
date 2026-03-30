@@ -13,17 +13,17 @@ import (
 	"github.com/aorith/varnishlog-parser/vsl/tags"
 )
 
-type transactionParser struct {
+type TransactionParser struct {
 	scanner *bufio.Scanner
 }
 
-func NewTransactionParser(r io.Reader) *transactionParser {
-	return &transactionParser{
+func NewTransactionParser(r io.Reader) *TransactionParser {
+	return &TransactionParser{
 		scanner: bufio.NewScanner(r),
 	}
 }
 
-func (p *transactionParser) Parse() (TransactionSet, error) {
+func (p *TransactionParser) Parse() (TransactionSet, error) {
 	ts := TransactionSet{
 		txs: make(map[VXID]*Transaction),
 	}
@@ -49,6 +49,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		if !p.scanner.Scan() {
 			return ts, fmt.Errorf("parser error: expected %s tag, found EOF after %q", tags.Begin, tx.RawLog)
 		}
+
 		line = strings.TrimSpace(p.scanner.Text())
 		if line == "" {
 			return ts, fmt.Errorf("parser error: expected %s tag, found empty line after %q", tags.Begin, tx.RawLog)
@@ -58,12 +59,13 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		if err != nil {
 			return ts, err
 		}
+
 		if r.GetTag() != tags.Begin {
 			return ts, fmt.Errorf("parser error: expected %s tag, found %q on line %q", tags.Begin, r.GetTag(), line)
 		}
 
 		// Add the data contained in the Begin tag to the new transaction
-		br := r.(BeginRecord)
+		br := r.(BeginRecord) // nolint
 		tx.Parent = br.Parent
 		tx.ESILevel = br.ESILevel
 		tx.TXID = parseTXID(tx.VXID, br.RecordType, br.Reason, br.ESILevel)
@@ -71,10 +73,14 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		tx.Records = append(tx.Records, br)
 
 		// Parse the remaining tags
-		complete := false                                 // to check at the end if the transaction finished (found End tag for example)
-		clientHeaders := true                             // keep track if we are still parsing client/received headers
-		var lastHeaderRecord *HeaderRecord                // required to track client/received headers
-		var tempHeaders Headers = make(map[string]Header) // required to track client/received headers
+		complete := false     // to check at the end if the transaction finished (found End tag for example)
+		clientHeaders := true // keep track if we are still parsing client/received headers
+
+		var (
+			lastHeaderRecord *HeaderRecord                           // required to track client/received headers
+			tempHeaders      Headers       = make(map[string]Header) // required to track client/received headers
+		)
+
 		for p.scanner.Scan() {
 			line := strings.TrimSpace(p.scanner.Text())
 			// Skip empty lines or invalid lines
@@ -86,6 +92,7 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 			if err != nil {
 				return ts, err
 			}
+
 			tx.Records = append(tx.Records, r)
 
 			switch record := r.(type) {
@@ -96,8 +103,10 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 					// prefer this rather that checking if the call is for 'recv', 'miss', 'deliver', etc, as that could be more brittle
 					if lastHeaderRecord == nil {
 						tempHeaders.Clear() // should be empty already
+
 						continue
 					}
+
 					if lastHeaderRecord.IsRespHeader() {
 						mergeTempHeaders(tx.RespHeaders, tempHeaders)
 					} else {
@@ -110,11 +119,13 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 				clientHeaders = true
 
 			case LinkRecord:
-				lr := r.(LinkRecord)
+				lr := r.(LinkRecord) // nolint
 				if slices.Contains(tx.Children, lr.VXID) {
 					slog.Warn("Parse() duplicate children assignment", "txid", tx.TXID, "linkTXID", lr.TXID)
+
 					continue
 				}
+
 				tx.Children = append(tx.Children, lr.VXID)
 
 			case BeginRecord:
@@ -173,19 +184,24 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 						slog.Warn("unset found for non-tracked Varnish C code modificable header", "header", record.Name)
 					}
 				}
+
 				headers.Delete(record.Name)
 				tempHeaders.Delete(record.Name) // Received headers are not deleted
+
+			default:
 			}
 
 			// Check if the tx is complete, this is outside of the switch case to be able to break the for loop
 			if r.GetTag() == tags.End {
 				ts.txs[tx.VXID] = tx
 				complete = true
+
 				break
 			}
 		}
 
-		if err := p.scanner.Err(); err != nil {
+		err = p.scanner.Err()
+		if err != nil {
 			return ts, err
 		}
 
@@ -194,7 +210,8 @@ func (p *transactionParser) Parse() (TransactionSet, error) {
 		}
 	}
 
-	if err := p.scanner.Err(); err != nil {
+	err := p.scanner.Err()
+	if err != nil {
 		return ts, err
 	}
 
@@ -288,6 +305,7 @@ func processRecord(line string) (Record, error) {
 		return ErrorRecord{BaseRecord: blr}, nil
 	default:
 		slog.Warn("unknown tag", "tag", t)
+
 		return blr, nil
 	}
 }
@@ -329,7 +347,7 @@ func isVarnishModifiedHeader(name, tagName string) bool {
 }
 
 // mergeTempHeaders is a helper function that should be called the first time clientHeaders is set to true
-// it adds all the headers that have not been deleted, at the end it should only contain real client headers
+// it adds all the headers that have not been deleted, at the end it should only contain real client headers.
 func mergeTempHeaders(headers, tempHeaders Headers) {
 	// Example: 'Via' header with value 'a' was sent by the client:
 	//
@@ -344,7 +362,6 @@ func mergeTempHeaders(headers, tempHeaders Headers) {
 	// -   ReqUnset       Via: a
 	// -   ReqHeader      Via: a, 1.1 53d4be3da396 (Varnish/7.5)
 	// -   VCL_call       RECV
-
 	for _, h := range tempHeaders.GetSortedHeaders() {
 		name := h.Name()
 		for _, v := range h.Values(true) {
@@ -352,6 +369,7 @@ func mergeTempHeaders(headers, tempHeaders Headers) {
 				headers.Add(name, v.Value(), HdrStateReceived)
 			}
 		}
+
 		for _, v := range h.Values(false) {
 			if v.State() != HdrStateDeleted {
 				headers.Add(name, v.Value(), v.State())
@@ -364,7 +382,7 @@ func mergeTempHeaders(headers, tempHeaders Headers) {
 	tempHeaders.Clear()
 }
 
-// addProcessedHeaders is a helper function to add headers processed in VCL or C code in Varnish
+// addProcessedHeaders is a helper function to add headers processed in VCL or C code in Varnish.
 func addProcessedHeaders(headers Headers, name, value string) {
 	if headers.Get(name, false) == "" {
 		// Header does not exist, mark it as added

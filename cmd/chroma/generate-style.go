@@ -15,7 +15,9 @@ func main() {
 	if style == nil {
 		style = styles.Fallback
 	}
+
 	formatter := chromahtml.New(chromahtml.WithClasses(true), chromahtml.WithCSSComments(false), chromahtml.ClassPrefix("chr_"))
+
 	err := formatter.WriteCSS(os.Stdout, style)
 	if err != nil {
 		panic(err)

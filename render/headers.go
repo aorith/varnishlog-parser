@@ -10,17 +10,22 @@ import (
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 
-// HTMLHeadersTable returns an HTML table with HTTP header states
+// HTMLHeadersTable returns an HTML table with HTTP header states.
 func HTMLHeadersTable(ts vsl.TransactionSet, tx *vsl.Transaction) []string {
 	visited := make(map[vsl.VXID]bool)
+
 	return headersView(ts, tx, visited)
 }
 
-func headersView(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) (lines []string) {
+func headersView(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) []string {
+	var lines []string
+
 	if visited[tx.VXID] {
 		slog.Info("headersView(): loop detected", "txid", tx.TXID)
+
 		return nil
 	}
+
 	visited[tx.VXID] = true
 
 	for _, r := range tx.Records {
@@ -42,13 +47,17 @@ func headersView(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXI
 				lines = append(lines, fmt.Sprintf(`<div class="hdr-tx hdr-tx-resp">Response of %s</div>`, tx.TXID))
 				lines = append(lines, renderHeaders(tx.RespHeaders)...)
 			}
+
+		default:
 		}
 	}
 
 	return lines
 }
 
-func renderHeaders(headers vsl.Headers) (lines []string) {
+func renderHeaders(headers vsl.Headers) []string {
+	var lines []string
+
 	for _, t := range []string{"Header", "Received", "Processed"} {
 		lines = append(lines, fmt.Sprintf(`<div class="hdr-title">%s</div>`, t))
 	}
@@ -61,6 +70,7 @@ func renderHeaders(headers vsl.Headers) (lines []string) {
 		received := h.Values(true)
 		processed := h.Values(false)
 		numValues := max(len(received), len(processed))
+
 		for i := range numValues {
 			lines = append(lines, fmt.Sprintf(`<div class="hdr-key">%s</div>`, html.EscapeString(h.Name())))
 
@@ -70,6 +80,7 @@ func renderHeaders(headers vsl.Headers) (lines []string) {
 			} else {
 				lines = append(lines, `<div class="hdr-val"></div>`)
 			}
+
 			if i < len(processed) {
 				processedBytes += len(h.Name()) + len(processed[i].Value()) + 2
 				lines = append(lines, renderHeader(processed[i].Value(), processed[i].State()))
@@ -96,7 +107,8 @@ func renderHeader(value string, state vsl.HdrState) string {
 	size := vsl.SizeValue(len(value)) // this already accounts for multi-byte chars
 	value = html.EscapeString(value)
 
-	class := ""
+	var class string
+
 	switch state {
 	case vsl.HdrStateReceived:
 		class = "diff-received"
@@ -106,6 +118,7 @@ func renderHeader(value string, state vsl.HdrState) string {
 		class = "diff-modified"
 	case vsl.HdrStateDeleted:
 		class = "diff-deleted"
+	default:
 	}
 
 	return fmt.Sprintf(`<abbr title="Size: %s"><input type="text" class="%s" value="%s"></abbr>`, size.String(), class, value)

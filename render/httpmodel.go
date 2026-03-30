@@ -3,10 +3,11 @@
 package render
 
 import (
+	"cmp"
+	"errors"
 	"fmt"
 	"net"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/aorith/varnishlog-parser/vsl"
@@ -21,7 +22,73 @@ type HTTPRequest struct {
 	headers []Header
 }
 
-func (r HTTPRequest) Headers() []Header {
+// NewHTTPRequest constructs an HTTPRequest from a Varnish transaction.
+// Returns nil if the transaction type is session.
+//
+// If received is true, initial (received) headers are used; otherwise, headers after VCL processing.
+// excludedHeaders can contain an slice of strings, each one must be a header name.
+func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string) (*HTTPRequest, error) {
+	if tx.TXType == vsl.TxTypeSession {
+		return nil, errors.New("cannot create an http request from a transaction of type session")
+	}
+
+	headers := tx.ReqHeaders
+	host := headers.Get("host", received)
+	port := ""
+
+	if strings.Contains(host, ":") {
+		var err error
+
+		host, port, err = ParseBackend(headers.Get("host", received))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Ensure that excludeHeaders are in canonical format
+	for i, n := range excludedHeaders {
+		excludedHeaders[i] = vsl.CanonicalHeaderName(n)
+	}
+
+	httpHeaders := []Header{}
+
+	for name, h := range headers {
+		if name == vsl.HdrNameHost || slices.Contains(excludedHeaders, name) {
+			continue
+		}
+
+		for _, v := range h.Values(received) {
+			if v.State() == vsl.HdrStateDeleted {
+				continue
+			}
+
+			httpHeaders = append(httpHeaders, Header{name: name, value: v.Value()})
+		}
+	}
+
+	var url, method string
+	if tx.TXType == vsl.TxTypeRequest {
+		method = tx.RecordValueByTag(tags.ReqMethod, received)
+		url = tx.RecordValueByTag(tags.ReqURL, received)
+	} else {
+		method = tx.RecordValueByTag(tags.BereqMethod, received)
+		url = tx.RecordValueByTag(tags.BereqURL, received)
+	}
+
+	slices.SortFunc(httpHeaders, func(a, b Header) int {
+		return cmp.Compare(a.name, b.name)
+	})
+
+	return &HTTPRequest{
+		method:  method,
+		host:    host,
+		port:    port,
+		url:     url,
+		headers: httpHeaders,
+	}, nil
+}
+
+func (r *HTTPRequest) Headers() []Header {
 	return r.headers
 }
 
@@ -45,69 +112,6 @@ type Backend struct {
 
 func NewBackend(host string, port string) *Backend {
 	return &Backend{host: host, port: port}
-}
-
-// NewHTTPRequest constructs an HTTPRequest from a Varnish transaction.
-// Returns nil if the transaction type is session.
-//
-// If received is true, initial (received) headers are used; otherwise, headers after VCL processing.
-// excludedHeaders can contain an slice of strings, each one must be a header name
-func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string) (*HTTPRequest, error) {
-	if tx.TXType == vsl.TxTypeSession {
-		return nil, fmt.Errorf("cannot create an http request from a transaction of type session")
-	}
-
-	headers := tx.ReqHeaders
-
-	host := headers.Get("host", received)
-	port := ""
-	if strings.Contains(host, ":") {
-		var err error
-		host, port, err = ParseBackend(headers.Get("host", received))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Ensure that excludeHeaders are in canonical format
-	for i, n := range excludedHeaders {
-		excludedHeaders[i] = vsl.CanonicalHeaderName(n)
-	}
-
-	httpHeaders := []Header{}
-	for name, h := range headers {
-		if name == vsl.HdrNameHost || slices.Contains(excludedHeaders, name) {
-			continue
-		}
-		for _, v := range h.Values(received) {
-			if v.State() == vsl.HdrStateDeleted {
-				continue
-			}
-			httpHeaders = append(httpHeaders, Header{name: name, value: v.Value()})
-		}
-	}
-
-	url := ""
-	method := ""
-	if tx.TXType == vsl.TxTypeRequest {
-		method = tx.RecordValueByTag(tags.ReqMethod, received)
-		url = tx.RecordValueByTag(tags.ReqURL, received)
-	} else {
-		method = tx.RecordValueByTag(tags.BereqMethod, received)
-		url = tx.RecordValueByTag(tags.BereqURL, received)
-	}
-
-	sort.Slice(httpHeaders, func(i, j int) bool {
-		return httpHeaders[i].name < httpHeaders[j].name
-	})
-
-	return &HTTPRequest{
-		method:  method,
-		host:    host,
-		port:    port,
-		url:     url,
-		headers: httpHeaders,
-	}, nil
 }
 
 // CurlCommand generates a new curl command as a string
@@ -136,6 +140,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	if r.port != "" {
 		hostURL = net.JoinHostPort(r.host, r.port)
 	}
+
 	hostURL = escapeDoubleQuotes(hostURL)
 
 	// Initial command
@@ -144,8 +149,6 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	switch r.method {
 	case "GET":
 		// Default
-	case "POST", "PUT", "PATCH":
-		s.WriteString("    -X " + r.method + " \\\n")
 	case "HEAD":
 		s.WriteString("    --head \\\n")
 	default:
@@ -157,6 +160,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 		if h.name == vsl.HdrNameHost {
 			continue
 		}
+
 		fmt.Fprintf(&s, `    -H "%s: %s"`+" \\\n", escapeDoubleQuotes(h.name), escapeDoubleQuotes(h.value))
 	}
 
@@ -167,9 +171,11 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 
 	// Default parameters
 	s.WriteString("    -qsv")
+
 	if scheme == "https://" {
 		s.WriteString(" -k")
 	}
+
 	s.WriteString(" -o /dev/null")
 
 	// Connect-to
@@ -217,6 +223,7 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 		if h.name == vsl.HdrNameHost {
 			continue
 		}
+
 		fmt.Fprintf(&s, "%s: %s\n", h.name, h.value)
 	}
 
@@ -241,7 +248,6 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	return s.String()
 }
 
-// escapeDoubleQuotes is an utility function to escape double quotes ;)
 func escapeDoubleQuotes(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
 }

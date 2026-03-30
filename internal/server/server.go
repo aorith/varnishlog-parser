@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -16,12 +15,17 @@ type vlogServer struct {
 	version string
 }
 
-func StartServer(bind string, port int, version string) {
+func StartServer(bind string, port int, version string) error {
 	srv := newServer(bind, port, version)
-	if err := srv.ListenAndServe(); err != nil {
+
+	err := srv.ListenAndServe()
+	if err != nil {
 		slog.Error("Server error", "error", err)
-		os.Exit(1)
+
+		return err
 	}
+
+	return nil
 }
 
 func newServer(bind string, port int, version string) *http.Server {

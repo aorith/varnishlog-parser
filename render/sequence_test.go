@@ -13,6 +13,7 @@ import (
 
 func TestMissingChild(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLMissingChild1))
+
 	ts, err := p.Parse()
 	if err != nil {
 		t.Errorf("Parse() failed %s", err)
@@ -20,6 +21,7 @@ func TestMissingChild(t *testing.T) {
 
 	tx := ts.UniqueRootParents(false)[0]
 	d := render.Sequence(ts, tx, render.SequenceConfig{})
+
 	txt := "child tx not found"
 	if !strings.Contains(d, txt) {
 		t.Errorf("Sequence() of VCLMissingChild1: expected text %q, got %s", txt, d)
@@ -28,6 +30,7 @@ func TestMissingChild(t *testing.T) {
 
 func TestLinkLoop(t *testing.T) {
 	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLLinkLoop))
+
 	ts, err := p.Parse()
 	if err != nil {
 		t.Errorf("Parse() failed %s", err)
@@ -42,6 +45,7 @@ func TestLinkLoop(t *testing.T) {
 
 	tx := rootParents[0]
 	d := render.Sequence(ts, tx, render.SequenceConfig{})
+
 	txt := "child tx not found"
 	if !strings.Contains(d, txt) {
 		t.Errorf("Sequence() of VCLMissingChild1: expected text %q, got %s", txt, d)

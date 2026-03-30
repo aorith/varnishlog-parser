@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package main starts the varnishlog-parser http server.
 package main
 
 import (
@@ -11,10 +12,11 @@ import (
 	"github.com/aorith/varnishlog-parser/internal/server"
 )
 
-var version string = "dev"
+var version = "dev"
 
-func init() {
-	if err := os.Setenv("TZ", "UTC"); err != nil {
+func init() { // nolint:gochecknoinits
+	err := os.Setenv("TZ", "UTC")
+	if err != nil {
 		panic(err)
 	}
 }
@@ -26,6 +28,7 @@ func main() {
 	help := flag.Bool("help", false, "help for server")
 
 	flag.Usage = func() {
+		// nolint
 		fmt.Println(`Start the http server, for example:
     server --bind 0.0.0.0 --port 8080
 
@@ -43,9 +46,14 @@ Flags:
 
 	if *help {
 		flag.Usage()
+
 		return
 	}
 
 	slog.Info("Starting server", "address", *bind, "port", *port)
-	server.StartServer(*bind, *port, version)
+
+	err := server.StartServer(*bind, *port, version)
+	if err != nil {
+		panic(err)
+	}
 }

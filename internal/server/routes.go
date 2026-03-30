@@ -26,9 +26,11 @@ func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
 	data.Timeline.Precision = 1200
 	data.Timeline.Ticks = 10
 
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := html.Index(w, data); err != nil {
+
+		err := html.Index(w, data)
+		if err != nil {
 			slog.Warn("failed to render template", "error", err)
 			html.Error(w, err)
 		}
@@ -39,10 +41,11 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 	data := html.PageData{Version: version}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+		err := r.ParseForm() // nolint:gosec
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.Error(w, err)
+
 			return
 		}
 
@@ -69,16 +72,20 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.PartialError(w, err)
+
 			return
 		}
+
 		data.Sequence.Distance = distance
 
 		stepHeight, err := strconv.Atoi(r.Form.Get("stepHeight"))
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.PartialError(w, err)
+
 			return
 		}
+
 		data.Sequence.StepHeight = stepHeight
 
 		data.Sequence.IncludeCalls = r.Form.Get("includeCalls") == "yes"
@@ -88,23 +95,31 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 
 		// Timeline settings
 		data.Timeline.Sessions = r.Form.Get("sessions") == "yes"
+
 		precision, err := strconv.Atoi(r.Form.Get("precision"))
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.PartialError(w, err)
+
 			return
 		}
+
 		data.Timeline.Precision = precision
+
 		numTicks, err := strconv.Atoi(r.Form.Get("ticks"))
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.PartialError(w, err)
+
 			return
 		}
+
 		data.Timeline.Ticks = numTicks
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := html.Parsed(w, data); err != nil {
+
+		err = html.Parsed(w, data)
+		if err != nil {
 			slog.Warn("failed to render template", "error", err)
 			html.Error(w, err)
 		}
@@ -115,10 +130,11 @@ func reqBuilderHandler(version string) func(http.ResponseWriter, *http.Request) 
 	data := html.PageData{Version: version}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+		err := r.ParseForm() // nolint: gosec
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.PartialError(w, err)
+
 			return
 		}
 
@@ -131,9 +147,12 @@ func reqBuilderHandler(version string) func(http.ResponseWriter, *http.Request) 
 		data.ReqBuild.ConnectCustom = r.Form.Get("custom")
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := html.ReqBuild(w, data); err != nil {
+
+		err = html.ReqBuild(w, data)
+		if err != nil {
 			slog.Warn("failed to render template", "error", err)
 			html.PartialError(w, err)
+
 			return
 		}
 	}
@@ -143,8 +162,9 @@ func (s *vlogServer) registerRoutes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /static/", http.FileServerFS(assets.Assets))
-	mux.HandleFunc("GET /static/style.css", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /static/style.css", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Add("Content-Type", "text/css; charset=utf-8")
+
 		_, err := w.Write(assets.CombinedCSS)
 		if err != nil {
 			panic(err)

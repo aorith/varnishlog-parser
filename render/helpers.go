@@ -14,22 +14,26 @@ import (
 // ParseBackend parses "<HOST/IP>:<PORT>" where HOST may be a hostname,
 //
 // IPv4, or IPv6 (possibly unbracketed). Returns host and port separately.
-func ParseBackend(s string) (host, port string, err error) {
+func ParseBackend(s string) (string, string, error) {
 	// Try the standard parser first (works for "host:port" and "[v6]:port").
-	host, port, err = net.SplitHostPort(s)
+	host, port, err := net.SplitHostPort(s)
 	if err != nil {
 		// Fallback: split at the last colon. This handles unbracketed IPv6 like "fe80::1%eth0:8080".
 		i := strings.LastIndex(s, ":")
 		if i == -1 {
 			return "", "", fmt.Errorf("missing port in %q", s)
 		}
+
 		host = s[:i]
 		port = s[i+1:]
+
 		if host == "" {
 			return "", "", fmt.Errorf("empty host in %q", s)
 		}
-		if _, e := strconv.Atoi(port); e != nil {
-			return "", "", fmt.Errorf("invalid port %q: %v", port, e)
+
+		_, err := strconv.Atoi(port)
+		if err != nil {
+			return "", "", fmt.Errorf("invalid port %q: %w", port, err)
 		}
 	}
 
@@ -41,7 +45,7 @@ func ParseBackend(s string) (host, port string, err error) {
 	return host, port, nil
 }
 
-// ttlRecordHTML returns a TTL record in HTML format using abbr for human readable dates
+// ttlRecordHTML returns a TTL record in HTML format using abbr for human readable dates.
 func ttlRecordHTML(r vsl.TTLRecord) string {
 	if r.Source == "RFC" {
 		return fmt.Sprintf(
@@ -75,9 +79,10 @@ func ttlRecordHTML(r vsl.TTLRecord) string {
 	)
 }
 
-// timestampRecordHTML returns a Timestamp record in HTML format using abbr for human readable dates
+// timestampRecordHTML returns a Timestamp record in HTML format using abbr for human readable dates.
 func timestampRecordHTML(r vsl.TimestampRecord) string {
 	absTime := float64(r.AbsoluteTime.UnixMicro()) / 1e6
+
 	return fmt.Sprintf(
 		`%s | Elapsed: %s | Total: %s | <abbr title="%s">%.6f</abbr>`,
 		r.EventLabel, r.SinceLast.String(), r.SinceStart.String(), r.AbsoluteTime.String(), absTime,

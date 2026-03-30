@@ -6,156 +6,156 @@ package tags
 // Reference: https://varnish-cache.org/docs/6.0/reference/vsl.html
 
 const (
-	// Client request header
+	// Client request header.
 	ReqHeader = "ReqHeader"
-	// Client response header
+	// Client response header.
 	RespHeader = "RespHeader"
-	// Backend request header
+	// Backend request header.
 	BereqHeader = "BereqHeader"
-	// Backend response header
+	// Backend response header.
 	BerespHeader = "BerespHeader"
-	// Object header
+	// Object header.
 	ObjHeader = "ObjHeader"
 )
 
 const (
-	// Request header unset
+	// Request header unset.
 	ReqUnset = "ReqUnset"
-	// Response header unset
+	// Response header unset.
 	RespUnset = "RespUnset"
-	// Backend request unset header
+	// Backend request unset header.
 	BereqUnset = "BereqUnset"
-	// Backend response unset header
+	// Backend response unset header.
 	BerespUnset = "BerespUnset"
-	// Object header unset
+	// Object header unset.
 	ObjUnset = "ObjUnset"
 )
 
 const (
-	// Marks the start of a VXID
+	// Marks the start of a VXID.
 	Begin = "Begin"
-	// Marks the end of a VXID
+	// Marks the end of a VXID.
 	End = "End"
-	// Logged when a backend connection is closed
+	// Logged when a backend connection is closed.
 	BackendClose = "BackendClose"
-	// Logged when a new backend connection is opened
+	// Logged when a new backend connection is opened.
 	BackendOpen = "BackendOpen"
-	// Logged when a backend connection is started
+	// Logged when a backend connection is started.
 	BackendStart = "BackendStart"
-	// Logged when a backend connection is reused (keep-alive)
+	// Logged when a backend connection is reused (keep-alive).
 	BackendReuse = "BackendReuse"
-	// Contains byte counters from backend request processing
+	// Contains byte counters from backend request processing.
 	BereqAcct = "BereqAcct"
-	// Backend request method
+	// Backend request method.
 	BereqMethod = "BereqMethod"
-	// Backend request protocol
+	// Backend request protocol.
 	BereqProtocol = "BereqProtocol"
-	// Backend request URL
+	// Backend request URL.
 	BereqURL = "BereqURL"
-	// Backend response protocol
+	// Backend response protocol.
 	BerespProtocol = "BerespProtocol"
-	// Backend response reason
+	// Backend response reason.
 	BerespReason = "BerespReason"
-	// Backend response status
+	// Backend response status.
 	BerespStatus = "BerespStatus"
-	// Bogus HTTP received
+	// Bogus HTTP received.
 	BogoHeader = "BogoHeader"
-	// Brotli - (un)Brotli performed on object
+	// Brotli - (un)Brotli performed on object.
 	Brotli = "Brotli"
-	// ESI parser error or warning message
+	// ESI parser error or warning message.
 	ESIXMLError = "ESI_xmlerror"
-	// Error messages
+	// Error messages.
 	Error = "Error"
-	// Object evicted due to ban
+	// Object evicted due to ban.
 	ExpBan = "ExpBan"
-	// Object expiry event
+	// Object expiry event.
 	ExpKill = "ExpKill"
-	// Error while fetching object
+	// Error while fetching object.
 	FetchError = "FetchError"
-	// Body fetched from backend
+	// Body fetched from backend.
 	FetchBody = "Fetch_Body"
-	// Body filters
+	// Body filters.
 	Filters = "Filters"
-	// G(un)zip performed on object
+	// G(un)zip performed on object.
 	Gzip = "Gzip"
-	// Hit object in cache
+	// Hit object in cache.
 	Hit = "Hit"
-	// Hit for miss object in cache
+	// Hit for miss object in cache.
 	HitMiss = "HitMiss"
-	// Hit for pass object in cache
+	// Hit for pass object in cache.
 	HitPass = "HitPass"
-	// Unparsable HTTP request
+	// Unparsable HTTP request.
 	HTTPGarbage = "HttpGarbage"
-	// Size of object body
+	// Size of object body.
 	Length = "Length"
-	// Links to a child VXID
+	// Links to a child VXID.
 	Link = "Link"
-	// Failed attempt to set HTTP header
+	// Failed attempt to set HTTP header.
 	LostHeader = "LostHeader"
-	// MSE4 new object timing data
+	// MSE4 new object timing data.
 	MSE4NewObject = "MSE4_NewObject"
-	// MSE4 object payload iteration timing summary
+	// MSE4 object payload iteration timing summary.
 	MSE4ObjIter = "MSE4_ObjIter"
-	// MSE4 persisted chunk memory fault
+	// MSE4 persisted chunk memory fault.
 	MSE4ChunkFault = "MSE4_ChunkFault"
-	// Informational messages about request handling
+	// Informational messages about request handling.
 	Notice = "Notice"
-	// Object protocol
+	// Object protocol.
 	ObjProtocol = "ObjProtocol"
-	// Object response
+	// Object response.
 	ObjReason = "ObjReason"
-	// Object status
+	// Object status.
 	ObjStatus = "ObjStatus"
-	// Pipe byte counts
+	// Pipe byte counts.
 	PipeAcct = "PipeAcct"
-	// PROXY protocol information
+	// PROXY protocol information.
 	Proxy = "Proxy"
-	// Unparseble PROXY request
+	// Unparseble PROXY request.
 	ProxyGarbage = "ProxyGarbage"
-	// Request handling byte counts
+	// Request handling byte counts.
 	ReqAcct = "ReqAcct"
-	// Client request method
+	// Client request method.
 	ReqMethod = "ReqMethod"
-	// Client request protocol
+	// Client request protocol.
 	ReqProtocol = "ReqProtocol"
-	// Client request start
+	// Client request start.
 	ReqStart = "ReqStart"
-	// Client request URL
+	// Client request URL.
 	ReqURL = "ReqURL"
-	// Client response protocol
+	// Client response protocol.
 	RespProtocol = "RespProtocol"
-	// Client response response
+	// Client response response.
 	RespReason = "RespReason"
-	// Client response status
+	// Client response status.
 	RespStatus = "RespStatus"
-	// Client connection closed
+	// Client connection closed.
 	SessClose = "SessClose"
-	// Client connection accept failed
+	// Client connection accept failed.
 	SessError = "SessError"
-	// Client connection opened
+	// Client connection opened.
 	SessOpen = "SessOpen"
-	// Where object is stored
+	// Where object is stored.
 	Storage = "Storage"
-	// TTL set on object
+	// TTL set on object.
 	TTL = "TTL"
-	// Timing information
+	// Timing information.
 	Timestamp = "Timestamp"
-	// VCL execution error message
+	// VCL execution error message.
 	VCLError = "VCL_Error"
-	// Log statement from VCL
+	// Log statement from VCL.
 	VCLLog = "VCL_Log"
-	// VCL ACL check results
+	// VCL ACL check results.
 	VCLAcl = "VCL_acl"
-	// VCL method called
+	// VCL method called.
 	VCLCall = "VCL_call"
-	// VCL method return value
+	// VCL method return value.
 	VCLReturn = "VCL_return"
-	// VCL trace data
+	// VCL trace data.
 	VCLTrace = "VCL_trace"
-	// VCL in use
+	// VCL in use.
 	VCLUse = "VCL_use"
-	// VSL API warnings and error message
+	// VSL API warnings and error message.
 	VSL = "VSL"
-	// Fetch filter accounting
+	// Fetch filter accounting.
 	VfpAcct = "VfpAcct"
 )
