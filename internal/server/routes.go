@@ -40,9 +40,9 @@ func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
 const maxRequestBodyBytes = 32 * 1024 * 1024 // 32 MiB
 
 func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
-	data := html.PageData{Version: version}
-
 	return func(w http.ResponseWriter, r *http.Request) {
+		data := html.PageData{Version: version}
+
 		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 
 		err := r.ParseForm()
@@ -131,9 +131,9 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 }
 
 func reqBuilderHandler(version string) func(http.ResponseWriter, *http.Request) {
-	data := html.PageData{Version: version}
-
 	return func(w http.ResponseWriter, r *http.Request) {
+		data := html.PageData{Version: version}
+
 		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 
 		err := r.ParseForm()

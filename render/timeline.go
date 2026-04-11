@@ -142,7 +142,7 @@ func collectAndSortRecords(ts vsl.TransactionSet, tx *vsl.Transaction, visited m
 	var events []TimelineEvent
 
 	if visited[tx.VXID] {
-		slog.Info("collectAndSortRecords(): loop detected", "txid", tx.TXID)
+		slog.Warn("collectAndSortRecords(): loop detected", "txid", tx.TXID)
 
 		return events
 	}

@@ -127,6 +127,15 @@ pre {
   text-decoration: line-through !important;
 }
 
+.error-inline {
+  color: var(--red-0);
+  border: 1px solid var(--red-0);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--deleted);
+}
+
 .bold {
   font-weight: 600;
 }

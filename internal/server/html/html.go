@@ -89,14 +89,14 @@ func Index(w http.ResponseWriter, data PageData) error {
 
 func Parsed(w http.ResponseWriter, data PageData) error {
 	parser := vsl.NewTransactionParser(strings.NewReader(data.Logs.Textinput))
-	ts, err := parser.Parse()
-	slog.Info("txs", "count", len(ts.Transactions()))
 
+	ts, err := parser.Parse()
 	if err != nil {
 		slog.Warn("failed to parse logs", "error", err)
-
-		return err
+		data.Error = err
 	}
+
+	slog.Info("txs", "count", len(ts.Transactions()))
 
 	data.Transactions.Set = ts
 	data.Transactions.Count = len(ts.Transactions())

@@ -3,7 +3,12 @@
 <div class="view active" id="parse-view">
 	<div class="view-content">
 		<h1>Parse</h1>
-		{{if .Transactions.Count }}
+		{{if .Error }}
+		<div class="error-inline">
+			<b>Parse error:</b>
+			<pre>{{ .Error }}</pre>
+		</div>
+		{{else if .Transactions.Count }}
 		<p>Use the menu to navigate to the different views.</p>
 		{{ else }}
 		<p>No valid transactions found.</p>
