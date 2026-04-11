@@ -120,7 +120,8 @@ func Error(w http.ResponseWriter, err error) {
 
 	err2 := executeTemplate(w, errorTmpl, "main_layout.html", PageData{Title: "Error", Error: err})
 	if err2 != nil {
-		panic(err2)
+		slog.Error("failed to render error template", "error", err2)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 }
 
@@ -130,7 +131,8 @@ func PartialError(w http.ResponseWriter, err error) {
 
 	err2 := executeTemplate(w, errorPartialTmpl, "error_partial.html", PageData{Title: "Error", Error: err})
 	if err2 != nil {
-		panic(err2)
+		slog.Error("failed to render error partial template", "error", err2)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 }
 
@@ -162,7 +164,7 @@ func executeTemplate(w io.Writer, tmpl *template.Template, name string, data any
 	if err == nil {
 		_, err = buf.WriteTo(w)
 		if err != nil {
-			panic(err)
+			slog.Warn("failed to write template to response", "error", err)
 		}
 	}
 

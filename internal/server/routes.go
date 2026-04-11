@@ -37,11 +37,15 @@ func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
+const maxRequestBodyBytes = 32 * 1024 * 1024 // 32 MiB
+
 func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 	data := html.PageData{Version: version}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm() // nolint:gosec
+		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
+
+		err := r.ParseForm()
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.Error(w, err)
@@ -130,7 +134,9 @@ func reqBuilderHandler(version string) func(http.ResponseWriter, *http.Request) 
 	data := html.PageData{Version: version}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm() // nolint: gosec
+		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
+
+		err := r.ParseForm()
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.PartialError(w, err)
@@ -167,7 +173,7 @@ func (s *vlogServer) registerRoutes() http.Handler {
 
 		_, err := w.Write(assets.CombinedCSS)
 		if err != nil {
-			panic(err)
+			slog.Warn("failed to write CSS response", "error", err)
 		}
 	})
 

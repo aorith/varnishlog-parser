@@ -82,6 +82,10 @@ func (l *LatencyCounter) Sum() time.Duration {
 
 // Average calculates the average of durations.
 func (l *LatencyCounter) Average() time.Duration {
+	if len(l.values) == 0 {
+		return 0
+	}
+
 	return l.Sum() / time.Duration(len(l.values))
 }
 

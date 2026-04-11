@@ -17,7 +17,8 @@ var version = "dev"
 func init() { // nolint:gochecknoinits
 	err := os.Setenv("TZ", "UTC")
 	if err != nil {
-		panic(err)
+		slog.Error("failed to set TZ=UTC", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -54,6 +55,7 @@ Flags:
 
 	err := server.StartServer(*bind, *port, version)
 	if err != nil {
-		panic(err)
+		slog.Error("server failed", "error", err)
+		os.Exit(1)
 	}
 }

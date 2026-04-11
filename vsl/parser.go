@@ -17,9 +17,14 @@ type TransactionParser struct {
 	scanner *bufio.Scanner
 }
 
+const maxScanTokenSize = 4 * 1024 * 1024 // 4 MiB per line
+
 func NewTransactionParser(r io.Reader) *TransactionParser {
+	sc := bufio.NewScanner(r)
+	sc.Buffer(make([]byte, 64*1024), maxScanTokenSize)
+
 	return &TransactionParser{
-		scanner: bufio.NewScanner(r),
+		scanner: sc,
 	}
 }
 
@@ -119,14 +124,13 @@ func (p *TransactionParser) Parse() (TransactionSet, error) {
 				clientHeaders = true
 
 			case LinkRecord:
-				lr := r.(LinkRecord) // nolint
-				if slices.Contains(tx.Children, lr.VXID) {
-					slog.Warn("Parse() duplicate children assignment", "txid", tx.TXID, "linkTXID", lr.TXID)
+				if slices.Contains(tx.Children, record.VXID) {
+					slog.Warn("Parse() duplicate children assignment", "txid", tx.TXID, "linkTXID", record.TXID)
 
 					continue
 				}
 
-				tx.Children = append(tx.Children, lr.VXID)
+				tx.Children = append(tx.Children, record.VXID)
 
 			case BeginRecord:
 				// A Begin tag was found in the middle of a transaction
