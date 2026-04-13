@@ -366,6 +366,10 @@ func drawRequest(req *HTTPRequest, truncateLen int) string {
 
 // truncateStr trims the input string to a maximum length, appending "…" if it exceeds the length.
 func truncateStr(s string, maxLen int) string {
+	if maxLen <= 0 {
+		return s
+	}
+
 	runes := []rune(s)
 	if len(runes) <= maxLen {
 		return s
@@ -377,6 +381,10 @@ func truncateStr(s string, maxLen int) string {
 // truncateStrMiddle trims the input string to a maximum length by keeping
 // the start and end, appending "…" in the middle if it exceeds the length.
 func truncateStrMiddle(s string, maxLen int) string {
+	if maxLen <= 0 {
+		return s
+	}
+
 	maxLen -= 2 // Account for extra spaces
 	if utf8.RuneCountInString(s) <= maxLen {
 		return s
