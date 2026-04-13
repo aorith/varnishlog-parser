@@ -871,21 +871,21 @@ func NewTTLRecord(blr BaseRecord) (TTLRecord, error) {
 		return r, fmt.Errorf("conversion to TTLRecord failed, bad field ttl on line %q", blr.GetRawLog())
 	}
 
-	r.TTL = time.Duration(ttl * int(time.Second))
+	r.TTL = time.Duration(ttl) * time.Second
 
 	grace, err := strconv.Atoi(parts[2])
 	if err != nil {
 		return r, fmt.Errorf("conversion to TTLRecord failed, bad field grace on line %q", blr.GetRawLog())
 	}
 
-	r.Grace = time.Duration(grace * int(time.Second))
+	r.Grace = time.Duration(grace) * time.Second
 
 	keep, err := strconv.Atoi(parts[3])
 	if err != nil {
 		return r, fmt.Errorf("conversion to TTLRecord failed, bad field keep on line %q", blr.GetRawLog())
 	}
 
-	r.Keep = time.Duration(keep * int(time.Second))
+	r.Keep = time.Duration(keep) * time.Second
 
 	ref, err := convertToUnixTimestamp(parts[4])
 	if err != nil {
@@ -931,7 +931,7 @@ func NewTTLRecord(blr BaseRecord) (TTLRecord, error) {
 		return r, fmt.Errorf("conversion to TTLRecord failed, bad field maxAge on line %q", blr.GetRawLog())
 	}
 
-	r.MaxAge = time.Duration(maxAge * int(time.Second))
+	r.MaxAge = time.Duration(maxAge) * time.Second
 
 	// Last field
 	r.CacheStatus = parts[9]
