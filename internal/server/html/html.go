@@ -94,22 +94,23 @@ func Parsed(w http.ResponseWriter, data PageData) error {
 	if err != nil {
 		slog.Warn("failed to parse logs", "error", err)
 		data.Error = err
-	}
-
-	slog.Info("txs", "count", len(ts.Transactions()))
-
-	data.Transactions.Set = ts
-	data.Transactions.Count = len(ts.Transactions())
-
-	if data.Transactions.Count > 0 {
-		data.Views.Overview = "checked"
-	} else {
 		data.Views.Parse = "checked"
-	}
+	} else {
+		slog.Info("txs", "count", len(ts.Transactions()))
 
-	data.Transactions.GroupCount = len(ts.GroupRelatedTransactions())
-	data.Logs.Raw = ts.RawLog()
-	data.Title = fmt.Sprintf("%d txs parsed", data.Transactions.Count)
+		data.Transactions.Set = ts
+		data.Transactions.Count = len(ts.Transactions())
+
+		if data.Transactions.Count > 0 {
+			data.Views.Overview = "checked"
+		} else {
+			data.Views.Parse = "checked"
+		}
+
+		data.Transactions.GroupCount = len(ts.GroupRelatedTransactions())
+		data.Logs.Raw = ts.RawLog()
+		data.Title = fmt.Sprintf("%d txs parsed", data.Transactions.Count)
+	}
 
 	return executeTemplate(w, parsed, "main_layout.html", data)
 }
