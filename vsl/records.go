@@ -1160,12 +1160,14 @@ type GzipRecord struct {
 	BitLocFirst               int64     // Bit location of first deflate block
 	BitLocLast                int64     // Bit location of 'last' bit
 	BitLengthOfCompressedData int64     // Bit length of compressed data
+	Error                     string    // Parser failure (probably a gzip error)
 }
 
 func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
 	parts := strings.Fields(blr.GetRawValue())
 	if len(parts) != 8 {
-		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, incorrect len on line %q", blr.GetRawLog())
+		// It could be a gzip error like: G(un)zip error: -3 ((null))
+		return GzipRecord{BaseRecord: blr, Error: blr.GetRawValue()}, nil
 	}
 
 	record := GzipRecord{BaseRecord: blr}
@@ -1213,6 +1215,10 @@ func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
 }
 
 func (r GzipRecord) String() string {
+	if r.Error != "" {
+		return r.Error
+	}
+
 	var action string
 
 	switch r.Action {

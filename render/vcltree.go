@@ -61,7 +61,12 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 		case vsl.HitRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.GzipRecord:
-			s.addRow(r.GetTag(), "", record.String(), "")
+			class := ""
+			if record.Error != "" {
+				class = "errorRecord"
+			}
+
+			s.addRow(r.GetTag(), class, record.String(), class)
 		case vsl.BrotliRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.BackendOpenRecord:
