@@ -571,11 +571,12 @@ type ReqStartRecord struct {
 	ClientIP   net.IP // Client IP4/6 address (0.0.0.0 for UDS)
 	ClientPort int    // Client Port number (0 for Unix domain sockets)
 	Listener   string // Listener name (from -a)
+	Scheme     string // Protocol scheme ("http" or "https")
 }
 
 func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
 	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 3 {
+	if len(parts) < 3 {
 		return ReqStartRecord{}, fmt.Errorf("conversion to ReqStartRecord failed, incorrect len on line %q", blr.GetRawLog())
 	}
 
@@ -589,7 +590,13 @@ func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
 		return ReqStartRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad clientPort on line %q", blr.GetRawLog())
 	}
 
-	return ReqStartRecord{BaseRecord: blr, ClientIP: clientIP, ClientPort: clientPort, Listener: parts[2]}, nil
+	r := ReqStartRecord{BaseRecord: blr, ClientIP: clientIP, ClientPort: clientPort, Listener: parts[2]}
+
+	if len(parts) >= 4 {
+		r.Scheme = parts[3]
+	}
+
+	return r, nil
 }
 
 func (r ReqStartRecord) String() string {
