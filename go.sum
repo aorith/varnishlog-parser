@@ -8,6 +8,8 @@ github.com/aorith/svg-sequence v0.0.17 h1:Es2271t91Wauygi+irKhXfn1tymNHwA/ryfeSQ
 github.com/aorith/svg-sequence v0.0.17/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
 github.com/aorith/svg-sequence v0.0.18 h1:M/1H4tb/rShPojk1fafpG2G9FsG3IwzfAtuRwJSRwyc=
 github.com/aorith/svg-sequence v0.0.18/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
+github.com/aorith/svg-sequence v0.0.19 h1:qSRw8PjFmg0Td5ub9uXQeEuORvHquNV2/jFS4HvYqiw=
+github.com/aorith/svg-sequence v0.0.19/go.mod h1:8PeIQFIE65/ZgSbPwUvv5lfuaiv80V9x2t4NNRhI2jQ=
 github.com/aorith/svg-timeline v0.2.3 h1:3sPHSDTtV4Ye/Xoat/9q7bf0vwpNboxNe7aOLElFdyk=
 github.com/aorith/svg-timeline v0.2.3/go.mod h1:haohFRiwc0+Po6714AgYlsoeolDqRTNkI+d62k51qjo=
 github.com/dlclark/regexp2/v2 v2.2.1 h1:mf4KkFUj0gJuarK8P+LgiS+Lit7m9N1yAwEfPbee7R0=

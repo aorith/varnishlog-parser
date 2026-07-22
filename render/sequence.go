@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
-	"unicode/utf8"
 
 	svgsequence "github.com/aorith/svg-sequence"
 
@@ -126,11 +125,6 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 		client = truncateStr(reqStartRecord.ClientIP.String(), 20)
 	}
 
-	truncateLen := 32
-	if cfg.Distance != 0 {
-		truncateLen = cfg.Distance/6 - 1
-	}
-
 	for i, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
@@ -147,7 +141,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 			switch r.GetRawValue() {
 			case "RECV":
-				s.AddStep(svgsequence.Step{Source: client, Target: V, Text: drawRequest(reqReceived, truncateLen)})
+				s.AddStep(svgsequence.Step{Source: client, Target: V, Text: drawRequest(reqReceived)})
 
 			case "HASH":
 				s.AddStep(svgsequence.Step{Source: V, Target: H, Text: "HASH"})
@@ -164,7 +158,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					}
 
 					s1 += hitRecord.Tag + "\n"
-					s1 += wrapAndTruncate(hitRecord.String(), truncateLen, 100)
+					s1 += hitRecord.String()
 				}
 
 				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: s1, Color: ColorHit})
@@ -182,7 +176,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				}
 
 				if lastReason != nil {
-					s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
+					s1 += " " + lastReason.GetRawValue()
 				}
 
 				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: s1})
@@ -192,7 +186,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				s.AddStep(svgsequence.Step{Source: B, Target: client, Text: r.GetRawValue()})
 
 			case "BACKEND_FETCH":
-				s.AddStep(svgsequence.Step{Source: V, Target: B, Text: drawRequest(reqProcessed, truncateLen)})
+				s.AddStep(svgsequence.Step{Source: V, Target: B, Text: drawRequest(reqProcessed)})
 
 			case "BACKEND_RESPONSE":
 				// handled at return deliver
@@ -218,7 +212,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				if status != nil {
 					s1 := "DELIVER\n" + status.GetRawValue()
 					if reason != nil {
-						s1 += " " + wrapAndTruncate(reason.GetRawValue(), truncateLen, 100)
+						s1 += " " + reason.GetRawValue()
 					}
 
 					s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
@@ -237,7 +231,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 					s1 += status.GetRawValue()
 					if reason != nil {
-						s1 += " " + wrapAndTruncate(reason.GetRawValue(), truncateLen, 100)
+						s1 += " " + reason.GetRawValue()
 					}
 
 					s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
@@ -252,7 +246,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 					lastReason := tx.LastRecordByTag(tags.BerespReason, i)
 					if lastReason != nil {
-						s1 += " " + wrapAndTruncate(lastReason.GetRawValue(), truncateLen, 100)
+						s1 += " " + lastReason.GetRawValue()
 					}
 				}
 
@@ -270,7 +264,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				Text: fmt.Sprintf(
 					"%s\n%s\n%s %s",
 					record.GetTag(),
-					truncateStrMiddle(record.Name, truncateLen),
+					record.Name,
 					record.Reason,
 					record.ConnStr(),
 				),
@@ -282,7 +276,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				Text: fmt.Sprintf(
 					"%s\n%s\n%s %s",
 					record.GetTag(),
-					truncateStrMiddle(record.Name, truncateLen),
+					record.Name,
 					record.Reason,
 					record.OptionalReason,
 				),
@@ -295,19 +289,19 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				Text: fmt.Sprintf(
 					"%s\n%s",
 					record.GetTag(),
-					truncateStrMiddle(record.Name, truncateLen),
+					record.Name,
 				),
 			})
 
 		case vsl.FetchErrorRecord:
-			s.AddStep(svgsequence.Step{Source: B, Target: B, Text: wrapAndTruncate(record.GetRawValue(), truncateLen, 100), Color: ColorError})
+			s.AddStep(svgsequence.Step{Source: B, Target: B, Text: record.GetRawValue(), Color: ColorError})
 
 		case vsl.URLRecord:
 			if cfg.TrackURLAndHost {
 				s.AddStep(svgsequence.Step{
 					Source: V,
 					Target: V,
-					Text:   truncateStr("URL: "+record.Path()+record.QueryString(), truncateLen),
+					Text:   "URL: " + record.Path() + record.QueryString(),
 					Color:  ColorTrack,
 				})
 			}
@@ -316,7 +310,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			if cfg.TrackURLAndHost {
 				// Header name should be already in canonical format
 				if record.Name == "Host" {
-					s.AddStep(svgsequence.Step{Source: V, Target: V, Text: truncateStr(record.Name+": "+record.Value, truncateLen), Color: ColorTrack})
+					s.AddStep(svgsequence.Step{Source: V, Target: V, Text: record.Name + ": " + record.Value, Color: ColorTrack})
 				}
 			}
 
@@ -325,7 +319,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				s.AddStep(svgsequence.Step{
 					Source: V,
 					Target: V,
-					Text:   truncateStr(record.String(), truncateLen),
+					Text:   record.String(),
 					Color:  ColorGray,
 				})
 			}
@@ -356,12 +350,12 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 	}
 }
 
-func drawRequest(req *HTTPRequest, truncateLen int) string {
+func drawRequest(req *HTTPRequest) string {
 	method := req.method
 	url := req.url
 	host := req.host
 
-	return method + " " + truncateStr(url, truncateLen) + "\n" + host
+	return method + " " + url + "\n" + host
 }
 
 // truncateStr trims the input string to a maximum length, appending "…" if it exceeds the length.
@@ -376,80 +370,6 @@ func truncateStr(s string, maxLen int) string {
 	}
 
 	return strings.TrimSpace(string(runes[:maxLen])) + "…"
-}
-
-// truncateStrMiddle trims the input string to a maximum length by keeping
-// the start and end, appending "…" in the middle if it exceeds the length.
-func truncateStrMiddle(s string, maxLen int) string {
-	if maxLen <= 0 {
-		return s
-	}
-
-	maxLen -= 2 // Account for extra spaces
-	if utf8.RuneCountInString(s) <= maxLen {
-		return s
-	}
-
-	runes := []rune(s)
-	if maxLen > len(runes) {
-		maxLen = len(runes) // Cap maxLen if it's greater than the length of runes
-	}
-
-	// Split maxLen between the start and end segments
-	halfLen := (maxLen - 1) / 2
-	start := runes[:halfLen]
-	end := runes[len(runes)-halfLen:]
-
-	return strings.TrimSpace(string(start)) + " … " + strings.TrimSpace(string(end))
-}
-
-// wrapAndTruncate wraps text at the specified wrapLen (breaking at word boundaries)
-// and truncates the final string to maxLen using truncateStr if needed.
-func wrapAndTruncate(s string, wrapLen, maxLen int) string {
-	if len(s) == 0 || wrapLen <= 0 {
-		return truncateStr(s, maxLen)
-	}
-
-	var builder strings.Builder
-
-	words := strings.Fields(s)
-	lineLen := 0
-
-	for i, word := range words {
-		wordLen := utf8.RuneCountInString(word)
-
-		// +1 for the space if it's not the first word in the line
-		if lineLen > 0 && lineLen+1+wordLen > wrapLen {
-			builder.WriteRune('\n')
-
-			lineLen = 0
-		} else if lineLen > 0 {
-			builder.WriteRune(' ')
-
-			lineLen++
-		}
-
-		builder.WriteString(word)
-
-		lineLen += wordLen
-
-		// Early stop if we already exceed maxLen (slightly before truncation)
-		if utf8.RuneCountInString(builder.String()) > maxLen {
-			break
-		}
-
-		// Avoid extra processing once near the end
-		if i == len(words)-1 {
-			break
-		}
-	}
-
-	result := builder.String()
-	if utf8.RuneCountInString(result) > maxLen {
-		result = truncateStr(result, maxLen)
-	}
-
-	return result
 }
 
 // getTxTypeColor is a helper function to associate the right color to the timeline section.
