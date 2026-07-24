@@ -11,6 +11,7 @@ html {
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
   font-size: 100%;
+  scroll-padding-top: var(--nav-height, 0px);
 }
 
 h1,

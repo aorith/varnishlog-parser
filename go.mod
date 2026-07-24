@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/alecthomas/chroma/v2 v2.27.0
-	github.com/aorith/svg-sequence v0.0.20
+	github.com/aorith/svg-sequence v0.0.21
 	github.com/aorith/svg-timeline v0.2.3
 )
 

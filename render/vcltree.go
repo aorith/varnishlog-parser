@@ -21,6 +21,12 @@ func TxTreeHTML(ts vsl.TransactionSet, root *vsl.Transaction) string {
 	return s.String()
 }
 
+// TxAnchorID returns the HTML id of a transaction's box in the VCL Log Tree
+// view; prefixed with "#" it's also the URL fragment used to link to it.
+func TxAnchorID(txid vsl.TXID) string {
+	return "tx-" + html.EscapeString(string(txid))
+}
+
 func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) {
 	if visited[tx.VXID] {
 		slog.Warn("renderTxTree(): loop detected", "transaction", tx.TXID)
@@ -30,7 +36,7 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 
 	visited[tx.VXID] = true
 
-	fmt.Fprintf(s, `<tx-logs id="tx-%s">`, html.EscapeString(string(tx.TXID))) //nolint:errcheck,revive
+	fmt.Fprintf(s, `<tx-logs id="%s">`, TxAnchorID(tx.TXID)) //nolint:errcheck,revive
 
 	for _, r := range tx.Records {
 		switch record := r.(type) {

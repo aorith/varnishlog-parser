@@ -82,7 +82,7 @@ var (
 )
 
 func Index(w http.ResponseWriter, data PageData) error {
-	data.Views.Parse = "checked"
+	data.Views.Parse = "active"
 
 	return executeTemplate(w, index, "main_layout.html", data)
 }
@@ -94,7 +94,7 @@ func Parsed(w http.ResponseWriter, data PageData) error {
 	if err != nil {
 		slog.Warn("failed to parse logs", "error", err)
 		data.Error = err
-		data.Views.Parse = "checked"
+		data.Views.Parse = "active"
 	} else {
 		slog.Info("txs", "count", len(ts.Transactions()))
 
@@ -102,9 +102,9 @@ func Parsed(w http.ResponseWriter, data PageData) error {
 		data.Transactions.Count = len(ts.Transactions())
 
 		if data.Transactions.Count > 0 {
-			data.Views.Overview = "checked"
+			data.Views.Overview = "active"
 		} else {
-			data.Views.Parse = "checked"
+			data.Views.Parse = "active"
 		}
 
 		data.Transactions.GroupCount = len(ts.GroupRelatedTransactions())

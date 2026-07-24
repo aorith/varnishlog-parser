@@ -125,10 +125,14 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 		client = truncateStr(reqStartRecord.ClientIP.String(), 20)
 	}
 
+	// svg-sequence XML-encodes this as an attribute value, escaping it there;
+	// escaping it here too would double-escape any special characters.
+	txLink := "#tx-" + string(tx.TXID)
+
 	for i, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
-			secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true}
+			secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true, Link: txLink}
 			s.OpenSection(string(tx.TXID), &secCfg)
 
 		case vsl.EndRecord:
@@ -330,7 +334,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				s.CloseSection()
 				addTransactionLogs(s, ts, childTx, cfg, visited)
 
-				secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true}
+				secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true, Link: txLink}
 
 				s.OpenSection(string(tx.TXID), &secCfg)
 			} else {

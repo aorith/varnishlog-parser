@@ -9,6 +9,7 @@
 		<script src="/static/vendor/htmx.min-2.0.8.js"></script>
 		<script src="/static/vendor/htmx-ext-response-targets-2.0.4.js"></script>
 		<script src="/static/history.js"></script>
+		<script src="/static/tabs.js" defer></script>
 		<link rel="stylesheet" href="/static/style.css">
 		<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 		<title>{{- if .Title -}}{{- .Title -}}{{ else }}Varnishlog Parser{{- end -}}</title>
@@ -16,25 +17,19 @@
 
 	<body hx-ext="response-targets">
 		<!-- Navigation -->
-		<input type="radio" class="nav" name="view" id="radio-parse" {{ .Views.Parse -}}>
-		<input type="radio" class="nav" name="view" id="radio-overview" {{ .Views.Overview -}}>
-		<input type="radio" class="nav" name="view" id="radio-vcllogtree">
-		<input type="radio" class="nav" name="view" id="radio-headers">
-		<input type="radio" class="nav" name="view" id="radio-timings">
-		<input type="radio" class="nav" name="view" id="radio-reqbuild">
 		<nav>
 			<div>
-				<label for="radio-parse">PARSE</label>
+				<a class="nav-link" href="#parse-view">PARSE</a>
 				|
-				<label for="radio-overview">Overview</label>
+				<a class="nav-link" href="#overview-view">Overview</a>
 				|
-				<label for="radio-vcllogtree">LogTree</label>
+				<a class="nav-link" href="#vcllogtree-view">LogTree</a>
 				|
-				<label for="radio-headers">Headers</label>
+				<a class="nav-link" href="#headers-view">Headers</a>
 				|
-				<label for="radio-timings">Timings</label>
+				<a class="nav-link" href="#timings-view">Timings</a>
 				|
-				<label for="radio-reqbuild">ReqBuild</label>
+				<a class="nav-link" href="#reqbuild-view">ReqBuild</a>
 			</div>
 		</nav>
 

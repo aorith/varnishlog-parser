@@ -38,7 +38,7 @@
 		{{ $precision := .Timeline.Precision }}
 		{{ $ticks := .Timeline.Ticks }}
 		{{- range .Transactions.Set.UniqueRootParents .Timeline.Sessions }}
-		<h3>{{ .TXID }}</h3>
+		<h3><a class="tx-link" href="#tx-{{ .TXID }}">{{ .TXID }}</a></h3>
 		<h4>Timeline</h4>
 		<div class="timeline">{{ timeline $set . $precision $ticks }}</div>
 		{{- end }}
