@@ -89,6 +89,7 @@ func NewMissingTransaction(r LinkRecord) *Transaction {
 
 	return &Transaction{
 		TXID:   r.TXID,
+		VXID:   r.VXID,
 		TXType: txType,
 		Records: []Record{
 			BaseRecord{Tag: "__MISSING", RawValue: "This transaction is not present in the provided VSL logs"},
