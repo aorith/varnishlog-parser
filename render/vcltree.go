@@ -130,7 +130,12 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 
 	classA, classB = formatClass(classA), formatClass(classB)
 
-	fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, a, classB, b) //nolint:errcheck,revive
+	key := a
+	if desc, ok := tags.Descriptions[a]; ok {
+		key = fmt.Sprintf(`<abbr title="%s">%s</abbr>`, html.EscapeString(desc), a)
+	}
+
+	fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, key, classB, b) //nolint:errcheck,revive
 }
 
 func statusCSSClass(s int) string {
