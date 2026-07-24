@@ -27,6 +27,10 @@
     border: 1px solid var(--fg-0);
 }
 
+.hdr-legend-color.diff-received {
+    background: var(--border) !important;
+}
+
 table.headers-legend th {
     text-align: right;
     vertical-align: top;
