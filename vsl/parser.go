@@ -324,9 +324,11 @@ func isVarnishModifiedHeader(name, tagName string) bool {
 		return false
 	}
 
-	// Only consider Recv headers
+	// Only consider client-facing headers: Recv (request) and Deliver (response).
+	// Bereq/Beresp are excluded since those reflect the backend transaction itself,
+	// not headers received from an actual client.
 	switch tagName {
-	case tags.ReqHeader, tags.ReqUnset:
+	case tags.ReqHeader, tags.ReqUnset, tags.RespHeader, tags.RespUnset:
 	default:
 		return false
 	}
