@@ -4,6 +4,7 @@ package render
 
 import (
 	"fmt"
+	"html"
 	"log/slog"
 	"strings"
 
@@ -29,7 +30,7 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 
 	visited[tx.VXID] = true
 
-	s.WriteString("<tx-logs>") // nolint
+	fmt.Fprintf(s, `<tx-logs id="tx-%s">`, html.EscapeString(string(tx.TXID))) //nolint:errcheck,revive
 
 	for _, r := range tx.Records {
 		switch record := r.(type) {
@@ -70,6 +71,8 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 		case vsl.BrotliRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.BackendOpenRecord:
+			s.addRow(r.GetTag(), "", record.String(), "")
+		case vsl.BackendStartRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.LengthRecord:
 			s.addRow(r.GetTag(), "", record.Size.String(), "")
