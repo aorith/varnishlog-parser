@@ -1,126 +1,135 @@
 .form-row {
-  display: flex;
-  gap: 4px;
-  margin-top: 2px;
-  margin-bottom: 6px;
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+    margin-bottom: 6px;
 }
 
 #parse-form {
-  width: 100%;
-
-  & fieldset {
     width: 100%;
 
     & fieldset {
-      width: auto;
-    }
+        width: 100%;
+        border: 1px solid var(--border);
 
-    & textarea {
-      width: 100%;
-      max-width: 450px;
-      height: 220px;
+        & fieldset {
+            width: auto;
+        }
+
+        & textarea {
+            width: 100%;
+            max-width: 640px;
+            height: 280px;
+        }
     }
-  }
 }
 
 #parse-submit-btn {
-  width: 100%;
-  max-width: 450px;
-  padding: 10px;
+    width: 100%;
+    max-width: 640px;
+    padding: 10px;
 }
 
 form {
-  margin-bottom: 1rem;
-  vertical-align: top;
-
-  & fieldset {
+    margin-bottom: 1rem;
     vertical-align: top;
-    display: inline-block;
-    margin: 0.3rem 0 0 0;
-    padding: 0.6rem;
 
-    background: var(--bg-0);
-    border-radius: 8px;
-  }
+    & fieldset {
+        vertical-align: top;
+        display: inline-block;
+        margin: 0.3rem 0 0 0;
+        padding: 0.6rem;
 
-  & fieldset legend {
-    padding: 4px;
-    margin: 0;
+        background: var(--bg-0);
+        border-radius: 8px;
+    }
 
-    background: var(--bg-0);
-  }
+    & fieldset legend {
+        padding: 4px;
+        margin: 0;
 
-  & fieldset label {
-    display: inline-block;
-    font-family: var(--font-text);
-    font-size: var(--fsize-s);
-    font-weight: 500;
-    background: var(--bg-0);
-    color: var(--gray-0);
-    align-items: center;
-    gap: 0.3rem;
-    margin: 4px 6px 4px 0;
-    padding: 2px;
-    white-space: nowrap;
-  }
+        background: var(--bg-0);
+    }
 
-  & input,
-  & textarea,
-  & select {
-    padding: 0.25rem 0.4rem;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: var(--fsize-xs);
-    font-family: var(--font-mono);
-  }
+    & fieldset label {
+        display: inline-block;
+        font-family: var(--font-text);
+        font-size: var(--fsize-s);
+        font-weight: 500;
+        background: var(--bg-0);
+        color: var(--gray-0);
+        align-items: center;
+        gap: 0.3rem;
+        margin: 4px 6px 4px 0;
+        padding: 2px;
+        white-space: nowrap;
+    }
 
-  & select {
-    font-family: var(--font-text);
-  }
+    & input,
+    & textarea,
+    & select {
+        padding: 0.25rem 0.4rem;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: var(--fsize-xs);
+        font-family: var(--font-mono);
+        background: var(--bg-0);
+        color: var(--fg-0);
+    }
 
-  & input[type="checkbox"] {
-    margin-left: 0;
-  }
+    & select {
+        font-family: var(--font-text);
+    }
 
-  & input:focus,
-  & textarea:focus,
-  & select:focus {
-    border-color: var(--warm);
-    outline: none;
-  }
+    & input[type="checkbox"] {
+        margin-left: 0;
+    }
 
-  & button {
-    align-self: flex-start;
-    margin: 1rem 1rem 0 0;
-  }
+    & input:focus,
+    & textarea:focus,
+    & select:focus {
+        border-color: var(--warm);
+        outline: none;
+        box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    & button {
+        align-self: flex-start;
+        margin: 1rem 1rem 0 0;
+    }
 }
 
 form .examples {
-  margin: 20px 0 10px 0;
+    margin: 20px 0 10px 0;
 
-  button {
-    font-size: var(--fsize-xs);
-    padding: 4px 8px;
-    margin: 8px 2px;
-  }
+    button {
+        font-size: var(--fsize-xs);
+        padding: 4px 8px;
+        margin: 8px 2px;
+    }
+}
+
+form.htmx-request .loading {
+    opacity: 0.6;
+    cursor: progress;
 }
 
 fieldset {
-  border: none;
+    border: none;
 
-  & legend {
-    font-weight: 600;
-    color: var(--cold);
-  }
+    & legend {
+        font-weight: 600;
+        color: var(--cold);
+    }
 }
 
 fieldset fieldset {
-  font-size: 85%;
-  margin: 0 0.4rem;
-  border: 1px solid var(--border);
+    font-size: 85%;
+    margin: 0 0.4rem;
+    border: 1px solid var(--border);
 
-  & legend {
-    color: var(--warm);
-  }
+    & legend {
+        color: var(--warm);
+    }
 }

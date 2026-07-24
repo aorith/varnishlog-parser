@@ -1,111 +1,132 @@
 body {
-  width: 100%;
-  min-height: 100dvh;
+    width: 100%;
+    min-height: 100dvh;
+    height: 100dvh;
 
-  display: grid;
+    display: grid;
 
-  grid-template-areas:
-    "nav"
-    "content"
-    "footer";
-  grid-template-rows: auto 1fr auto;
-  grid-template-columns: 1fr;
+    grid-template-areas:
+        "nav"
+        "content"
+        "footer";
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
 }
 
 #content {
-  grid-area: content;
-  display: flex;
-  margin: 0 auto;
-  width: 100%;
-  justify-content: center;
+    grid-area: content;
+    display: flex;
+    margin: 0 auto;
+    width: 100%;
+    justify-content: center;
 }
 
 footer {
-  grid-area: footer;
-  gap: 2px;
-  font-size: var(--fsize-xxs);
-  border-top: 1px solid var(--border);
-  border-bottom: none;
-  font-style: italic;
-  color: var(--fg-1);
+    grid-area: footer;
+    gap: 2px;
+    font-size: var(--fsize-xxs);
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    font-style: italic;
+    color: var(--fg-1);
 }
 
 nav {
-  grid-area: nav;
+    grid-area: nav;
 }
 
 nav,
 footer {
-  display: flex;
-  gap: 6px;
-  flex-direction: row;
-  align-content: center; /* vertical align */
-  align-items: center;
-  justify-content: center;
-  justify-items: center;
-  padding: 0.5rem 0.5rem 0.5rem 1rem;
-  background-color: var(--bg-1);
-  border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    flex-direction: row;
+    align-content: center;
+    /* vertical align */
+    align-items: center;
+    justify-content: center;
+    justify-items: center;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    background-color: var(--bg-1);
+    border-bottom: 1px solid var(--border);
 }
 
 nav div {
-  color: var(--gray-0);
-  width: 100%;
-  max-width: var(--view-width);
-  margin: 0 auto;
-  padding-left: 0.8rem;
+    color: var(--gray-0);
+    width: 100%;
+    max-width: var(--view-width);
+    margin: 0 auto;
+    padding-left: 0.8rem;
 }
 
 nav label {
-  color: var(--fg-0);
-  font-size: var(--fsize-s);
-  font-family: var(--font-text2);
-  font-weight: 500;
-  cursor: pointer;
-  padding: 2px;
+    color: var(--fg-0);
+    font-size: var(--fsize-s);
+    font-family: var(--font-text2);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 2px;
 }
 
 nav label:hover {
-  color: var(--accent-hover);
-  text-decoration: underline;
+    color: var(--accent-hover);
+    text-decoration: underline;
 }
 
+/* Hidden but still focusable/keyboard-operable, unlike display:none */
 input[type="radio"].nav {
-  display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .view,
 .error {
-  width: 100%;
-  max-width: var(--view-width);
+    width: 100%;
+    max-width: var(--view-width);
 }
 
 .view {
-  display: none;
-  width: 100%;
-  max-width: var(--view-width);
+    display: none;
+    width: 100%;
+    max-width: var(--view-width);
 }
 
 .view-content {
-  width: 100%;
-  padding: 1rem;
+    width: 100%;
+    padding: 1rem;
 }
 
-#radio-parse:checked ~ nav div label[for="radio-parse"],
-#radio-overview:checked ~ nav div label[for="radio-overview"],
-#radio-timings:checked ~ nav div label[for="radio-timings"],
-#radio-headers:checked ~ nav div label[for="radio-headers"],
-#radio-vcllogtree:checked ~ nav div label[for="radio-vcllogtree"],
-#radio-reqbuild:checked ~ nav div label[for="radio-reqbuild"] {
-  color: var(--accent);
-  text-decoration: underline;
+#radio-parse:checked~nav div label[for="radio-parse"],
+#radio-overview:checked~nav div label[for="radio-overview"],
+#radio-timings:checked~nav div label[for="radio-timings"],
+#radio-headers:checked~nav div label[for="radio-headers"],
+#radio-vcllogtree:checked~nav div label[for="radio-vcllogtree"],
+#radio-reqbuild:checked~nav div label[for="radio-reqbuild"] {
+    color: var(--accent);
+    text-decoration: underline;
 }
 
-#radio-parse:checked ~ #content #parse-view,
-#radio-overview:checked ~ #content #overview-view,
-#radio-timings:checked ~ #content #timings-view,
-#radio-headers:checked ~ #content #headers-view,
-#radio-vcllogtree:checked ~ #content #vcllogtree-view,
-#radio-reqbuild:checked ~ #content #reqbuild-view {
-  display: block;
+#radio-parse:focus-visible~nav div label[for="radio-parse"],
+#radio-overview:focus-visible~nav div label[for="radio-overview"],
+#radio-timings:focus-visible~nav div label[for="radio-timings"],
+#radio-headers:focus-visible~nav div label[for="radio-headers"],
+#radio-vcllogtree:focus-visible~nav div label[for="radio-vcllogtree"],
+#radio-reqbuild:focus-visible~nav div label[for="radio-reqbuild"] {
+    outline: 2px solid var(--accent-hover);
+    outline-offset: 2px;
+}
+
+#radio-parse:checked~#content #parse-view,
+#radio-overview:checked~#content #overview-view,
+#radio-timings:checked~#content #timings-view,
+#radio-headers:checked~#content #headers-view,
+#radio-vcllogtree:checked~#content #vcllogtree-view,
+#radio-reqbuild:checked~#content #reqbuild-view {
+    display: block;
 }
