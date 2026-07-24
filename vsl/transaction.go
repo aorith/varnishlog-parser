@@ -314,16 +314,16 @@ func (t TransactionSet) RawLog() string {
 
 	for i, tx := range t.Transactions() {
 		if i != 0 && tx.TXType == TxTypeSession {
-			s.WriteString("\n")
+			s.WriteString("\n") //nolint:revive
 		}
 
-		fmt.Fprintf(&s, "%s\n", tx.RawLog)
+		fmt.Fprintf(&s, "%s\n", tx.RawLog) //nolint:revive
 
 		for _, r := range tx.Records {
-			fmt.Fprintf(&s, "%s\n", r.GetRawLog())
+			fmt.Fprintf(&s, "%s\n", r.GetRawLog()) //nolint:revive
 		}
 
-		s.WriteString("\n")
+		s.WriteString("\n") //nolint:revive
 	}
 
 	return s.String()
@@ -340,16 +340,16 @@ func (t TransactionSet) RawLogForTx(tx *Transaction, includeChildrenTxs bool) st
 
 	for i, tx := range txs {
 		if i != 0 && tx.TXType == TxTypeSession {
-			s.WriteString("\n")
+			s.WriteString("\n") //nolint:revive
 		}
 
-		fmt.Fprintf(&s, "%s\n", tx.RawLog)
+		fmt.Fprintf(&s, "%s\n", tx.RawLog) //nolint:revive
 
 		for _, r := range tx.Records {
-			fmt.Fprintf(&s, "%s\n", r.GetRawLog())
+			fmt.Fprintf(&s, "%s\n", r.GetRawLog()) //nolint:revive
 		}
 
-		s.WriteString("\n")
+		s.WriteString("\n") //nolint:revive
 	}
 
 	return s.String()

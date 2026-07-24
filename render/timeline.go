@@ -119,7 +119,8 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 					),
 					Duration: record.SinceLast,
 					Time:     record.StartTime,
-				})
+				},
+			)
 
 		default:
 		}

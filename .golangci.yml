@@ -9,11 +9,12 @@ linters:
     - exhaustruct
     - funlen # handled by revive
     - gochecknoglobals
+    - gochecknoinits
     - gocognit
     - goconst
     - gocyclo
-    - gochecknoinits
     - godoclint
+    - gomodguard # handled by gomodguard_v2
     - ireturn
     - lll
     - maintidx

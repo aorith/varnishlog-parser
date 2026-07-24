@@ -102,7 +102,7 @@ func parseLevel(s string) (int, error) {
 
 	for _, r := range s {
 		if r != '*' {
-			sb.WriteRune(r)
+			sb.WriteRune(r) //nolint:revive
 		}
 	}
 

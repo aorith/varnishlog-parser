@@ -121,7 +121,7 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 
 	classA, classB = formatClass(classA), formatClass(classB)
 
-	fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, a, classB, b) //nolint:errcheck
+	fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, a, classB, b) //nolint:errcheck,revive
 }
 
 func statusCSSClass(s int) string {

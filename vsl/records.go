@@ -93,35 +93,12 @@ type BeginRecord struct {
 }
 
 func NewBeginRecord(blr BaseRecord) (BeginRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 3 && len(parts) != 4 {
-		return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
-
-	if len(parts) == 4 {
-		if parts[2] != "esi" {
-			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, len is 4 but it is not an ESI on line %q", blr.GetRawLog())
-		}
-
-		level, err := strconv.Atoi(parts[3])
-		if err != nil {
-			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, extraction of ESI level failed on line %q, error: %w", blr.GetRawLog(), err)
-		}
-
-		parentVXID, err := parseVXID(parts[1])
-		if err != nil {
-			return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
-		}
-
-		return BeginRecord{BaseRecord: blr, RecordType: parts[0], Parent: parentVXID, ESILevel: level, Reason: parts[2]}, nil
-	}
-
-	parentVXID, err := parseVXID(parts[1])
+	ref, err := parseTxRef(blr, "BeginRecord")
 	if err != nil {
-		return BeginRecord{}, fmt.Errorf("conversion to BeginRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
+		return BeginRecord{}, err
 	}
 
-	return BeginRecord{BaseRecord: blr, RecordType: parts[0], Parent: parentVXID, ESILevel: 0, Reason: parts[2]}, nil
+	return BeginRecord{BaseRecord: blr, RecordType: ref.recordType, Parent: ref.vxid, ESILevel: ref.esiLevel, Reason: ref.reason}, nil
 }
 
 // HeaderRecord represents an HTTP header log record.
@@ -254,51 +231,26 @@ type BackendOpenRecord struct {
 }
 
 func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 6 {
-		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
+	f := newFieldScanner(blr, "BackendOpenRecord")
+	f.requireMin(6)
 
-	fileDesc, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad file descriptor on line %q", blr.GetRawLog())
-	}
-
-	remoteAddr := net.ParseIP(strings.Trim(parts[2], "[]"))
-	if remoteAddr == nil {
-		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad remoteAddr on line %q", blr.GetRawLog())
-	}
-
-	remotePort, err := strconv.Atoi(parts[3])
-	if err != nil {
-		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad remotePort on line %q", blr.GetRawLog())
-	}
-
-	localAddr := net.ParseIP(strings.Trim(parts[4], "[]"))
-	if localAddr == nil {
-		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad localAddr on line %q", blr.GetRawLog())
-	}
-
-	localPort, err := strconv.Atoi(parts[5])
-	if err != nil {
-		return BackendOpenRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad localPort on line %q", blr.GetRawLog())
-	}
-
-	reason := "-"
-	if len(parts) >= 7 {
-		reason = parts[6]
-	}
-
-	return BackendOpenRecord{
+	record := BackendOpenRecord{
 		BaseRecord:     blr,
-		FileDescriptor: fileDesc,
-		Name:           parts[1],
-		RemoteAddr:     remoteAddr,
-		RemotePort:     remotePort,
-		LocalAddr:      localAddr,
-		LocalPort:      localPort,
-		Reason:         reason,
-	}, nil
+		FileDescriptor: f.int("file descriptor", 0),
+		Name:           f.str("name", 1),
+		RemoteAddr:     f.ip("remote address", 2),
+		RemotePort:     f.int("remote port", 3),
+		LocalAddr:      f.ip("local address", 4),
+		LocalPort:      f.int("local port", 5),
+		Reason:         f.strOr(6, "-"),
+	}
+
+	err := f.err()
+	if err != nil {
+		return BackendOpenRecord{}, err
+	}
+
+	return record, nil
 }
 
 func (r BackendOpenRecord) ConnStr() string {
@@ -318,26 +270,21 @@ type BackendStartRecord struct {
 }
 
 func NewBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 2 {
-		return BackendStartRecord{}, fmt.Errorf("conversion to BackendStartRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
+	f := newFieldScanner(blr, "BackendStartRecord")
+	f.requireMin(2)
 
-	remoteAddr := net.ParseIP(strings.Trim(parts[0], "[]"))
-	if remoteAddr == nil {
-		return BackendStartRecord{}, fmt.Errorf("conversion to BackendStartRecord failed, bad remoteAddr on line %q", blr.GetRawLog())
-	}
-
-	remotePort, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return BackendStartRecord{}, fmt.Errorf("conversion to BackendStartRecord failed, bad remotePort on line %q", blr.GetRawLog())
-	}
-
-	return BackendStartRecord{
+	record := BackendStartRecord{
 		BaseRecord: blr,
-		RemoteAddr: remoteAddr,
-		RemotePort: remotePort,
-	}, nil
+		RemoteAddr: f.ip("remote address", 0),
+		RemotePort: f.int("remote port", 1),
+	}
+
+	err := f.err()
+	if err != nil {
+		return BackendStartRecord{}, err
+	}
+
+	return record, nil
 }
 
 func (r BackendStartRecord) ConnStr() string {
@@ -359,33 +306,23 @@ type BackendCloseRecord struct {
 }
 
 func NewBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 2 {
-		return BackendCloseRecord{}, fmt.Errorf("conversion to BackendCloseRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
+	f := newFieldScanner(blr, "BackendCloseRecord")
+	f.requireMin(2)
 
-	fileDesc, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return BackendCloseRecord{}, fmt.Errorf("conversion to BackendCloseRecord failed, bad file descriptor on line %q", blr.GetRawLog())
-	}
-
-	reason := "unknown"
-	if len(parts) >= 3 {
-		reason = parts[2]
-	}
-
-	optReason := ""
-	if len(parts) >= 4 {
-		optReason = parts[3]
-	}
-
-	return BackendCloseRecord{
+	record := BackendCloseRecord{
 		BaseRecord:     blr,
-		FileDescriptor: fileDesc,
-		Name:           parts[1],
-		Reason:         reason,
-		OptionalReason: optReason,
-	}, nil
+		FileDescriptor: f.int("file descriptor", 0),
+		Name:           f.str("name", 1),
+		Reason:         f.strOr(2, "unknown"),
+		OptionalReason: f.strOr(3, ""),
+	}
+
+	err := f.err()
+	if err != nil {
+		return BackendCloseRecord{}, err
+	}
+
+	return record, nil
 }
 
 // BackendReuseRecord holds information about a backend reuse (keep-alive)
@@ -399,20 +336,21 @@ type BackendReuseRecord struct {
 }
 
 func NewBackendReuseRecord(blr BaseRecord) (BackendReuseRecord, error) {
-	record := BackendReuseRecord{BaseRecord: blr}
-
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 2 {
-		return record, nil
+	f := newFieldScanner(blr, "BackendReuseRecord")
+	if f.count() < 2 {
+		return BackendReuseRecord{BaseRecord: blr}, nil
 	}
 
-	fileDesc, err := strconv.Atoi(parts[0])
+	record := BackendReuseRecord{
+		BaseRecord:     blr,
+		FileDescriptor: f.int("file descriptor", 0),
+		Name:           f.str("name", 1),
+	}
+
+	err := f.err()
 	if err != nil {
-		return record, err
+		return BackendReuseRecord{BaseRecord: blr}, err
 	}
-
-	record.FileDescriptor = fileDesc
-	record.Name = parts[1]
 
 	return record, nil
 }
@@ -430,28 +368,22 @@ type AcctRecord struct {
 }
 
 func NewAcctRecord(blr BaseRecord) (AcctRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 6 {
-		return AcctRecord{}, fmt.Errorf("conversion to AcctRecord failed, incorrect len on line %q", blr.GetRawLog())
+	f := newFieldScanner(blr, "AcctRecord")
+	f.require(6)
+
+	record := AcctRecord{
+		BaseRecord: blr,
+		HeaderTx:   f.size("header tx", 0),
+		BodyTx:     f.size("body tx", 1),
+		TotalTx:    f.size("total tx", 2),
+		HeaderRx:   f.size("header rx", 3),
+		BodyRx:     f.size("body rx", 4),
+		TotalRx:    f.size("total rx", 5),
 	}
 
-	record := AcctRecord{BaseRecord: blr}
-	fields := []*SizeValue{
-		&record.HeaderTx,
-		&record.BodyTx,
-		&record.TotalTx,
-		&record.HeaderRx,
-		&record.BodyRx,
-		&record.TotalRx,
-	}
-
-	for i := range fields {
-		value, err := strconv.Atoi(parts[i])
-		if err != nil {
-			return AcctRecord{}, fmt.Errorf("conversion to AcctRecord failed, bad value in part[%d] on line %q", i, blr.GetRawLog())
-		}
-
-		*fields[i] = SizeValue(value)
+	err := f.err()
+	if err != nil {
+		return AcctRecord{}, err
 	}
 
 	return record, nil
@@ -480,26 +412,20 @@ type PipeAcctRecord struct {
 }
 
 func NewPipeAcctRecord(blr BaseRecord) (PipeAcctRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 4 {
-		return PipeAcctRecord{}, fmt.Errorf("conversion to PipeAcctRecord failed, incorrect len on line %q", blr.GetRawLog())
+	f := newFieldScanner(blr, "PipeAcctRecord")
+	f.require(4)
+
+	record := PipeAcctRecord{
+		BaseRecord:        blr,
+		ClientReqHeaders:  f.size("client req headers", 0),
+		BackendReqHeaders: f.size("backend req headers", 1),
+		PipedFrom:         f.size("piped from", 2),
+		PipedTo:           f.size("piped to", 3),
 	}
 
-	record := PipeAcctRecord{BaseRecord: blr}
-	fields := []*SizeValue{
-		&record.ClientReqHeaders,
-		&record.BackendReqHeaders,
-		&record.PipedFrom,
-		&record.PipedTo,
-	}
-
-	for i := range fields {
-		value, err := strconv.Atoi(parts[i])
-		if err != nil {
-			return PipeAcctRecord{}, fmt.Errorf("conversion to PipeAcctRecord failed, bad value in part[%d] on line %q", i, blr.GetRawLog())
-		}
-
-		*fields[i] = SizeValue(value)
+	err := f.err()
+	if err != nil {
+		return PipeAcctRecord{}, err
 	}
 
 	return record, nil
@@ -526,29 +452,22 @@ type TimestampRecord struct {
 }
 
 func NewTimestampRecord(blr BaseRecord) (TimestampRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 4 {
-		return TimestampRecord{}, fmt.Errorf("conversion to TimestampRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
+	f := newFieldScanner(blr, "TimestampRecord")
+	f.require(4)
 
-	ab, err := convertToUnixTimestamp(parts[1])
-	if err != nil {
-		return TimestampRecord{}, fmt.Errorf("conversion to TimestampRecord failed, bad field absolute time on line %q", blr.GetRawLog())
-	}
+	label := strings.TrimRight(f.str("event label", 0), ":")
+	ab := f.unixTime("absolute time", 1)
+	sinceStart := f.duration("since start", 2, time.Second)
+	sinceLast := f.duration("since last", 3, time.Second)
 
-	sinceStart, err := convertStrToDuration(parts[2], time.Second)
+	err := f.err()
 	if err != nil {
-		return TimestampRecord{}, fmt.Errorf("conversion to TimestampRecord failed, bad field since start on line %q", blr.GetRawLog())
-	}
-
-	sinceLast, err := convertStrToDuration(parts[3], time.Second)
-	if err != nil {
-		return TimestampRecord{}, fmt.Errorf("conversion to TimestampRecord failed, bad field since last on line %q", blr.GetRawLog())
+		return TimestampRecord{}, err
 	}
 
 	return TimestampRecord{
 		BaseRecord:   blr,
-		EventLabel:   strings.TrimRight(parts[0], ":"),
+		EventLabel:   label,
 		StartTime:    ab.Add(-sinceLast),
 		AbsoluteTime: ab,
 		SinceStart:   sinceStart,
@@ -575,28 +494,23 @@ type ReqStartRecord struct {
 }
 
 func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 3 {
-		return ReqStartRecord{}, fmt.Errorf("conversion to ReqStartRecord failed, incorrect len on line %q", blr.GetRawLog())
+	f := newFieldScanner(blr, "ReqStartRecord")
+	f.requireMin(3)
+
+	record := ReqStartRecord{
+		BaseRecord: blr,
+		ClientIP:   f.ip("client address", 0),
+		ClientPort: f.int("client port", 1),
+		Listener:   f.str("listener", 2),
+		Scheme:     f.strOr(3, ""),
 	}
 
-	clientIP := net.ParseIP(strings.Trim(parts[0], "[]"))
-	if clientIP == nil {
-		return ReqStartRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad clientAddr on line %q", blr.GetRawLog())
-	}
-
-	clientPort, err := strconv.Atoi(parts[1])
+	err := f.err()
 	if err != nil {
-		return ReqStartRecord{}, fmt.Errorf("conversion to BackendOpenRecord failed, bad clientPort on line %q", blr.GetRawLog())
+		return ReqStartRecord{}, err
 	}
 
-	r := ReqStartRecord{BaseRecord: blr, ClientIP: clientIP, ClientPort: clientPort, Listener: parts[2]}
-
-	if len(parts) >= 4 {
-		r.Scheme = parts[3]
-	}
-
-	return r, nil
+	return record, nil
 }
 
 func (r ReqStartRecord) String() string {
@@ -619,49 +533,51 @@ type LinkRecord struct {
 }
 
 func NewLinkRecord(blr BaseRecord) (LinkRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 3 && len(parts) != 4 {
-		return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
-
-	if len(parts) == 4 {
-		if parts[2] != "esi" {
-			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, len is 4 but it is not an ESI on line %q", blr.GetRawLog())
-		}
-
-		level, err := strconv.Atoi(parts[3])
-		if err != nil {
-			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, extraction of ESI level failed on line %q, error: %w", blr.GetRawLog(), err)
-		}
-
-		vxid, err := parseVXID(parts[1])
-		if err != nil {
-			return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
-		}
-
-		return LinkRecord{
-			BaseRecord: blr,
-			TXID:       parseTXID(vxid, parts[0], parts[2], level),
-			TXType:     parts[0],
-			VXID:       vxid,
-			ESILevel:   level,
-			Reason:     parts[2],
-		}, nil
-	}
-
-	vxid, err := parseVXID(parts[1])
+	ref, err := parseTxRef(blr, "LinkRecord")
 	if err != nil {
-		return LinkRecord{}, fmt.Errorf("conversion to LinkRecord failed, bad VXID on line %q, error: %w", blr.GetRawLog(), err)
+		return LinkRecord{}, err
 	}
 
 	return LinkRecord{
 		BaseRecord: blr,
-		TXID:       parseTXID(vxid, parts[0], parts[2], 0),
-		TXType:     parts[0],
-		VXID:       vxid,
-		ESILevel:   0,
-		Reason:     parts[2],
+		TXID:       parseTXID(ref.vxid, ref.recordType, ref.reason, ref.esiLevel),
+		TXType:     ref.recordType,
+		VXID:       ref.vxid,
+		ESILevel:   ref.esiLevel,
+		Reason:     ref.reason,
 	}, nil
+}
+
+// txRef holds the value shape shared by the Begin and Link tags:
+// "<type> <vxid> <reason>" or "<type> <vxid> esi <level>".
+type txRef struct {
+	recordType string
+	vxid       VXID
+	reason     string
+	esiLevel   int
+}
+
+func parseTxRef(blr BaseRecord, target string) (txRef, error) {
+	f := newFieldScanner(blr, target)
+	f.require(3, 4)
+
+	ref := txRef{
+		recordType: f.strOr(0, ""),
+		vxid:       f.vxid("vxid", 1),
+		reason:     f.strOr(2, ""),
+	}
+
+	if f.count() == 4 {
+		f.literal("reason", 2, "esi")
+		ref.esiLevel = f.int("esi level", 3)
+	}
+
+	err := f.err()
+	if err != nil {
+		return txRef{}, err
+	}
+
+	return ref, nil
 }
 
 // URLRecord holds request URL from ReqURL and BereqURL tags.
@@ -761,58 +677,32 @@ type HitRecord struct {
 }
 
 func NewHitRecord(blr BaseRecord) (HitRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
+	f := newFieldScanner(blr, "HitRecord")
+	f.require(2, 4, 5, 6)
 
-	n := len(parts)
-	if n < 2 || n > 6 {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, incorrect len of %d on line %q", n, blr.GetRawLog())
+	hr := HitRecord{
+		BaseRecord: blr,
+		ObjVXID:    f.vxid("obj vxid", 0),
+		TTL:        f.duration("ttl", 1, time.Second),
 	}
 
-	vxid, err := parseVXID(parts[0])
+	if f.count() >= 4 {
+		hr.Grace = f.duration("grace", 2, time.Second)
+		hr.Keep = f.duration("keep", 3, time.Second)
+	}
+
+	if f.count() >= 5 {
+		hr.Fetched = f.size("fetched", 4)
+	}
+
+	if f.count() == 6 {
+		hr.ContentLength = f.size("content length", 5)
+	}
+
+	err := f.err()
 	if err != nil {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad VXID on line %q", blr.GetRawLog())
+		return HitRecord{}, err
 	}
-
-	ttl, err := convertStrToDuration(parts[1], time.Second)
-	if err != nil {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad field TTL on line %q", blr.GetRawLog())
-	}
-
-	if n == 2 {
-		return HitRecord{BaseRecord: blr, ObjVXID: vxid, TTL: ttl}, nil
-	}
-
-	grace, err := convertStrToDuration(parts[2], time.Second)
-	if err != nil {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad field grace on line %q", blr.GetRawLog())
-	}
-
-	keep, err := convertStrToDuration(parts[3], time.Second)
-	if err != nil {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad field keep on line %q", blr.GetRawLog())
-	}
-
-	hr := HitRecord{BaseRecord: blr, ObjVXID: vxid, TTL: ttl, Grace: grace, Keep: keep}
-	if n == 4 {
-		return hr, nil
-	}
-
-	fetched, err := strconv.Atoi(parts[4])
-	if err != nil {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad value in part[4] on line %q", blr.GetRawLog())
-	}
-
-	hr.Fetched = SizeValue(fetched)
-	if n == 5 {
-		return hr, nil
-	}
-
-	cl, err := strconv.Atoi(parts[5])
-	if err != nil {
-		return HitRecord{}, fmt.Errorf("conversion to HitRecord failed, bad value in part[5] on line %q", blr.GetRawLog())
-	}
-
-	hr.ContentLength = SizeValue(cl)
 
 	return hr, nil
 }
@@ -865,83 +755,33 @@ func NewTTLRecord(blr BaseRecord) (TTLRecord, error) {
 	// RFC 120 10 0 1606398419 1606398419 1606398419 0 0 cacheable
 	// VCL 120 10 0 1606400537 uncacheable
 	// HFP 10 0 0 1606402666 uncacheable
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 6 {
-		return TTLRecord{}, fmt.Errorf("conversion to TTLRecord failed, incorrect len on line %q", blr.GetRawLog())
+	f := newFieldScanner(blr, "TTLRecord")
+	f.require(6, 10)
+
+	r := TTLRecord{
+		BaseRecord: blr,
+		Source:     f.str("source", 0),
+		TTL:        f.duration("ttl", 1, time.Second),
+		Grace:      f.duration("grace", 2, time.Second),
+		Keep:       f.duration("keep", 3, time.Second),
+		Reference:  f.unixTime("reference", 4),
 	}
 
-	r := TTLRecord{BaseRecord: blr, Source: parts[0]}
+	// 6 fields: VCL or HFP source. 10 fields: RFC source.
+	if f.count() == 6 {
+		r.CacheStatus = f.str("cache status", 5)
+	} else {
+		r.Age = f.unixTime("age", 5)
+		r.Date = f.unixTime("date", 6)
+		r.Expires = f.unixTime("expires", 7)
+		r.MaxAge = f.duration("max age", 8, time.Second)
+		r.CacheStatus = f.str("cache status", 9)
+	}
 
-	// First 5 parts are common
-	ttl, err := strconv.Atoi(parts[1])
+	err := f.err()
 	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field ttl on line %q", blr.GetRawLog())
+		return TTLRecord{}, err
 	}
-
-	r.TTL = time.Duration(ttl) * time.Second
-
-	grace, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field grace on line %q", blr.GetRawLog())
-	}
-
-	r.Grace = time.Duration(grace) * time.Second
-
-	keep, err := strconv.Atoi(parts[3])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field keep on line %q", blr.GetRawLog())
-	}
-
-	r.Keep = time.Duration(keep) * time.Second
-
-	ref, err := convertToUnixTimestamp(parts[4])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field reference on line %q", blr.GetRawLog())
-	}
-
-	r.Reference = ref
-
-	// Check if we are parsing a VCL or HFP source (6 fields) or a HFP
-	if len(parts) == 6 {
-		r.CacheStatus = parts[5]
-
-		return r, nil
-	}
-
-	if len(parts) != 10 {
-		return TTLRecord{}, fmt.Errorf("conversion to TTLRecord failed, incorrect len (wanted 10) on line %q", blr.GetRawLog())
-	}
-
-	age, err := convertToUnixTimestamp(parts[5])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field age on line %q", blr.GetRawLog())
-	}
-
-	r.Age = age
-
-	date, err := convertToUnixTimestamp(parts[6])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field date on line %q", blr.GetRawLog())
-	}
-
-	r.Date = date
-
-	expires, err := convertToUnixTimestamp(parts[7])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field expires on line %q", blr.GetRawLog())
-	}
-
-	r.Expires = expires
-
-	maxAge, err := strconv.Atoi(parts[8])
-	if err != nil {
-		return r, fmt.Errorf("conversion to TTLRecord failed, bad field maxAge on line %q", blr.GetRawLog())
-	}
-
-	r.MaxAge = time.Duration(maxAge) * time.Second
-
-	// Last field
-	r.CacheStatus = parts[9]
 
 	return r, nil
 }
@@ -1013,12 +853,17 @@ type StorageRecord struct {
 }
 
 func NewStorageRecord(blr BaseRecord) (StorageRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) < 2 {
-		return StorageRecord{}, fmt.Errorf("conversion to StorageRecord failed, incorrect len on line %q", blr.GetRawLog())
+	f := newFieldScanner(blr, "StorageRecord")
+	f.requireMin(2)
+
+	record := StorageRecord{BaseRecord: blr, StorageType: f.str("storage type", 0), Name: f.str("name", 1)}
+
+	err := f.err()
+	if err != nil {
+		return StorageRecord{}, err
 	}
 
-	return StorageRecord{BaseRecord: blr, StorageType: parts[0], Name: parts[1]}, nil
+	return record, nil
 }
 
 // FetchBodyRecord holds information about the mode to fetch the object from the backend.
@@ -1031,24 +876,22 @@ type FetchBodyRecord struct {
 }
 
 func NewFetchBodyRecord(blr BaseRecord) (FetchBodyRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 3 {
-		return FetchBodyRecord{}, fmt.Errorf("conversion to FetchBodyRecord failed, incorrect len on line %q", blr.GetRawLog())
+	f := newFieldScanner(blr, "FetchBodyRecord")
+	f.require(3)
+
+	record := FetchBodyRecord{
+		BaseRecord:  blr,
+		Mode:        f.int("mode", 0),
+		Description: f.str("description", 1),
+		Stream:      f.oneOf("stream", 2, "stream", "-") == "stream",
 	}
 
-	m, err := strconv.Atoi(parts[0])
+	err := f.err()
 	if err != nil {
-		return FetchBodyRecord{}, fmt.Errorf("conversion to FetchBodyRecord failed, bad field mode on line %q", blr.GetRawLog())
+		return FetchBodyRecord{}, err
 	}
 
-	stream := false
-	if parts[2] == "stream" {
-		stream = true
-	} else if parts[2] != "-" {
-		return FetchBodyRecord{}, fmt.Errorf("conversion to FetchBodyRecord failed, unknown value for stream on line %q", blr.GetRawLog())
-	}
-
-	return FetchBodyRecord{BaseRecord: blr, Mode: m, Description: parts[1], Stream: stream}, nil
+	return record, nil
 }
 
 // SessOpenRecord is the first record for a client connection
@@ -1066,51 +909,26 @@ type SessOpenRecord struct {
 }
 
 func NewSessOpenRecord(blr BaseRecord) (SessOpenRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 7 {
-		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, incorrect len on line %q", blr.GetRawLog())
-	}
+	f := newFieldScanner(blr, "SessOpenRecord")
+	f.require(7)
 
-	remoteAddr := net.ParseIP(strings.Trim(parts[0], "[]"))
-	if remoteAddr == nil {
-		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad remoteAddr on line %q", blr.GetRawLog())
-	}
-
-	remotePort, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad remotePort on line %q", blr.GetRawLog())
-	}
-
-	localAddr := net.ParseIP(strings.Trim(parts[3], "[]"))
-	if localAddr == nil {
-		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad localAddr on line %q", blr.GetRawLog())
-	}
-
-	localPort, err := strconv.Atoi(parts[4])
-	if err != nil {
-		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad localPort on line %q", blr.GetRawLog())
-	}
-
-	sessionStart, err := convertToUnixTimestamp(parts[5])
-	if err != nil {
-		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad field sessionStart on line %q", blr.GetRawLog())
-	}
-
-	fileDesc, err := strconv.Atoi(parts[6])
-	if err != nil {
-		return SessOpenRecord{}, fmt.Errorf("conversion to SessOpenRecord failed, bad file descriptor on line %q", blr.GetRawLog())
-	}
-
-	return SessOpenRecord{
+	record := SessOpenRecord{
 		BaseRecord:     blr,
-		RemoteAddr:     remoteAddr,
-		RemotePort:     remotePort,
-		SocketName:     parts[2],
-		LocalAddr:      localAddr,
-		LocalPort:      localPort,
-		SessionStart:   sessionStart,
-		FileDescriptor: fileDesc,
-	}, nil
+		RemoteAddr:     f.ip("remote address", 0),
+		RemotePort:     f.int("remote port", 1),
+		SocketName:     f.str("socket name", 2),
+		LocalAddr:      f.ip("local address", 3),
+		LocalPort:      f.int("local port", 4),
+		SessionStart:   f.unixTime("session start", 5),
+		FileDescriptor: f.int("file descriptor", 6),
+	}
+
+	err := f.err()
+	if err != nil {
+		return SessOpenRecord{}, err
+	}
+
+	return record, nil
 }
 
 func (r SessOpenRecord) String() string {
@@ -1138,17 +956,21 @@ type SessCloseRecord struct {
 }
 
 func NewSessCloseRecord(blr BaseRecord) (SessCloseRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 2 {
-		return SessCloseRecord{}, fmt.Errorf("conversion to SessCloseRecord failed, invalid len on line %q", blr.GetRawLog())
+	f := newFieldScanner(blr, "SessCloseRecord")
+	f.require(2)
+
+	record := SessCloseRecord{
+		BaseRecord: blr,
+		Reason:     f.str("reason", 0),
+		Duration:   f.duration("duration", 1, time.Second),
 	}
 
-	d, err := convertStrToDuration(parts[1], time.Second)
+	err := f.err()
 	if err != nil {
-		return SessCloseRecord{}, fmt.Errorf("conversion to SessCloseRecord failed, bad field duration on line %q", blr.GetRawLog())
+		return SessCloseRecord{}, err
 	}
 
-	return SessCloseRecord{BaseRecord: blr, Reason: parts[0], Duration: d}, nil
+	return record, nil
 }
 
 func (r SessCloseRecord) String() string {
@@ -1171,52 +993,28 @@ type GzipRecord struct {
 }
 
 func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 8 {
+	f := newFieldScanner(blr, "GzipRecord")
+	if f.count() != 8 {
 		// It could be a gzip error like: G(un)zip error: -3 ((null))
 		return GzipRecord{BaseRecord: blr, Error: blr.GetRawValue()}, nil
 	}
 
-	record := GzipRecord{BaseRecord: blr}
-
-	record.Action = parts[0]
-	record.When = parts[1]
-	record.Object = parts[2]
-
-	inputBytes, err := strconv.Atoi(parts[3])
-	if err != nil {
-		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for inputBytes on line %q", blr.GetRawLog())
+	record := GzipRecord{
+		BaseRecord:                blr,
+		Action:                    f.str("action", 0),
+		When:                      f.str("when", 1),
+		Object:                    f.str("object", 2),
+		InputBytes:                f.size("input bytes", 3),
+		OutputBytes:               f.size("output bytes", 4),
+		BitLocFirst:               f.int64("bit loc first", 5),
+		BitLocLast:                f.int64("bit loc last", 6),
+		BitLengthOfCompressedData: f.int64("bit length of compressed data", 7),
 	}
 
-	record.InputBytes = SizeValue(inputBytes)
-
-	outputBytes, err := strconv.Atoi(parts[4])
+	err := f.err()
 	if err != nil {
-		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for outputBytes on line %q", blr.GetRawLog())
+		return GzipRecord{}, err
 	}
-
-	record.OutputBytes = SizeValue(outputBytes)
-
-	bitLocFirst, err := strconv.ParseInt(parts[5], 10, 64)
-	if err != nil {
-		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for bitLocFirst on line %q", blr.GetRawLog())
-	}
-
-	record.BitLocFirst = bitLocFirst
-
-	bitLocLast, err := strconv.ParseInt(parts[6], 10, 64)
-	if err != nil {
-		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for bitLocLast on line %q", blr.GetRawLog())
-	}
-
-	record.BitLocLast = bitLocLast
-
-	bitLengthOfCompressedData, err := strconv.ParseInt(parts[7], 10, 64)
-	if err != nil {
-		return GzipRecord{}, fmt.Errorf("conversion to GzipRecord failed, bad value for bitLengthOfCompressedData on line %q", blr.GetRawLog())
-	}
-
-	record.BitLengthOfCompressedData = bitLengthOfCompressedData
 
 	return record, nil
 }
@@ -1290,71 +1088,29 @@ type MSE4NewObjectRecord struct {
 }
 
 func NewMSE4NewObjectRecord(blr BaseRecord) (MSE4NewObjectRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 5 && len(parts) != 8 {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, expected 5 or 8 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	f := newFieldScanner(blr, "MSE4NewObjectRecord")
+	f.require(5, 8)
+
+	record := MSE4NewObjectRecord{
+		BaseRecord:           blr,
+		IsPersisted:          f.count() == 8,
+		AllocationChunks:     f.int64("allocation chunks", 0),
+		BytesProcessed:       f.size("bytes processed", 1),
+		TimeElapsed:          f.duration("time elapsed", 2, time.Second),
+		TimeMSE4Processing:   f.duration("time mse4 processing", 3, time.Second),
+		TimeMemoryAllocation: f.duration("time memory allocation", 4, time.Second),
 	}
 
-	record := MSE4NewObjectRecord{BaseRecord: blr}
-	record.IsPersisted = len(parts) == 8
-
-	allocationChunks, err := strconv.ParseInt(parts[0], 10, 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for allocationChunks on line %q", blr.GetRawLog())
-	}
-
-	record.AllocationChunks = allocationChunks
-
-	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
-	}
-
-	record.BytesProcessed = SizeValue(bytesProcessed)
-
-	timeElapsed, err := strconv.ParseFloat(parts[2], 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
-	}
-
-	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
-
-	timeMSE4Processing, err := strconv.ParseFloat(parts[3], 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMSE4Processing on line %q", blr.GetRawLog())
-	}
-
-	record.TimeMSE4Processing = time.Duration(timeMSE4Processing * float64(time.Second))
-
-	timeMemoryAllocation, err := strconv.ParseFloat(parts[4], 64)
-	if err != nil {
-		return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeMemoryAllocation on line %q", blr.GetRawLog())
-	}
-
-	record.TimeMemoryAllocation = time.Duration(timeMemoryAllocation * float64(time.Second))
-
-	// Parse optional persisted object fields
+	// Optional persisted object fields
 	if record.IsPersisted {
-		timeResourceWait, err := strconv.ParseFloat(parts[5], 64)
-		if err != nil {
-			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeResourceWait on line %q", blr.GetRawLog())
-		}
+		record.TimeResourceWait = f.duration("time resource wait", 5, time.Second)
+		record.TimeDiskIOFetch = f.duration("time disk io fetch", 6, time.Second)
+		record.TimeDiskIOFinalize = f.duration("time disk io finalize", 7, time.Second)
+	}
 
-		record.TimeResourceWait = time.Duration(timeResourceWait * float64(time.Second))
-
-		timeDiskIOFetch, err := strconv.ParseFloat(parts[6], 64)
-		if err != nil {
-			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFetch on line %q", blr.GetRawLog())
-		}
-
-		record.TimeDiskIOFetch = time.Duration(timeDiskIOFetch * float64(time.Second))
-
-		timeDiskIOFinalize, err := strconv.ParseFloat(parts[7], 64)
-		if err != nil {
-			return MSE4NewObjectRecord{}, fmt.Errorf("conversion to MSE4NewObjectRecord failed, bad value for timeDiskIOFinalize on line %q", blr.GetRawLog())
-		}
-
-		record.TimeDiskIOFinalize = time.Duration(timeDiskIOFinalize * float64(time.Second))
+	err := f.err()
+	if err != nil {
+		return MSE4NewObjectRecord{}, err
 	}
 
 	return record, nil
@@ -1396,57 +1152,27 @@ type MSE4ObjIterRecord struct {
 }
 
 func NewMSE4ObjIterRecord(blr BaseRecord) (MSE4ObjIterRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 4 && len(parts) != 6 {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, expected 4 or 6 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	f := newFieldScanner(blr, "MSE4ObjIterRecord")
+	f.require(4, 6)
+
+	record := MSE4ObjIterRecord{
+		BaseRecord:      blr,
+		IsPersisted:     f.count() == 6,
+		TimeElapsed:     f.duration("time elapsed", 0, time.Second),
+		BytesProcessed:  f.size("bytes processed", 1),
+		TimeProcessing:  f.duration("time processing", 2, time.Second),
+		TimeBackendWait: f.duration("time backend wait", 3, time.Second),
 	}
 
-	record := MSE4ObjIterRecord{BaseRecord: blr}
-	record.IsPersisted = len(parts) == 6
-
-	timeElapsed, err := strconv.ParseFloat(parts[0], 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeElapsed on line %q", blr.GetRawLog())
-	}
-
-	record.TimeElapsed = time.Duration(timeElapsed * float64(time.Second))
-
-	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
-	}
-
-	record.BytesProcessed = SizeValue(bytesProcessed)
-
-	timeProcessing, err := strconv.ParseFloat(parts[2], 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeProcessing on line %q", blr.GetRawLog())
-	}
-
-	record.TimeProcessing = time.Duration(timeProcessing * float64(time.Second))
-
-	timeBackendWait, err := strconv.ParseFloat(parts[3], 64)
-	if err != nil {
-		return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeBackendWait on line %q", blr.GetRawLog())
-	}
-
-	record.TimeBackendWait = time.Duration(timeBackendWait * float64(time.Second))
-
-	// Parse optional persisted object fields
+	// Optional persisted object fields
 	if record.IsPersisted {
-		diskIOBytes, err := strconv.ParseInt(parts[4], 10, 64)
-		if err != nil {
-			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for diskIOBytes on line %q", blr.GetRawLog())
-		}
+		record.DiskIOBytes = f.size("disk io bytes", 4)
+		record.TimeDiskIOProcessing = f.duration("time disk io processing", 5, time.Second)
+	}
 
-		record.DiskIOBytes = SizeValue(diskIOBytes)
-
-		timeDiskIOProcessing, err := strconv.ParseFloat(parts[5], 64)
-		if err != nil {
-			return MSE4ObjIterRecord{}, fmt.Errorf("conversion to MSE4ObjIterRecord failed, bad value for timeDiskIOProcessing on line %q", blr.GetRawLog())
-		}
-
-		record.TimeDiskIOProcessing = time.Duration(timeDiskIOProcessing * float64(time.Second))
+	err := f.err()
+	if err != nil {
+		return MSE4ObjIterRecord{}, err
 	}
 
 	return record, nil
@@ -1484,47 +1210,22 @@ type MSE4ChunkFaultRecord struct {
 }
 
 func NewMSE4ChunkFaultRecord(blr BaseRecord) (MSE4ChunkFaultRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 5 {
-		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, expected 5 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	f := newFieldScanner(blr, "MSE4ChunkFaultRecord")
+	f.require(5)
+
+	record := MSE4ChunkFaultRecord{
+		BaseRecord:           blr,
+		ChunksProcessed:      f.int64("chunks processed", 0),
+		BytesProcessed:       f.size("bytes processed", 1),
+		TimeProcessing:       f.duration("time processing", 2, time.Second),
+		TimeMemoryAllocation: f.duration("time memory allocation", 3, time.Second),
+		TimeDiskIOWait:       f.duration("time disk io wait", 4, time.Second),
 	}
 
-	record := MSE4ChunkFaultRecord{BaseRecord: blr}
-
-	chunksProcessed, err := strconv.ParseInt(parts[0], 10, 64)
+	err := f.err()
 	if err != nil {
-		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for chunksProcessed on line %q", blr.GetRawLog())
+		return MSE4ChunkFaultRecord{}, err
 	}
-
-	record.ChunksProcessed = chunksProcessed
-
-	bytesProcessed, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for bytesProcessed on line %q", blr.GetRawLog())
-	}
-
-	record.BytesProcessed = SizeValue(bytesProcessed)
-
-	timeProcessing, err := strconv.ParseFloat(parts[2], 64)
-	if err != nil {
-		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeProcessing on line %q", blr.GetRawLog())
-	}
-
-	record.TimeProcessing = time.Duration(timeProcessing * float64(time.Second))
-
-	timeMemoryAllocation, err := strconv.ParseFloat(parts[3], 64)
-	if err != nil {
-		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeMemoryAllocation on line %q", blr.GetRawLog())
-	}
-
-	record.TimeMemoryAllocation = time.Duration(timeMemoryAllocation * float64(time.Second))
-
-	timeDiskIOWait, err := strconv.ParseFloat(parts[4], 64)
-	if err != nil {
-		return MSE4ChunkFaultRecord{}, fmt.Errorf("conversion to MSE4ChunkFaultRecord failed, bad value for timeDiskIOWait on line %q", blr.GetRawLog())
-	}
-
-	record.TimeDiskIOWait = time.Duration(timeDiskIOWait * float64(time.Second))
 
 	return record, nil
 }
@@ -1551,44 +1252,21 @@ type BrotliRecord struct {
 }
 
 func NewBrotliRecord(blr BaseRecord) (BrotliRecord, error) {
-	parts := strings.Fields(blr.GetRawValue())
-	if len(parts) != 4 {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, expected 4 fields, got %d on line %q", len(parts), blr.GetRawLog())
+	f := newFieldScanner(blr, "BrotliRecord")
+	f.require(4)
+
+	record := BrotliRecord{
+		BaseRecord:  blr,
+		Operation:   f.rune("operation", 0, 'B', 'U', 'u'),
+		Direction:   f.rune("direction", 1, 'F', 'D'),
+		BytesInput:  f.size("bytes input", 2),
+		BytesOutput: f.size("bytes output", 3),
 	}
 
-	record := BrotliRecord{BaseRecord: blr}
-
-	if len(parts[0]) != 1 {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for operation on line %q", blr.GetRawLog())
-	}
-
-	record.Operation = rune(parts[0][0])
-	if record.Operation != 'B' && record.Operation != 'U' && record.Operation != 'u' {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid operation '%c' on line %q", record.Operation, blr.GetRawLog())
-	}
-
-	if len(parts[1]) != 1 {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for direction on line %q", blr.GetRawLog())
-	}
-
-	record.Direction = rune(parts[1][0])
-	if record.Direction != 'F' && record.Direction != 'D' {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, invalid direction '%c' on line %q", record.Direction, blr.GetRawLog())
-	}
-
-	bytesInput, err := strconv.ParseInt(parts[2], 10, 64)
+	err := f.err()
 	if err != nil {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesInput on line %q", blr.GetRawLog())
+		return BrotliRecord{}, err
 	}
-
-	record.BytesInput = SizeValue(bytesInput)
-
-	bytesOutput, err := strconv.ParseInt(parts[3], 10, 64)
-	if err != nil {
-		return BrotliRecord{}, fmt.Errorf("conversion to BrotliRecord failed, bad value for bytesOutput on line %q", blr.GetRawLog())
-	}
-
-	record.BytesOutput = SizeValue(bytesOutput)
 
 	return record, nil
 }

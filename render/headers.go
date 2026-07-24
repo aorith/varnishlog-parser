@@ -90,14 +90,17 @@ func renderHeaders(headers vsl.Headers) []string {
 		}
 	}
 
-	lines = append(lines,
+	lines = append(
+		lines,
 		`<div class="hdr-key hdr-bytes">Total Bytes</div>`,
 		fmt.Sprintf(
 			`<abbr class="hdr-bytes" title="Sum of header bytes: length(key) + length(value) + length(': ')"><input class="hdr-bytes" type="text" value="%s"></abbr>`,
-			vsl.SizeValue(receivedBytes)),
+			vsl.SizeValue(receivedBytes),
+		),
 		fmt.Sprintf(
 			`<abbr title="Sum of header bytes: length(key) + length(value) + length(': ')"><input class="hdr-bytes"  type="text" value="%s"></abbr>`,
-			vsl.SizeValue(processedBytes)),
+			vsl.SizeValue(processedBytes),
+		),
 	)
 
 	return lines

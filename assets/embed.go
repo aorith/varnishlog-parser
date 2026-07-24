@@ -70,8 +70,8 @@ func init() {
 			panic(err)
 		}
 
-		sb.Write(data)
-		sb.WriteByte('\n')
+		sb.Write(data)     //nolint:revive
+		sb.WriteByte('\n') //nolint:revive
 	}
 
 	CombinedCSS = []byte(sb.String())
