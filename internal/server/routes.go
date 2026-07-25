@@ -23,7 +23,7 @@ func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
 	data.Sequence.TrackURLAndHost = false
 
 	data.Timeline.Sessions = false
-	data.Timeline.Precision = 1200
+	data.Timeline.Width = 1200
 	data.Timeline.Ticks = 10
 
 	return func(w http.ResponseWriter, _ *http.Request) {
@@ -100,7 +100,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 		// Timeline settings
 		data.Timeline.Sessions = r.Form.Get("sessions") == "yes"
 
-		precision, err := strconv.Atoi(r.Form.Get("precision"))
+		width, err := strconv.Atoi(r.Form.Get("width"))
 		if err != nil {
 			slog.Warn("failed to parse form", "error", err)
 			html.PartialError(w, err)
@@ -108,7 +108,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		data.Timeline.Precision = precision
+		data.Timeline.Width = width
 
 		numTicks, err := strconv.Atoi(r.Form.Get("ticks"))
 		if err != nil {

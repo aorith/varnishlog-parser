@@ -43,9 +43,9 @@ type PageData struct {
 		ConnectCustom   string // <host:port>
 	}
 	Timeline struct {
-		Sessions  bool // include sessions
-		Precision int  // timeline precision
-		Ticks     int  // number of ticks
+		Sessions bool // include sessions
+		Width    int  // timeline width
+		Ticks    int  // number of ticks
 	}
 	Sequence render.SequenceConfig
 }

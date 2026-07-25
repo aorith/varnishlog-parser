@@ -23,7 +23,7 @@ type TimelineEvent struct {
 }
 
 // Timeline generates an SVG timeline.
-func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks int) string {
+func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, width, numTicks int) string {
 	tl := svgtimeline.NewTimeline()
 
 	visited := make(map[vsl.VXID]bool)
@@ -126,7 +126,7 @@ func Timeline(ts vsl.TransactionSet, root *vsl.Transaction, precision, numTicks 
 		}
 	}
 
-	tl.SetPrecision(precision)
+	tl.SetContentWidth(width)
 	tl.SetNumTicks(numTicks)
 	tl.SetMargins(15, 30, 20, 10)
 	tl.SetStyle("")

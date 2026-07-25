@@ -35,12 +35,12 @@
 		</table>
 
 		{{ $set := .Transactions.Set }}
-		{{ $precision := .Timeline.Precision }}
+		{{ $width := .Timeline.Width }}
 		{{ $ticks := .Timeline.Ticks }}
 		{{- range .Transactions.Set.UniqueRootParents .Timeline.Sessions }}
 		<h3><a class="tx-link" href="#tx-{{ .TXID }}">{{ .TXID }}</a></h3>
 		<h4>Timeline</h4>
-		<div class="timeline">{{ timeline $set . $precision $ticks }}</div>
+		<div class="timeline">{{ timeline $set . $width $ticks }}</div>
 		{{- end }}
 	</div>
 </div>
