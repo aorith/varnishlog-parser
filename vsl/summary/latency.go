@@ -6,6 +6,7 @@ package summary
 import (
 	"cmp"
 	"fmt"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -121,9 +122,19 @@ func (l *LatencyCounter) Percentile(p float64) time.Duration {
 func TimestampEventsSummary(ts vsl.TransactionSet) []*LatencyCounter {
 	tsEvents := make(map[string]*LatencyCounter)
 
+	visited := make(map[vsl.VXID]bool)
+
 	var processEvents func(tx *vsl.Transaction)
 
 	processEvents = func(tx *vsl.Transaction) {
+		if visited[tx.VXID] {
+			slog.Warn("TimestampEventsSummary() -> processEvents: loop detected", "transaction", tx.TXID)
+
+			return
+		}
+
+		visited[tx.VXID] = true
+
 		for _, r := range tx.Records {
 			switch record := r.(type) {
 			case vsl.TimestampRecord:
