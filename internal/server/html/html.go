@@ -59,6 +59,7 @@ var funcMap = template.FuncMap{
 	"timeline":               render.Timeline,
 	"sequence":               render.Sequence,
 	"timestampEventsSummary": summary.TimestampEventsSummary,
+	"bandwidth":              summary.Bandwidth,
 }
 
 var (

@@ -356,6 +356,11 @@ func NewBackendReuseRecord(blr BaseRecord) (BackendReuseRecord, error) {
 }
 
 // AcctRecord holds accounting information for ReqAcct and BereqAcct tags.
+//
+// The two tags don't share a wire field order: BereqAcct reports what
+// Varnish sent to the backend before what it received back (hdr-tx, body-tx, total-tx,
+// hdr-rx, body-rx, total-rx), while ReqAcct reports what Varnish received from the client
+// before what it sent back (hdr-rx, body-rx, total-rx, hdr-tx, body-tx, total-tx).
 type AcctRecord struct {
 	BaseRecord
 
@@ -371,14 +376,22 @@ func NewAcctRecord(blr BaseRecord) (AcctRecord, error) {
 	f := newFieldScanner(blr, "AcctRecord")
 	f.require(6)
 
-	record := AcctRecord{
-		BaseRecord: blr,
-		HeaderTx:   f.size("header tx", 0),
-		BodyTx:     f.size("body tx", 1),
-		TotalTx:    f.size("total tx", 2),
-		HeaderRx:   f.size("header rx", 3),
-		BodyRx:     f.size("body rx", 4),
-		TotalRx:    f.size("total rx", 5),
+	record := AcctRecord{BaseRecord: blr}
+
+	if blr.Tag == tags.BereqAcct {
+		record.HeaderTx = f.size("header tx", 0)
+		record.BodyTx = f.size("body tx", 1)
+		record.TotalTx = f.size("total tx", 2)
+		record.HeaderRx = f.size("header rx", 3)
+		record.BodyRx = f.size("body rx", 4)
+		record.TotalRx = f.size("total rx", 5)
+	} else {
+		record.HeaderRx = f.size("header rx", 0)
+		record.BodyRx = f.size("body rx", 1)
+		record.TotalRx = f.size("total rx", 2)
+		record.HeaderTx = f.size("header tx", 3)
+		record.BodyTx = f.size("body tx", 4)
+		record.TotalTx = f.size("total tx", 5)
 	}
 
 	err := f.err()

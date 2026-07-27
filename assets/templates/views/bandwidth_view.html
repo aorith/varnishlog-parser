@@ -1,0 +1,79 @@
+<!-- templates/views/bandwidth_view.html -->
+
+<div class="view" id="bandwidth-view">
+	<div class="view-content">
+		<h1>Bandwidth</h1>
+
+		<p>
+			Bytes transferred (<code>ReqAcct</code>/<code>BereqAcct</code>), split between
+			<b>client</b> traffic (Varnish &lt;-&gt; client) and <b>backend</b> traffic (Varnish &lt;-&gt; backend).
+			Piped transactions aren't included here, since a pipe tunnels the same bytes over both legs at once.
+		</p>
+
+		{{ $report := bandwidth .Transactions.Set }}
+
+		<table>
+			<thead>
+				<tr>
+					<th></th>
+					<th>Header Tx</th>
+					<th>Body Tx</th>
+					<th>Total Tx</th>
+					<th>Header Rx</th>
+					<th>Body Rx</th>
+					<th>Total Rx</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Client</td>
+					<td>{{ $report.Client.HeaderTx }}</td>
+					<td>{{ $report.Client.BodyTx }}</td>
+					<td>{{ $report.Client.TotalTx }}</td>
+					<td>{{ $report.Client.HeaderRx }}</td>
+					<td>{{ $report.Client.BodyRx }}</td>
+					<td>{{ $report.Client.TotalRx }}</td>
+				</tr>
+				<tr>
+					<td>Backend</td>
+					<td>{{ $report.Backend.HeaderTx }}</td>
+					<td>{{ $report.Backend.BodyTx }}</td>
+					<td>{{ $report.Backend.TotalTx }}</td>
+					<td>{{ $report.Backend.HeaderRx }}</td>
+					<td>{{ $report.Backend.BodyRx }}</td>
+					<td>{{ $report.Backend.TotalRx }}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<h3>Per transaction</h3>
+		<table>
+			<thead>
+				<tr>
+					<th>Transaction</th>
+					<th>Type</th>
+					<th>Header Tx</th>
+					<th>Body Tx</th>
+					<th>Total Tx</th>
+					<th>Header Rx</th>
+					<th>Body Rx</th>
+					<th>Total Rx</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{- range $report.Rows }}
+				<tr>
+					<td><a class="tx-link" href="#tx-{{ .TXID }}">{{ .TXID }}</a></td>
+					<td>{{ .TXType }}</td>
+					<td>{{ .HeaderTx }}</td>
+					<td>{{ .BodyTx }}</td>
+					<td>{{ .TotalTx }}</td>
+					<td>{{ .HeaderRx }}</td>
+					<td>{{ .BodyRx }}</td>
+					<td>{{ .TotalRx }}</td>
+				</tr>
+				{{- end }}
+			</tbody>
+		</table>
+	</div>
+</div>

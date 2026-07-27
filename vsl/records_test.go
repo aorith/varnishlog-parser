@@ -370,13 +370,14 @@ func TestAcctRecord(t *testing.T) {
 			totalRx:   vsl.SizeValue(211),
 		},
 		{
+			// ReqAcct is rx-first (received from the client), unlike BereqAcct.
 			logRecord: "--  ReqAcct        84 0 84 279 100 379",
-			headerTx:  vsl.SizeValue(84),
-			bodyTx:    vsl.SizeValue(0),
-			totalTx:   vsl.SizeValue(84),
-			headerRx:  vsl.SizeValue(279),
-			bodyRx:    vsl.SizeValue(100),
-			totalRx:   vsl.SizeValue(379),
+			headerRx:  vsl.SizeValue(84),
+			bodyRx:    vsl.SizeValue(0),
+			totalRx:   vsl.SizeValue(84),
+			headerTx:  vsl.SizeValue(279),
+			bodyTx:    vsl.SizeValue(100),
+			totalTx:   vsl.SizeValue(379),
 		},
 	}
 
