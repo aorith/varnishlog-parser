@@ -7,6 +7,9 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+
+	"github.com/aorith/varnishlog-parser/assets"
+	"github.com/aorith/varnishlog-parser/vsl"
 )
 
 func TestShellSingleQuote(t *testing.T) {
@@ -74,5 +77,62 @@ func TestCurlCommandIsShellSafe(t *testing.T) {
 
 	if !strings.Contains(string(out), "X-Quote: value's got a quote") {
 		t.Errorf("header value with a single quote was not preserved literally, got:\n%s", out)
+	}
+}
+
+// TestNewHTTPRequestOmitsStaleBodyFramingHeaders checks that Content-Length
+// and Transfer-Encoding aren't forwarded for methods whose body varnishlog
+// never records (POST/PUT/PATCH) - since CurlCommand/HurlFile substitute a
+// placeholder body, those headers would describe a body that no longer
+// matches and would break the request on the wire.
+func TestNewHTTPRequestOmitsStaleBodyFramingHeaders(t *testing.T) {
+	// simple-post.txt is a POST with a real Content-Length; add a
+	// Transfer-Encoding header too so both get exercised.
+	logText := strings.Replace(
+		assets.VCLSimplePOST,
+		"--  ReqHeader      Content-Length: 129\n",
+		"--  ReqHeader      Content-Length: 129\n--  ReqHeader      Transfer-Encoding: chunked\n",
+		1,
+	)
+
+	p := vsl.NewTransactionParser(strings.NewReader(logText))
+
+	ts, err := p.Parse()
+	if err != nil {
+		t.Fatalf("Parse() failed: %s", err)
+	}
+
+	var reqTx *vsl.Transaction
+
+	for _, tx := range ts.Transactions() {
+		if tx.TXType == vsl.TxTypeRequest {
+			reqTx = tx
+
+			break
+		}
+	}
+
+	if reqTx == nil {
+		t.Fatal("no Request transaction found in the test log")
+	}
+
+	httpReq, err := NewHTTPRequest(reqTx, true, nil)
+	if err != nil {
+		t.Fatalf("NewHTTPRequest() failed: %s", err)
+	}
+
+	for _, h := range httpReq.Headers() {
+		if h.Name() == vsl.HdrNameContentLength {
+			t.Errorf("Content-Length should be excluded for POST (placeholder body), got value %q", h.Value())
+		}
+
+		if h.Name() == vsl.HdrNameTransferEncoding {
+			t.Errorf("Transfer-Encoding should be excluded for POST (placeholder body), got value %q", h.Value())
+		}
+	}
+
+	cmd := httpReq.CurlCommand("http://", nil)
+	if strings.Contains(cmd, "Content-Length") || strings.Contains(cmd, "Transfer-Encoding") {
+		t.Errorf("generated curl command still references stale body-framing headers:\n%s", cmd)
 	}
 }

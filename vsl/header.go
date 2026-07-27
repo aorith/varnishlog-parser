@@ -12,7 +12,11 @@ import (
 // The RFCs allow multiple headers with the same name, and both set and unset
 // within VCL will remove all headers with the name given.
 
-var HdrNameHost = CanonicalHeaderName("Host")
+var (
+	HdrNameHost             = CanonicalHeaderName("Host")
+	HdrNameContentLength    = CanonicalHeaderName("Content-Length")
+	HdrNameTransferEncoding = CanonicalHeaderName("Transfer-Encoding")
+)
 
 // HdrState represents the state of an HTTP header within the Varnish lifecycle.
 // It indicates whether a header was originally received, added, modified, or deleted.

@@ -45,15 +45,33 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string
 		}
 	}
 
+	var url, method string
+	if tx.TXType == vsl.TxTypeRequest {
+		method = tx.RecordValueByTag(tags.ReqMethod, received)
+		url = tx.RecordValueByTag(tags.ReqURL, received)
+	} else {
+		method = tx.RecordValueByTag(tags.BereqMethod, received)
+		url = tx.RecordValueByTag(tags.BereqURL, received)
+	}
+
 	// Ensure that excludeHeaders are in canonical format
 	for i, n := range excludedHeaders {
 		excludedHeaders[i] = vsl.CanonicalHeaderName(n)
 	}
 
+	noBody := methodHasNoRecordedBody(method)
+
 	httpHeaders := []Header{}
 
 	for name, h := range headers {
 		if name == vsl.HdrNameHost || slices.Contains(excludedHeaders, name) {
+			continue
+		}
+
+		// A placeholder body is used for these methods (see CurlCommand/
+		// HurlFile), so headers describing the real body's framing would
+		// no longer match and must not be forwarded.
+		if noBody && (name == vsl.HdrNameContentLength || name == vsl.HdrNameTransferEncoding) {
 			continue
 		}
 
@@ -64,15 +82,6 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string
 
 			httpHeaders = append(httpHeaders, Header{name: name, value: v.Value()})
 		}
-	}
-
-	var url, method string
-	if tx.TXType == vsl.TxTypeRequest {
-		method = tx.RecordValueByTag(tags.ReqMethod, received)
-		url = tx.RecordValueByTag(tags.ReqURL, received)
-	} else {
-		method = tx.RecordValueByTag(tags.BereqMethod, received)
-		url = tx.RecordValueByTag(tags.BereqURL, received)
 	}
 
 	slices.SortFunc(httpHeaders, func(a, b Header) int {
@@ -155,15 +164,11 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 
 	// Headers
 	for _, h := range r.headers {
-		if h.name == vsl.HdrNameHost {
-			continue
-		}
-
 		fmt.Fprintf(&s, "    -H %s"+" \\\n", shellSingleQuote(h.name+": "+h.value)) //nolint:revive
 	}
 
 	// Body
-	if r.method == "POST" || r.method == "PUT" || r.method == "PATCH" {
+	if methodHasNoRecordedBody(r.method) {
 		s.WriteString("    -d '<body-unavailable>' \\\n") //nolint:revive
 	}
 
@@ -218,10 +223,6 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 
 	// Headers
 	for _, h := range r.headers {
-		if h.name == vsl.HdrNameHost {
-			continue
-		}
-
 		fmt.Fprintf(&s, "%s: %s\n", h.name, h.value) //nolint:revive
 	}
 
@@ -231,7 +232,7 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	}
 
 	// Body
-	if r.method == "POST" || r.method == "PUT" || r.method == "PATCH" {
+	if methodHasNoRecordedBody(r.method) {
 		s.WriteString("\n# Body is not available within varnishlog, add it manually.\n") //nolint:revive
 	}
 
@@ -244,6 +245,18 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	}
 
 	return s.String()
+}
+
+// methodHasNoRecordedBody reports whether varnishlog doesn't capture a
+// request body for this method, meaning the generated request must fall
+// back to a placeholder body.
+func methodHasNoRecordedBody(method string) bool {
+	switch method {
+	case "POST", "PUT", "PATCH":
+		return true
+	default:
+		return false
+	}
 }
 
 // shellSingleQuote quotes s as a single POSIX shell argument. Header values
