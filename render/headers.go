@@ -31,7 +31,8 @@ func headersView(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXI
 	for _, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
-			if tx.TXType != vsl.TxTypeSession {
+			// A restart/retry/bgfetch's original transaction never gets a real response
+			if tx.TXType != vsl.TxTypeSession && len(tx.ReqHeaders) > 0 {
 				txid := html.EscapeString(string(tx.TXID))
 				lines = append(lines, fmt.Sprintf(`<div class="hdr-tx hdr-tx-req">Request of <a class="tx-link" href="#%s">%s</a></div>`, TxAnchorID(tx.TXID), txid))
 				lines = append(lines, renderHeaders(tx.ReqHeaders)...)
@@ -44,7 +45,7 @@ func headersView(ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXI
 			}
 
 		case vsl.EndRecord:
-			if tx.TXType != vsl.TxTypeSession {
+			if tx.TXType != vsl.TxTypeSession && len(tx.RespHeaders) > 0 {
 				txid := html.EscapeString(string(tx.TXID))
 				lines = append(lines, fmt.Sprintf(`<div class="hdr-tx hdr-tx-resp">Response of <a class="tx-link" href="#%s">%s</a></div>`, TxAnchorID(tx.TXID), txid))
 				lines = append(lines, renderHeaders(tx.RespHeaders)...)
