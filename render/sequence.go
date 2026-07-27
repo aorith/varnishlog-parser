@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"time"
 
 	svgsequence "github.com/aorith/svg-sequence"
 
@@ -32,6 +33,7 @@ const (
 	ColorHit    = "#115F00"
 	ColorGray   = "#707070"
 	ColorTrack  = "#492020"
+	ColorWarn   = "#a15c00" // cache misses and 4xx status codes
 )
 
 type SequenceConfig struct {
@@ -179,22 +181,30 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: s1, Color: ColorHit})
 
 			case "MISS", "PASS":
-				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: r.GetRawValue()})
+				color := ColorGray
+				if r.GetRawValue() == "MISS" {
+					color = ColorWarn
+				}
+
+				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: r.GetRawValue(), Color: color})
 
 			case "SYNTH":
 				lastStatus := tx.LastRecordByTag(tags.RespStatus, i)
 				lastReason := tx.LastRecordByTag(tags.RespReason, i)
 
 				s1 := "SYNTH"
+				color := ""
+
 				if lastStatus != nil {
 					s1 += "\n" + lastStatus.GetRawValue()
+					color = statusColor(lastStatus.GetRawValue())
 				}
 
 				if lastReason != nil {
 					s1 += " " + lastReason.GetRawValue()
 				}
 
-				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: s1})
+				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: s1, Color: color})
 
 			case "PIPE":
 				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "Open pipe to backend and forward request"})
@@ -242,29 +252,29 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					s1 += " " + reason.GetRawValue()
 				}
 
-				if acct, ok := tx.RecordByTag(tags.ReqAcct, false).(vsl.AcctRecord); ok {
-					s1 += fmt.Sprintf(" (%s)", acct.TotalTx)
-				}
+				acct, hasAcct := tx.RecordByTag(tags.ReqAcct, false).(vsl.AcctRecord)
+				s1 += formatExtras(acct.TotalTx, hasAcct, tx.Duration())
 
-				s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
+				s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1, Color: statusColor(status.GetRawValue())})
 
 			case vsl.TxTypeBereq:
 				status := tx.RecordByTag(tags.BerespStatus, false)
 				s1 := "BACKEND_RESPONSE"
+				color := ""
 
 				if status != nil {
 					s1 += "\n" + status.GetRawValue()
+					color = statusColor(status.GetRawValue())
 
 					if reason := tx.RecordByTag(tags.BerespReason, false); reason != nil {
 						s1 += " " + reason.GetRawValue()
 					}
 				}
 
-				if acct, ok := tx.RecordByTag(tags.BereqAcct, false).(vsl.AcctRecord); ok {
-					s1 += fmt.Sprintf(" (%s)", acct.TotalRx)
-				}
+				acct, hasAcct := tx.RecordByTag(tags.BereqAcct, false).(vsl.AcctRecord)
+				s1 += formatExtras(acct.TotalRx, hasAcct, tx.Duration())
 
-				s.AddStep(svgsequence.Step{Source: B, Target: V, Text: s1})
+				s.AddStep(svgsequence.Step{Source: B, Target: V, Text: s1, Color: color})
 
 			case vsl.TxTypeSession:
 				continue
@@ -400,6 +410,42 @@ func truncateStr(s string, maxLen int) string {
 	}
 
 	return strings.TrimSpace(string(runes[:maxLen])) + "…"
+}
+
+// formatExtras builds a "(size, duration)" suffix for a response step, omitting
+// whichever part is unavailable.
+func formatExtras(size vsl.SizeValue, hasSize bool, dur time.Duration) string {
+	var parts []string
+
+	if hasSize {
+		parts = append(parts, size.String())
+	}
+
+	if dur > 0 {
+		parts = append(parts, dur.String())
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+
+	return " (" + strings.Join(parts, ", ") + ")"
+}
+
+// statusColor highlights non-2xx/3xx HTTP status codes.
+func statusColor(status string) string {
+	if len(status) == 0 {
+		return ""
+	}
+
+	switch status[0] {
+	case '5':
+		return ColorError
+	case '4':
+		return ColorWarn
+	default:
+		return ""
+	}
 }
 
 // getTxTypeColor is a helper function to associate the right color to the timeline section.
