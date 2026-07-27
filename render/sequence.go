@@ -89,7 +89,7 @@ func Sequence(ts vsl.TransactionSet, root *vsl.Transaction, cfg SequenceConfig) 
 
 // addTransactionLogs is a recursive function to process each transaction's log records
 // to setup the sequence diagram.
-func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.Transaction, cfg SequenceConfig, visited map[vsl.TXID]bool) {
+func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.Transaction, cfg SequenceConfig, visited map[vsl.TXID]bool) { // nolint:revive
 	if visited[tx.TXID] {
 		slog.Warn("Sequence() -> addTransactionLogs: loop detected", "transaction", tx.TXID)
 
@@ -331,6 +331,22 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 		case vsl.LinkRecord:
 			childTx := ts.GetTX(record.VXID)
 			if childTx != nil {
+				// retry/restart/bgfetch supersede the current transaction
+				switch record.Reason {
+				case "retry", "restart", "bgfetch":
+					actor := V
+					if record.TXType == vsl.LinkTypeBereq {
+						actor = B
+					}
+
+					s.AddStep(svgsequence.Step{
+						Source: actor, Target: actor,
+						Text:  strings.ToUpper(record.Reason) + " (" + string(childTx.TXID) + ")",
+						Color: ColorReturn,
+					})
+				default:
+				}
+
 				s.CloseSection()
 				addTransactionLogs(s, ts, childTx, cfg, visited)
 
