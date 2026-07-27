@@ -145,7 +145,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 	for i, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
-			secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true, Link: txLink}
+			secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), Link: txLink, WithoutBorder: true}
 			s.OpenSection(string(tx.TXID), &secCfg)
 
 		case vsl.EndRecord:
@@ -351,9 +351,10 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 		case vsl.LinkRecord:
 			childTx := ts.GetTX(record.VXID)
 			if childTx != nil {
-				// retry/restart/bgfetch supersede the current transaction
 				switch record.Reason {
 				case "retry", "restart", "bgfetch":
+					// These supersede the current transaction rather than being spawned
+					// from within it, so close its section and start a fresh sibling one.
 					actor := V
 					if record.TXType == vsl.LinkTypeBereq {
 						actor = B
@@ -364,15 +365,19 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 						Text:  strings.ToUpper(record.Reason) + " (" + string(childTx.TXID) + ")",
 						Color: ColorReturn,
 					})
+
+					s.CloseSection()
+					addTransactionLogs(s, ts, childTx, cfg, visited)
+
+					secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), Link: txLink, WithoutBorder: true}
+					s.OpenSection(string(tx.TXID), &secCfg)
+
 				default:
+					// ESI includes, byte-range segments, backend fetches, ... happen inside
+					// the current transaction: keep its section open so the child's own
+					// section nests visually within it instead of splitting it in two.
+					addTransactionLogs(s, ts, childTx, cfg, visited)
 				}
-
-				s.CloseSection()
-				addTransactionLogs(s, ts, childTx, cfg, visited)
-
-				secCfg := svgsequence.SectionConfig{Color: getTxTypeColor(tx.TXType), WithoutBorder: true, Link: txLink}
-
-				s.OpenSection(string(tx.TXID), &secCfg)
 			} else {
 				actor := V
 				if record.TXType == vsl.LinkTypeBereq {
