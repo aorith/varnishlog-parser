@@ -141,10 +141,8 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 		hostURL = net.JoinHostPort(r.host, r.port)
 	}
 
-	hostURL = escapeDoubleQuotes(hostURL)
-
 	// Initial command
-	fmt.Fprintf(&s, `curl "%s%s%s"`+" \\\n", scheme, hostURL, escapeDoubleQuotes(r.url)) //nolint:revive
+	fmt.Fprintf(&s, "curl %s"+" \\\n", shellSingleQuote(scheme+hostURL+r.url)) //nolint:revive
 
 	switch r.method {
 	case "GET":
@@ -161,7 +159,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 			continue
 		}
 
-		fmt.Fprintf(&s, `    -H "%s: %s"`+" \\\n", escapeDoubleQuotes(h.name), escapeDoubleQuotes(h.value)) //nolint:revive
+		fmt.Fprintf(&s, "    -H %s"+" \\\n", shellSingleQuote(h.name+": "+h.value)) //nolint:revive
 	}
 
 	// Body
@@ -182,7 +180,7 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	// --connect-to HOST1:PORT1:HOST2:PORT2
 	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
 	if backend != nil {
-		fmt.Fprintf(&s, " \\\n    "+`--connect-to "::%s:%s"`, escapeDoubleQuotes(backend.host), backend.port) //nolint:revive
+		fmt.Fprintf(&s, " \\\n    --connect-to %s", shellSingleQuote("::"+backend.host+":"+backend.port)) //nolint:revive
 	}
 
 	return s.String()
@@ -241,13 +239,18 @@ func (r *HTTPRequest) HurlFile(scheme string, backend *Backend) string {
 	// --connect-to HOST1:PORT1:HOST2:PORT2
 	// when you would connect to HOST1:PORT1, actually connect to HOST2:PORT2
 	if backend != nil {
-		s.WriteString("\n# To connect to the backend run the hurl file as:\n")                                     //nolint:revive
-		fmt.Fprintf(&s, `# hurl --connect-to "::%s:%s" file.hurl`, escapeDoubleQuotes(backend.host), backend.port) //nolint:revive
+		s.WriteString("\n# To connect to the backend run the hurl file as:\n")                                    //nolint:revive
+		fmt.Fprintf(&s, "# hurl --connect-to %s file.hurl", shellSingleQuote("::"+backend.host+":"+backend.port)) //nolint:revive
 	}
 
 	return s.String()
 }
 
-func escapeDoubleQuotes(s string) string {
-	return strings.ReplaceAll(s, `"`, `\"`)
+// shellSingleQuote quotes s as a single POSIX shell argument. Header values
+// and URLs come from parsed HTTP traffic, which cannot be trusted (e.g. an
+// attacker-controlled User-Agent or Referer) - single quotes suppress all
+// shell expansion ($, `, \, !), unlike double quotes, which is what keeps a
+// copy-pasted command from executing anything embedded in that data.
+func shellSingleQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
