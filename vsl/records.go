@@ -724,7 +724,8 @@ func (r HitRecord) String() string {
 	s := fmt.Sprintf(
 		"ObjVXID: %d, TTL: %s",
 		r.ObjVXID,
-		r.TTL.String(),
+		// Varnish reports these with microsecond precision, which is noise for display purposes.
+		r.TTL.Round(time.Second).String(),
 	)
 
 	if r.GetTag() == tags.HitMiss || r.GetTag() == tags.HitPass {
@@ -733,8 +734,8 @@ func (r HitRecord) String() string {
 
 	s += fmt.Sprintf(
 		", Grace: %s, Keep: %s",
-		r.Grace.String(),
-		r.Keep.String(),
+		r.Grace.Round(time.Second).String(),
+		r.Keep.Round(time.Second).String(),
 	)
 
 	if r.Fetched != 0 {

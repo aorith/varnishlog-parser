@@ -129,6 +129,17 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 	// escaping it here too would double-escape any special characters.
 	txLink := "#tx-" + string(tx.TXID)
 
+	// vcl_hit/vcl_pass/vcl_miss can each return(deliver) on their way into vcl_deliver,
+	// which itself also returns(deliver); only the last one is the actual hand-off to
+	// the client/backend, so status/byte-count reporting must anchor on it.
+	lastDeliverIdx := -1
+
+	for idx, rec := range tx.Records {
+		if vr, ok := rec.(vsl.VCLReturnRecord); ok && vr.GetRawValue() == "deliver" {
+			lastDeliverIdx = idx
+		}
+	}
+
 	for i, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
@@ -204,54 +215,53 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "return " + record.GetRawValue(), Color: ColorReturn})
 			}
 
-			if r.GetRawValue() != "deliver" {
+			// Only the last return(deliver) is the actual hand-off; status/headers can
+			// still be rewritten after earlier ones (e.g. vcl_hit's return(deliver)).
+			if r.GetRawValue() != "deliver" || i != lastDeliverIdx {
 				continue
 			}
 
 			switch tx.TXType {
 			case vsl.TxTypeRequest:
-				status := tx.LastRecordByTag(tags.RespStatus, i)
-				reason := tx.LastRecordByTag(tags.RespReason, i)
-				// If a RespStatus is not found, we are probably serving a cache hit
-				if status != nil {
-					s1 := "DELIVER\n" + status.GetRawValue()
-					if reason != nil {
-						s1 += " " + reason.GetRawValue()
-					}
-
-					s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
+				// Status/reason are read as the final value across the whole transaction
+				// since Varnish can still rewrite them (e.g. 200 -> 206) after this point.
+				status := tx.RecordByTag(tags.RespStatus, false)
+				if status == nil {
+					continue
 				}
 
-				// Handle 200 --> 206 (partial content) by checking the next status
-				status = tx.NextRecordByTag(tags.RespStatus, i)
-				reason = tx.NextRecordByTag(tags.RespReason, i)
-				contentRange := tx.RespHeaders.Get("Content-Range", false)
+				reason := tx.RecordByTag(tags.RespReason, false)
 
-				if status != nil {
-					s1 := "DELIVER\n"
-					if contentRange != "" {
-						s1 += "Content-Range: " + contentRange + "\n"
-					}
-
-					s1 += status.GetRawValue()
-					if reason != nil {
-						s1 += " " + reason.GetRawValue()
-					}
-
-					s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
+				s1 := "DELIVER\n"
+				if contentRange := tx.RespHeaders.Get("Content-Range", false); contentRange != "" {
+					s1 += "Content-Range: " + contentRange + "\n"
 				}
+
+				s1 += status.GetRawValue()
+				if reason != nil {
+					s1 += " " + reason.GetRawValue()
+				}
+
+				if acct, ok := tx.RecordByTag(tags.ReqAcct, false).(vsl.AcctRecord); ok {
+					s1 += fmt.Sprintf(" (%s)", acct.TotalTx)
+				}
+
+				s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1})
 
 			case vsl.TxTypeBereq:
-				lastStatus := tx.LastRecordByTag(tags.BerespStatus, i)
+				status := tx.RecordByTag(tags.BerespStatus, false)
 				s1 := "BACKEND_RESPONSE"
 
-				if lastStatus != nil {
-					s1 += "\n" + lastStatus.GetRawValue()
+				if status != nil {
+					s1 += "\n" + status.GetRawValue()
 
-					lastReason := tx.LastRecordByTag(tags.BerespReason, i)
-					if lastReason != nil {
-						s1 += " " + lastReason.GetRawValue()
+					if reason := tx.RecordByTag(tags.BerespReason, false); reason != nil {
+						s1 += " " + reason.GetRawValue()
 					}
+				}
+
+				if acct, ok := tx.RecordByTag(tags.BereqAcct, false).(vsl.AcctRecord); ok {
+					s1 += fmt.Sprintf(" (%s)", acct.TotalRx)
 				}
 
 				s.AddStep(svgsequence.Step{Source: B, Target: V, Text: s1})
