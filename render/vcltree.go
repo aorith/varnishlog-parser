@@ -38,6 +38,11 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 
 	fmt.Fprintf(s, `<tx-logs id="%s">`, TxAnchorID(tx.TXID)) //nolint:errcheck,revive
 
+	// retry/restart links don't produce a child transaction, they supersede
+	// the current one; render them as a sibling once this box is closed
+	// instead of nesting them inside it.
+	var siblings []*vsl.Transaction
+
 	for _, r := range tx.Records {
 		switch record := r.(type) {
 		case vsl.BeginRecord:
@@ -101,7 +106,11 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 				s.addRow(record.GetTag(), "", fmt.Sprintf("%s (%s)", record.GetRawValue(), childTx.TXID), "")
 			}
 
-			renderTxTree(s, ts, childTx, visited)
+			if record.Reason == "retry" || record.Reason == "restart" {
+				siblings = append(siblings, childTx)
+			} else {
+				renderTxTree(s, ts, childTx, visited)
+			}
 
 		default:
 			s.addRow(r.GetTag(), "", r.GetRawValue(), "")
@@ -109,6 +118,10 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 	}
 
 	s.WriteString("</tx-logs>") // nolint
+
+	for _, sibling := range siblings {
+		renderTxTree(s, ts, sibling, visited)
+	}
 }
 
 type rowBuilder struct {
