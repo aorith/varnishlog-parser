@@ -25,8 +25,8 @@ const (
 
 // Colors.
 const (
-	ColorReq    = "#998800"
-	ColorBereq  = "#008899"
+	ColorReq    = "#918500"
+	ColorBereq  = "#0077aa"
 	ColorError  = "#991111"
 	ColorCall   = "#555599"
 	ColorReturn = "#995599"
@@ -127,19 +127,65 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 		client = truncateStr(reqStartRecord.ClientIP.String(), 20)
 	}
 
-	// svg-sequence XML-encodes this as an attribute value, escaping it there;
-	// escaping it here too would double-escape any special characters.
+	// svg-sequence XML-encodes this as an attribute value, escaping it there
 	txLink := "#tx-" + string(tx.TXID)
 
-	// vcl_hit/vcl_pass/vcl_miss can each return(deliver) on their way into vcl_deliver,
-	// which itself also returns(deliver); only the last one is the actual hand-off to
-	// the client/backend, so status/byte-count reporting must anchor on it.
 	lastDeliverIdx := -1
+	lastNestedLinkIdx := -1
 
 	for idx, rec := range tx.Records {
-		if vr, ok := rec.(vsl.VCLReturnRecord); ok && vr.GetRawValue() == "deliver" {
-			lastDeliverIdx = idx
+		switch rec := rec.(type) {
+		case vsl.VCLReturnRecord:
+			if rec.GetRawValue() == "deliver" {
+				lastDeliverIdx = idx
+			}
+
+		case vsl.LinkRecord:
+			switch rec.Reason {
+			case "retry", "restart", "bgfetch":
+				// These supersede the transaction instead of nesting inside it.
+			default:
+				lastNestedLinkIdx = idx
+			}
+		default:
 		}
+	}
+
+	deferHandoff := lastNestedLinkIdx > lastDeliverIdx
+	deferring := false
+
+	var pendingSteps []svgsequence.Step
+
+	// addStep helper to optionally defer steps when nested tx steps take precedence.
+	addStep := func(step svgsequence.Step) {
+		if deferring {
+			pendingSteps = append(pendingSteps, step)
+
+			return
+		}
+
+		s.AddStep(step)
+	}
+
+	// flushPending draws a marker showing execution is back in tx, followed by
+	// every step queued while deferring was active.
+	flushPending := func() {
+		if len(pendingSteps) == 0 {
+			return
+		}
+
+		s.AddStep(svgsequence.Step{
+			Source: V,
+			Text:   "RESUME (" + string(tx.TXID) + ")",
+			Color:  ColorGray,
+		})
+
+		for _, step := range pendingSteps {
+			s.AddStep(step)
+		}
+
+		pendingSteps = nil
+		deferring = false
 	}
 
 	for i, r := range tx.Records {
@@ -149,19 +195,20 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			s.OpenSection(string(tx.TXID), &secCfg)
 
 		case vsl.EndRecord:
+			flushPending()
 			s.CloseSection()
 
 		case vsl.VCLCallRecord:
 			if cfg.IncludeCalls {
-				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "call " + record.GetRawValue(), Color: ColorCall})
+				addStep(svgsequence.Step{Source: V, Text: "call " + record.GetRawValue(), Color: ColorCall})
 			}
 
 			switch r.GetRawValue() {
 			case "RECV":
-				s.AddStep(svgsequence.Step{Source: client, Target: V, Text: drawRequest(reqReceived)})
+				addStep(svgsequence.Step{Source: client, Target: V, Text: drawRequest(reqReceived)})
 
 			case "HASH":
-				s.AddStep(svgsequence.Step{Source: V, Target: H, Text: "HASH"})
+				addStep(svgsequence.Step{Source: V, Target: H, Text: "HASH"})
 
 			case "HIT":
 				hitRecord := getLastHitRecord(tx, i)
@@ -178,7 +225,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					s1 += hitRecord.String()
 				}
 
-				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: s1, Color: ColorHit})
+				addStep(svgsequence.Step{Source: H, Target: V, Text: s1, Color: ColorHit})
 
 			case "MISS", "PASS":
 				color := ColorGray
@@ -186,7 +233,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					color = ColorWarn
 				}
 
-				s.AddStep(svgsequence.Step{Source: H, Target: V, Text: r.GetRawValue(), Color: color})
+				addStep(svgsequence.Step{Source: H, Target: V, Text: r.GetRawValue(), Color: color})
 
 			case "SYNTH":
 				lastStatus := tx.LastRecordByTag(tags.RespStatus, i)
@@ -204,14 +251,14 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					s1 += " " + lastReason.GetRawValue()
 				}
 
-				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: s1, Color: color})
+				addStep(svgsequence.Step{Source: V, Target: V, Text: s1, Color: color})
 
 			case "PIPE":
-				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "Open pipe to backend and forward request"})
-				s.AddStep(svgsequence.Step{Source: B, Target: client, Text: r.GetRawValue()})
+				addStep(svgsequence.Step{Source: V, Target: V, Text: "Open pipe to backend and forward request"})
+				addStep(svgsequence.Step{Source: B, Target: client, Text: r.GetRawValue()})
 
 			case "BACKEND_FETCH":
-				s.AddStep(svgsequence.Step{Source: V, Target: B, Text: drawRequest(reqProcessed)})
+				addStep(svgsequence.Step{Source: V, Target: B, Text: drawRequest(reqProcessed)})
 
 			case "BACKEND_RESPONSE":
 				// handled at return deliver
@@ -221,12 +268,14 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			}
 
 		case vsl.VCLReturnRecord:
-			if cfg.IncludeReturns {
-				s.AddStep(svgsequence.Step{Source: V, Target: V, Text: "return " + record.GetRawValue(), Color: ColorReturn})
+			if deferHandoff && i == lastDeliverIdx {
+				deferring = true
 			}
 
-			// Only the last return(deliver) is the actual hand-off; status/headers can
-			// still be rewritten after earlier ones (e.g. vcl_hit's return(deliver)).
+			if cfg.IncludeReturns {
+				addStep(svgsequence.Step{Source: V, Text: "return " + record.GetRawValue(), Color: ColorReturn})
+			}
+
 			if r.GetRawValue() != "deliver" || i != lastDeliverIdx {
 				continue
 			}
@@ -255,7 +304,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				acct, hasAcct := tx.RecordByTag(tags.ReqAcct, false).(vsl.AcctRecord)
 				s1 += formatExtras(acct.TotalTx, hasAcct, tx.Duration())
 
-				s.AddStep(svgsequence.Step{Source: V, Target: client, Text: s1, Color: statusColor(status.GetRawValue())})
+				addStep(svgsequence.Step{Source: V, Target: client, Text: s1, Color: statusColor(status.GetRawValue())})
 
 			case vsl.TxTypeBereq:
 				status := tx.RecordByTag(tags.BerespStatus, false)
@@ -274,7 +323,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				acct, hasAcct := tx.RecordByTag(tags.BereqAcct, false).(vsl.AcctRecord)
 				s1 += formatExtras(acct.TotalRx, hasAcct, tx.Duration())
 
-				s.AddStep(svgsequence.Step{Source: B, Target: V, Text: s1, Color: color})
+				addStep(svgsequence.Step{Source: B, Target: V, Text: s1, Color: color})
 
 			case vsl.TxTypeSession:
 				continue
@@ -283,7 +332,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			}
 
 		case vsl.BackendOpenRecord:
-			s.AddStep(svgsequence.Step{
+			addStep(svgsequence.Step{
 				Source: B, Target: B,
 				Text: fmt.Sprintf(
 					"%s\n%s\n%s %s",
@@ -295,7 +344,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			})
 
 		case vsl.BackendCloseRecord:
-			s.AddStep(svgsequence.Step{
+			addStep(svgsequence.Step{
 				Source: B, Target: B,
 				Text: fmt.Sprintf(
 					"%s\n%s\n%s %s",
@@ -308,7 +357,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 
 		// Old varnish versions
 		case vsl.BackendReuseRecord:
-			s.AddStep(svgsequence.Step{
+			addStep(svgsequence.Step{
 				Source: B, Target: B,
 				Text: fmt.Sprintf(
 					"%s\n%s",
@@ -318,13 +367,12 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			})
 
 		case vsl.FetchErrorRecord:
-			s.AddStep(svgsequence.Step{Source: B, Target: B, Text: record.GetRawValue(), Color: ColorError})
+			addStep(svgsequence.Step{Source: B, Target: B, Text: record.GetRawValue(), Color: ColorError})
 
 		case vsl.URLRecord:
 			if cfg.TrackURLAndHost {
-				s.AddStep(svgsequence.Step{
+				addStep(svgsequence.Step{
 					Source: V,
-					Target: V,
 					Text:   "URL: " + record.Path() + record.QueryString(),
 					Color:  ColorTrack,
 				})
@@ -334,15 +382,14 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			if cfg.TrackURLAndHost {
 				// Header name should be already in canonical format
 				if record.Name == "Host" {
-					s.AddStep(svgsequence.Step{Source: V, Target: V, Text: record.Name + ": " + record.Value, Color: ColorTrack})
+					addStep(svgsequence.Step{Source: V, Text: record.Name + ": " + record.Value, Color: ColorTrack})
 				}
 			}
 
 		case vsl.VCLLogRecord:
 			if cfg.IncludeVCLLogs {
-				s.AddStep(svgsequence.Step{
+				addStep(svgsequence.Step{
 					Source: V,
-					Target: V,
 					Text:   record.String(),
 					Color:  ColorGray,
 				})
@@ -353,19 +400,14 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			if childTx != nil {
 				switch record.Reason {
 				case "retry", "restart", "bgfetch":
-					// These supersede the current transaction rather than being spawned
-					// from within it, so close its section and start a fresh sibling one.
-					actor := V
-					if record.TXType == vsl.LinkTypeBereq {
-						actor = B
-					}
-
+					// These supersede the current transaction, so close its section and start a fresh sibling one.
 					s.AddStep(svgsequence.Step{
-						Source: actor, Target: actor,
-						Text:  strings.ToUpper(record.Reason) + " (" + string(childTx.TXID) + ")",
-						Color: ColorReturn,
+						Source: V,
+						Text:   strings.ToUpper(record.Reason) + " (" + string(childTx.TXID) + ")",
+						Color:  ColorGray,
 					})
 
+					flushPending()
 					s.CloseSection()
 					addTransactionLogs(s, ts, childTx, cfg, visited)
 
@@ -373,20 +415,19 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 					s.OpenSection(string(tx.TXID), &secCfg)
 
 				default:
-					// ESI includes, byte-range segments, backend fetches, ... happen inside
-					// the current transaction: keep its section open so the child's own
-					// section nests visually within it instead of splitting it in two.
+					// Nested txs like ESI includes or backend fetches.
+					s.AddStep(svgsequence.Step{
+						Source: V,
+						Text:   strings.ToUpper(record.Reason) + " (" + string(childTx.TXID) + ")",
+						Color:  ColorGray,
+					})
+
 					addTransactionLogs(s, ts, childTx, cfg, visited)
 				}
 			} else {
-				actor := V
-				if record.TXType == vsl.LinkTypeBereq {
-					actor = B
-				}
-
 				s.AddStep(svgsequence.Step{
-					Source: actor, Target: actor,
-					Text: record.GetRawLog() + "\n*Linked child tx not found*",
+					Source: V,
+					Text:   record.GetRawLog() + "\n*Linked child tx not found*",
 				})
 			}
 
