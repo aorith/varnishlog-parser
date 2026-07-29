@@ -261,7 +261,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				addStep(svgsequence.Step{Source: V, Target: B, Text: drawRequest(reqProcessed)})
 
 			case "BACKEND_RESPONSE":
-				// handled at return deliver
+				// handled at return deliver/retry
 				continue
 
 			default:
@@ -276,7 +276,7 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				addStep(svgsequence.Step{Source: V, Text: "return " + record.GetRawValue(), Color: ColorReturn})
 			}
 
-			if r.GetRawValue() != "deliver" || i != lastDeliverIdx {
+			if (r.GetRawValue() != "deliver" || i != lastDeliverIdx) && r.GetRawValue() != "retry" {
 				continue
 			}
 
@@ -344,14 +344,18 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 			})
 
 		case vsl.BackendCloseRecord:
+			reason := ""
+			if record.Reason != "" || record.OptionalReason != "" {
+				reason = fmt.Sprintf("\n%s %s", record.Reason, record.OptionalReason)
+			}
+
 			addStep(svgsequence.Step{
 				Source: B, Target: B,
 				Text: fmt.Sprintf(
-					"%s\n%s\n%s %s",
+					"%s\n%s%s",
 					record.GetTag(),
 					record.Name,
-					record.Reason,
-					record.OptionalReason,
+					reason,
 				),
 			})
 
