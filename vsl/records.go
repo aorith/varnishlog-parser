@@ -313,7 +313,7 @@ func NewBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
 		BaseRecord:     blr,
 		FileDescriptor: f.int("file descriptor", 0),
 		Name:           f.str("name", 1),
-		Reason:         f.strOr(2, "unknown"),
+		Reason:         f.strOr(2, ""),
 		OptionalReason: f.strOr(3, ""),
 	}
 
