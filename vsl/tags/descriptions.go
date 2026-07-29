@@ -24,4 +24,5 @@ var Descriptions = map[string]string{ // nolint:gosec
 	PipeAcct:     "Byte counts for a piped connection: request headers, plus bytes piped in each direction between client and backend.",
 	VfpAcct:      "Byte count processed by a fetch filter (VFP) applied to the response body.",
 	BackendReuse: "An existing (keep-alive) backend connection was reused instead of opening a new one.",
+	YKEY:         "Diagnostic message from the ykey vmod: namespace or key, the action performed (ADD, PURGE or STAT), and the key name or blob length.",
 }
