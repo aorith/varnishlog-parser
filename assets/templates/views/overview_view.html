@@ -15,6 +15,37 @@
 			For easier reference, transactions have a custom identifier formatted as <code>{vxid}-{txType}-{reason}[-{ESILevel}]</code>.
 		</p>
 
+		{{ $findings := diagnostics .Transactions.Set }}
+		<details open>
+			<summary>Diagnostics</summary>
+			{{ if not $findings }}
+				<p>No issues detected.</p>
+			{{ else }}
+				<table class="diagnostics-table">
+					<thead>
+						<tr>
+							<th>Severity</th>
+							<th>Rule</th>
+							<th>Transaction</th>
+							<th>Summary</th>
+							<th>Detail</th>
+						</tr>
+					</thead>
+					<tbody>
+						{{- range $findings }}
+						<tr>
+							<td class="severity-{{ .Severity }}">{{ .Severity }}</td>
+							<td>{{ .Rule }}</td>
+							<td><a class="tx-link" href="#tx-{{ .TXID }}">{{ .TXID }}</a></td>
+							<td>{{ .Summary }}</td>
+							<td>{{ .Detail }}</td>
+						</tr>
+						{{- end }}
+					</tbody>
+				</table>
+			{{ end }}
+		</details>
+
 		{{ $set := .Transactions.Set }}
 		{{ $cfg := .Sequence }}
 		{{ $state := "open" }}

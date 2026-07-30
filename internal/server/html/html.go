@@ -14,6 +14,7 @@ import (
 	"github.com/aorith/varnishlog-parser/assets"
 	"github.com/aorith/varnishlog-parser/render"
 	"github.com/aorith/varnishlog-parser/vsl"
+	"github.com/aorith/varnishlog-parser/vsl/diagnostics"
 	"github.com/aorith/varnishlog-parser/vsl/summary"
 )
 
@@ -60,6 +61,7 @@ var funcMap = template.FuncMap{
 	"sequence":               render.Sequence,
 	"timestampEventsSummary": summary.TimestampEventsSummary,
 	"bandwidth":              summary.Bandwidth,
+	"diagnostics":            diagnostics.Run,
 }
 
 var (
