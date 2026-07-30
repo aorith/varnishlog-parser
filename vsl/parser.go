@@ -225,7 +225,7 @@ func processRecord(line string) (Record, error) {
 		return VCLUseRecord{BaseRecord: blr}, nil
 	case tags.Error:
 		return ErrorRecord{BaseRecord: blr}, nil
-	case tags.YKEY:
+	case tags.XBody, tags.YKEY:
 		// tags without a dedicated struct
 		return blr, nil
 	default:

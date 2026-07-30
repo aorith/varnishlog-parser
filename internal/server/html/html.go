@@ -5,11 +5,11 @@ package html
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
-	"text/template"
 
 	"github.com/aorith/varnishlog-parser/assets"
 	"github.com/aorith/varnishlog-parser/render"
@@ -51,14 +51,40 @@ type PageData struct {
 	Sequence render.SequenceConfig
 }
 
+// asHTML marks a render/helpers.go result as safe, pre-escaped HTML so
+// html/template inserts it verbatim instead of escaping it.
+// So it should be used only by functions that already HTML-escape its data.
+func asHTML(s string) template.HTML {
+	return template.HTML(s) // nolint:gosec
+}
+
 var funcMap = template.FuncMap{
-	"headersView":            render.HTMLHeadersTable,
-	"renderTXLogTree":        render.TxTreeHTML,
-	"isTxTypeSession":        func(tx *vsl.Transaction) bool { return tx.TXType == vsl.TxTypeSession },
-	"curlCommand":            curlCommand,
-	"hurlFile":               hurlFile,
-	"timeline":               render.Timeline,
-	"sequence":               render.Sequence,
+	"headersView": func(ts vsl.TransactionSet, tx *vsl.Transaction) []template.HTML {
+		lines := render.HTMLHeadersTable(ts, tx)
+		htmlLines := make([]template.HTML, len(lines))
+
+		for i, l := range lines {
+			htmlLines[i] = asHTML(l)
+		}
+
+		return htmlLines
+	},
+	"renderTXLogTree": func(ts vsl.TransactionSet, tx *vsl.Transaction) template.HTML {
+		return asHTML(render.TxTreeHTML(ts, tx))
+	},
+	"isTxTypeSession": func(tx *vsl.Transaction) bool { return tx.TXType == vsl.TxTypeSession },
+	"curlCommand": func(tx *vsl.Transaction, cfg PageData) template.HTML {
+		return asHTML(curlCommand(tx, cfg))
+	},
+	"hurlFile": func(tx *vsl.Transaction, cfg PageData) template.HTML {
+		return asHTML(hurlFile(tx, cfg))
+	},
+	"timeline": func(ts vsl.TransactionSet, tx *vsl.Transaction, width, numTicks int) template.HTML {
+		return asHTML(render.Timeline(ts, tx, width, numTicks))
+	},
+	"sequence": func(ts vsl.TransactionSet, tx *vsl.Transaction, cfg render.SequenceConfig) template.HTML {
+		return asHTML(render.Sequence(ts, tx, cfg))
+	},
 	"timestampEventsSummary": summary.TimestampEventsSummary,
 	"bandwidth":              summary.Bandwidth,
 	"diagnostics":            diagnostics.Run,

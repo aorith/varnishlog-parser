@@ -60,6 +60,38 @@ func TestParsedRenders(t *testing.T) {
 	}
 }
 
+// TestParsedEscapesSpecialCharacters guards against a bug where VSL data
+// containing HTML-special characters (an unknown tag's raw value, or a
+// VCL_Log message) broke the raw log <pre> block and the LogTree view.
+func TestParsedEscapesSpecialCharacters(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	data := PageData{Version: "test"}
+	data.Logs.Textinput = `*** << BeReq    >> 3
+--- Begin          bereq 1 fetch
+--- VCL_Log        xbody.regsub() '<Location>http://example.com/'
+--- XBody          XBODY_REGSUB_<Locatio-0 0
+--- End
+`
+
+	err := Parsed(w, data)
+	if err != nil {
+		t.Fatalf("Parsed() failed: %s", err)
+	}
+
+	body := w.Body.String()
+
+	if strings.Contains(body, "<Location>") || strings.Contains(body, "<Locatio-0") {
+		t.Errorf("Parsed() output contains unescaped HTML-special characters from VSL data:\n%s", body)
+	}
+
+	for _, want := range []string{"&lt;Location&gt;", "XBODY_REGSUB_&lt;Locatio-0"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("Parsed() output missing escaped value %q", want)
+		}
+	}
+}
+
 func TestParsedRendersErrorFallback(t *testing.T) {
 	w := httptest.NewRecorder()
 

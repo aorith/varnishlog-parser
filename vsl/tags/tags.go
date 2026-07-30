@@ -158,6 +158,8 @@ const (
 	VSL = "VSL"
 	// Fetch filter accounting.
 	VfpAcct = "VfpAcct"
+	// XBody vmod diagnostic message.
+	XBody = "XBody"
 	// YKEY vmod diagnostic message.
 	YKEY = "YKEY"
 )

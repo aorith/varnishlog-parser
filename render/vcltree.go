@@ -63,9 +63,9 @@ func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, vis
 		case vsl.FetchErrorRecord:
 			s.addRow(r.GetTag(), "errorRecord", r.GetRawValue(), "errorRecord")
 		case vsl.TimestampRecord:
-			s.addRow(r.GetTag(), "", timestampRecordHTML(record), "")
+			s.addRowRaw(r.GetTag(), "", timestampRecordHTML(record), "")
 		case vsl.TTLRecord:
-			s.addRow(r.GetTag(), "", ttlRecordHTML(record), "")
+			s.addRowRaw(r.GetTag(), "", ttlRecordHTML(record), "")
 		case vsl.AcctRecord:
 			s.addRow(r.GetTag(), "", record.String(), "")
 		case vsl.PipeAcctRecord:
@@ -128,7 +128,13 @@ type rowBuilder struct {
 	strings.Builder
 }
 
+// addRow renders a key/value row, HTML-escaping the value.
 func (s *rowBuilder) addRow(a, classA, b, classB string) {
+	s.addRowRaw(a, classA, html.EscapeString(b), classB)
+}
+
+// addRowRaw renders a key/value row without escaping the value.
+func (s *rowBuilder) addRowRaw(a, classA, rawHTML, classB string) {
 	formatClass := func(cls string) string {
 		if cls != "" {
 			return fmt.Sprintf(` class="%s"`, cls)
@@ -143,12 +149,12 @@ func (s *rowBuilder) addRow(a, classA, b, classB string) {
 
 	classA, classB = formatClass(classA), formatClass(classB)
 
-	key := a
+	key := html.EscapeString(a)
 	if desc, ok := tags.Descriptions[a]; ok {
 		key = fmt.Sprintf(`<abbr title="%s">%s</abbr>`, html.EscapeString(desc), a)
 	}
 
-	fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, key, classB, b) //nolint:errcheck,revive
+	fmt.Fprintf(s, `<tx-key%s>%s</tx-key><tx-val%s>%s</tx-val>`, classA, key, classB, rawHTML) //nolint:errcheck,revive
 }
 
 func statusCSSClass(s int) string {

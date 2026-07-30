@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html"
 	"strings"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
@@ -75,7 +76,7 @@ func processReqBuildForm(tx *vsl.Transaction, cfg PageData) (*render.HTTPRequest
 }
 
 func applyChromaStyle(text, lang string) string {
-	fallback := "<pre><code>" + text + "</code></pre>"
+	fallback := "<pre><code>" + html.EscapeString(text) + "</code></pre>"
 
 	lexer := lexers.Get(lang)
 	formatter := chromahtml.New(chromahtml.WithClasses(true), chromahtml.WithCSSComments(false), chromahtml.ClassPrefix("chr_"))
@@ -98,7 +99,7 @@ func applyChromaStyle(text, lang string) string {
 func curlCommand(tx *vsl.Transaction, cfg PageData) string {
 	httpReq, backend, err := processReqBuildForm(tx, cfg)
 	if err != nil {
-		return fmt.Sprintf(`<pre>%s</pre>`, err.Error())
+		return fmt.Sprintf(`<pre>%s</pre>`, html.EscapeString(err.Error()))
 	}
 
 	return applyChromaStyle(httpReq.CurlCommand(cfg.ReqBuild.Scheme, backend), "bash")
@@ -107,7 +108,7 @@ func curlCommand(tx *vsl.Transaction, cfg PageData) string {
 func hurlFile(tx *vsl.Transaction, cfg PageData) string {
 	httpReq, backend, err := processReqBuildForm(tx, cfg)
 	if err != nil {
-		return fmt.Sprintf(`<pre>%s</pre>`, err.Error())
+		return fmt.Sprintf(`<pre>%s</pre>`, html.EscapeString(err.Error()))
 	}
 
 	return applyChromaStyle(httpReq.HurlFile(cfg.ReqBuild.Scheme, backend), "properties")
