@@ -319,7 +319,7 @@ func TestBackendCloseRecord(t *testing.T) {
 			logRecord:      "-5- BackendClose   30 varnishA",
 			fileDescriptor: 30,
 			name:           "varnishA",
-			reason:         "unknown",
+			reason:         "",
 		},
 	}
 
