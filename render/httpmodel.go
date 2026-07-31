@@ -54,9 +54,10 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string
 		url = tx.RecordValueByTag(tags.BereqURL, received)
 	}
 
-	// Ensure that excludeHeaders are in canonical format
+	// Canonicalize excludedHeaders into a copy
+	canonicalExcluded := make([]string, len(excludedHeaders))
 	for i, n := range excludedHeaders {
-		excludedHeaders[i] = vsl.CanonicalHeaderName(n)
+		canonicalExcluded[i] = vsl.CanonicalHeaderName(n)
 	}
 
 	noBody := methodHasNoRecordedBody(method)
@@ -64,7 +65,7 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string
 	httpHeaders := []Header{}
 
 	for name, h := range headers {
-		if name == vsl.HdrNameHost || slices.Contains(excludedHeaders, name) {
+		if name == vsl.HdrNameHost || slices.Contains(canonicalExcluded, name) {
 			continue
 		}
 
