@@ -117,10 +117,10 @@ func TestLongGrace(t *testing.T) {
 	}
 }
 
-func TestFetchError(t *testing.T) {
+func TestFetchErrorFallback(t *testing.T) {
 	const rawLog = `*** << BeReq    >> 16
 --- Begin          bereq 1 fetch
---- FetchError     no backend connection
+--- FetchError     something unexpected happened
 --- End
 `
 
@@ -129,6 +129,57 @@ func TestFetchError(t *testing.T) {
 
 	if !hasRule(findings, "fetch-error") {
 		t.Errorf("expected a fetch-error finding, got: %v", findings)
+	}
+}
+
+func TestFetchErrorClassification(t *testing.T) {
+	tests := []struct {
+		msg  string
+		rule string
+	}{
+		{"backend notgood: fail errno 111 (Connection refused)", "fetch-error-connection-refused"},
+		{"backend notgood: fail errno 104 (Connection reset by peer)", "fetch-error-connection-reset"},
+		{"backend notgood: fail errno 110 (Connection timed out)", "fetch-error-connect-timeout"},
+		{"backend notgood: fail errno 101 (Network is unreachable)", "fetch-error-network-unreachable"},
+		{"backend notgood: fail errno 71 (Protocol error)", "fetch-error-protocol-error"},
+		{"out of workspace", "fetch-error-out-of-workspace"},
+		{"backend default: unhealthy", "fetch-error-backend-unhealthy"},
+		{"backend default: busy", "fetch-error-backend-busy"},
+		{"No thread available for bgfetch", "fetch-error-no-thread"},
+		{"Director dir returned no backend", "fetch-error-no-backend"},
+		{"No backend", "fetch-error-no-backend"},
+		{"HTC eof (-1)", "fetch-error-htc-eof"},
+		{"HTC idle (3)", "fetch-error-htc-idle"},
+		{"Timed out reusing backend connection", "fetch-error-timeout"},
+	}
+
+	for _, tt := range tests {
+		rawLog := "*** << BeReq    >> 16\n" +
+			"--- Begin          bereq 1 fetch\n" +
+			"--- FetchError     " + tt.msg + "\n" +
+			"--- End\n"
+
+		ts := parse(t, rawLog)
+		findings := diagnostics.Run(ts)
+
+		if !hasRule(findings, tt.rule) {
+			t.Errorf("message %q: expected a %q finding, got: %v", tt.msg, tt.rule, findings)
+		}
+	}
+}
+
+func TestLostHeader(t *testing.T) {
+	const rawLog = `*   << Request  >> 23
+-   Begin          req 1 rxreq
+-   LostHeader     X-Too-Many-Headers
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "lost-header") {
+		t.Errorf("expected a lost-header finding, got: %v", findings)
 	}
 }
 

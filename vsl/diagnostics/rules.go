@@ -162,16 +162,114 @@ func checkLongGrace(tx *vsl.Transaction) []Finding {
 		fmt.Sprintf("Grace: %s", ttlRecord.Grace))}
 }
 
-// checkFetchError flags failed backend fetches.
+// fetchErrorClassifications maps a substring found in a FetchError message to
+// a specific, actionable rule.
+var fetchErrorClassifications = []struct {
+	substr   string
+	rule     string
+	severity Severity
+	summary  string
+}{
+	{
+		"errno 111", "fetch-error-connection-refused", SeverityCritical,
+		"Backend refused the connection, verify it's listening on that host/port",
+	},
+	{
+		"errno 104", "fetch-error-connection-reset", SeverityWarning,
+		"Backend reset the connection, often a TLS SNI/protocol mismatch",
+	},
+	{
+		"errno 110", "fetch-error-connect-timeout", SeverityCritical,
+		"TCP connect to the backend timed out, check connectivity/firewalls or raise connect_timeout",
+	},
+	{
+		"errno 101", "fetch-error-network-unreachable", SeverityCritical,
+		"Backend network is unreachable, check the backend address and routing",
+	},
+	{
+		"errno 71", "fetch-error-protocol-error", SeverityWarning,
+		"Protocol error talking to the backend, check for a plaintext/TLS mismatch",
+	},
+	{
+		"out of workspace", "fetch-error-out-of-workspace", SeverityCritical,
+		"Ran out of workspace processing the backend response, raise workspace_backend or check for a VMOD leak",
+	},
+	{
+		": unhealthy", "fetch-error-backend-unhealthy", SeverityCritical,
+		"Backend is marked unhealthy by its health probe, traffic to it is being diverted",
+	},
+	{
+		": busy", "fetch-error-backend-busy", SeverityWarning,
+		"Backend connection limit (max_connections) reached",
+	},
+	{
+		"no thread available", "fetch-error-no-thread", SeverityWarning,
+		"No worker thread available for the fetch, thread_pool_max may be exhausted",
+	},
+	{
+		"no backend", "fetch-error-no-backend", SeverityCritical,
+		"No backend was selected for this request, check the director/VCL backend logic or backend health",
+	},
+	{
+		"htc eof", "fetch-error-htc-eof", SeverityInfo,
+		"Backend closed an idle keep-alive connection before Varnish did, check the backend's keep-alive timeout vs backend_idle_timeout",
+	},
+	{
+		"htc idle", "fetch-error-htc-idle", SeverityWarning,
+		"Backend accepted the connection but never sent a response within first_byte_timeout",
+	},
+	{
+		"timeout", "fetch-error-timeout", SeverityWarning,
+		"Backend fetch timed out",
+	},
+	{
+		"timed out", "fetch-error-timeout", SeverityWarning,
+		"Backend fetch timed out",
+	},
+}
+
+// classifyFetchError matches a FetchError message against known Varnish
+// error signatures, falling back to a generic classification when nothing
+// matches.
+func classifyFetchError(msg string) (string, Severity, string) {
+	lower := strings.ToLower(msg)
+
+	for _, c := range fetchErrorClassifications {
+		if strings.Contains(lower, c.substr) {
+			return c.rule, c.severity, c.summary
+		}
+	}
+
+	return "fetch-error", SeverityWarning, "Backend fetch failed"
+}
+
+// checkFetchError flags failed backend fetches, classifying well known
+// Varnish error signatures (connection refused, out of workspace, unhealthy
+// backend, ...) into specific, actionable rules.
 func checkFetchError(tx *vsl.Transaction) []Finding {
 	r := tx.RecordByTag(tags.FetchError, true)
 	if r == nil {
 		return nil
 	}
 
-	return []Finding{newFinding(tx, "fetch-error", SeverityWarning,
-		"Backend fetch failed",
-		r.GetRawValue())}
+	msg := r.GetRawValue()
+	rule, severity, summary := classifyFetchError(msg)
+
+	return []Finding{newFinding(tx, rule, severity, summary, msg)}
+}
+
+// checkLostHeader flags a header that couldn't be added to a request or
+// response, typically because http_max_hdr or http_req_hdr_len/
+// http_resp_hdr_len was exceeded (or, over HTTP/2, h2_max_header_list_size).
+func checkLostHeader(tx *vsl.Transaction) []Finding {
+	r := tx.RecordByTag(tags.LostHeader, true)
+	if r == nil {
+		return nil
+	}
+
+	return []Finding{newFinding(tx, "lost-header", SeverityWarning,
+		"A header could not be added, exceeding a header count or size limit",
+		fmt.Sprintf("Lost header: %q (check http_max_hdr, http_req_hdr_len/http_resp_hdr_len)", r.GetRawValue()))}
 }
 
 // checkESIError flags ESI parser errors or warnings.

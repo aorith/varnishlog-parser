@@ -80,6 +80,7 @@ func Run(ts vsl.TransactionSet) []Finding {
 		findings = append(findings, checkHitForPassLongTTL(tx)...)
 		findings = append(findings, checkLongGrace(tx)...)
 		findings = append(findings, checkFetchError(tx)...)
+		findings = append(findings, checkLostHeader(tx)...)
 		findings = append(findings, checkESIError(tx)...)
 		findings = append(findings, checkVCLError(tx)...)
 		findings = append(findings, checkMalformedRequest(tx)...)
