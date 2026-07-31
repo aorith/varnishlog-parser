@@ -118,8 +118,7 @@ func NewHeaderRecord(blr BaseRecord) (HeaderRecord, error) {
 	}
 
 	name := fields[0]
-	firstIndex := strings.Index(blr.GetRawValue(), name)
-	value := strings.TrimLeft(blr.GetRawValue()[firstIndex+len(name):], " \t")
+	value := strings.TrimLeft(blr.GetRawValue()[len(name):], " \t")
 
 	name = strings.TrimRight(name, ": \t")
 	// Canonical format for the header key
@@ -175,8 +174,7 @@ func NewHeaderUnsetRecord(blr BaseRecord) (HeaderUnsetRecord, error) {
 	}
 
 	name := fields[0]
-	firstIndex := strings.Index(blr.GetRawValue(), name)
-	value := strings.TrimLeft(blr.GetRawValue()[firstIndex+len(name):], " \t")
+	value := strings.TrimLeft(blr.GetRawValue()[len(name):], " \t")
 
 	name = strings.TrimRight(name, ": \t")
 	// Canonical format for the header key
@@ -844,8 +842,7 @@ func NewVCLLogRecord(blr BaseRecord) (VCLLogRecord, error) {
 	}
 
 	key := fields[0]
-	firstIndex := strings.Index(blr.GetRawValue(), key)
-	value := strings.TrimLeft(blr.GetRawValue()[firstIndex+len(key):], " \t")
+	value := strings.TrimLeft(blr.GetRawValue()[len(key):], " \t")
 
 	return VCLLogRecord{BaseRecord: blr, Key: strings.TrimRight(key, ": \t"), Value: value}, nil
 }
