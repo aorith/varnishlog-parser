@@ -80,6 +80,51 @@ func TestCurlCommandIsShellSafe(t *testing.T) {
 	}
 }
 
+func TestNewHTTPRequestHostParsing(t *testing.T) {
+	tests := []struct {
+		host     string
+		wantHost string
+		wantPort string
+	}{
+		{"::1", "[::1]", ""},
+		{"fe80::1", "[fe80::1]", ""},
+		{"2001:db8::1", "[2001:db8::1]", ""},
+		{"10.0.0.1", "10.0.0.1", ""},
+		{"example.com", "example.com", ""},
+		{"example.com:8080", "example.com", "8080"},
+		{"10.0.0.1:8080", "10.0.0.1", "8080"},
+		{"[::1]:8080", "[::1]", "8080"},
+	}
+
+	for _, tt := range tests {
+		rawLog := "*   << Request  >> 2\n" +
+			"-   Begin          req 1 rxreq\n" +
+			"-   ReqMethod      GET\n" +
+			"-   ReqURL         /\n" +
+			"-   ReqHeader      Host: " + tt.host + "\n" +
+			"-   End\n"
+
+		p := vsl.NewTransactionParser(strings.NewReader(rawLog))
+
+		ts, err := p.Parse()
+		if err != nil {
+			t.Fatalf("Host %q: Parse() failed: %s", tt.host, err)
+		}
+
+		tx := ts.UniqueRootParents(false)[0]
+
+		req, err := NewHTTPRequest(tx, true, nil)
+		if err != nil {
+			t.Fatalf("Host %q: NewHTTPRequest() failed: %s", tt.host, err)
+		}
+
+		if req.host != tt.wantHost || req.port != tt.wantPort {
+			t.Errorf("Host %q: got host=%q port=%q, want host=%q port=%q",
+				tt.host, req.host, req.port, tt.wantHost, tt.wantPort)
+		}
+	}
+}
+
 // TestNewHTTPRequestOmitsStaleBodyFramingHeaders checks that Content-Length
 // and Transfer-Encoding aren't forwarded for methods whose body varnishlog
 // never records (POST/PUT/PATCH) - since CurlCommand/HurlFile substitute a

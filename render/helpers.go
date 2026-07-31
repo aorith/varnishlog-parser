@@ -11,29 +11,36 @@ import (
 	"github.com/aorith/varnishlog-parser/vsl"
 )
 
-// ParseBackend parses "<HOST/IP>:<PORT>" where HOST may be a hostname,
-//
-// IPv4, or IPv6 (possibly unbracketed). Returns host and port separately.
+// ParseBackend parses "<HOST/IP>[:<PORT>]" where HOST may be a hostname, IPv4, or IPv6.
 func ParseBackend(s string) (string, string, error) {
-	// Try the standard parser first (works for "host:port" and "[v6]:port").
+	// Try the standard parser first (works for "host:port", "[v6]:port" and "[v6]:" with an empty port).
 	host, port, err := net.SplitHostPort(s)
 	if err != nil {
-		// Fallback: split at the last colon. This handles unbracketed IPv6 like "fe80::1%eth0:8080".
-		i := strings.LastIndex(s, ":")
-		if i == -1 {
-			return "", "", fmt.Errorf("missing port in %q", s)
-		}
+		switch {
+		case strings.HasPrefix(s, "[") && strings.HasSuffix(s, "]"):
+			// Bracketed IPv6 with no port at all, e.g. "[::1]".
+			host = s[1 : len(s)-1]
 
-		host = s[:i]
-		port = s[i+1:]
+		case net.ParseIP(s) != nil, !strings.Contains(s, ":"):
+			// A bare hostname/IPv4/unbracketed-IPv6 address with no port.
+			host = s
 
-		if host == "" {
-			return "", "", fmt.Errorf("empty host in %q", s)
-		}
+		default:
+			// Fallback: split at the last colon.
+			i := strings.LastIndex(s, ":")
+			host = s[:i]
+			port = s[i+1:]
 
-		_, err := strconv.Atoi(port)
-		if err != nil {
-			return "", "", fmt.Errorf("invalid port %q: %w", port, err)
+			if host == "" {
+				return "", "", fmt.Errorf("empty host in %q", s)
+			}
+
+			if port != "" {
+				_, err := strconv.Atoi(port)
+				if err != nil {
+					return "", "", fmt.Errorf("invalid port %q: %w", port, err)
+				}
+			}
 		}
 	}
 

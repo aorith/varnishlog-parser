@@ -33,16 +33,10 @@ func NewHTTPRequest(tx *vsl.Transaction, received bool, excludedHeaders []string
 	}
 
 	headers := tx.ReqHeaders
-	host := headers.Get("host", received)
-	port := ""
 
-	if strings.Contains(host, ":") {
-		var err error
-
-		host, port, err = ParseBackend(headers.Get("host", received))
-		if err != nil {
-			return nil, err
-		}
+	host, port, err := ParseBackend(headers.Get("host", received))
+	if err != nil {
+		return nil, err
 	}
 
 	var url, method string
@@ -160,7 +154,9 @@ func (r *HTTPRequest) CurlCommand(scheme string, backend *Backend) string {
 	case "HEAD":
 		s.WriteString("    --head \\\n") //nolint:revive
 	default:
-		s.WriteString("    -X " + r.method + " \\\n") //nolint:revive
+		s.WriteString("    -X ")
+		s.WriteString(r.method)
+		s.WriteString(" \\\n") //nolint:revive
 	}
 
 	// Headers
@@ -260,11 +256,7 @@ func methodHasNoRecordedBody(method string) bool {
 	}
 }
 
-// shellSingleQuote quotes s as a single POSIX shell argument. Header values
-// and URLs come from parsed HTTP traffic, which cannot be trusted (e.g. an
-// attacker-controlled User-Agent or Referer) - single quotes suppress all
-// shell expansion ($, `, \, !), unlike double quotes, which is what keeps a
-// copy-pasted command from executing anything embedded in that data.
+// shellSingleQuote quotes s as a single POSIX shell argument.
 func shellSingleQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
