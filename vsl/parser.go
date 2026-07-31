@@ -147,10 +147,11 @@ func processRecord(line string) (Record, error) {
 	}
 
 	t := blr.GetTag()
-	switch t {
+
+	switch t { // nolint:revive
 	case tags.End:
 		return EndRecord{BaseRecord: blr}, nil
-	case tags.RespReason, tags.BerespReason:
+	case tags.RespReason, tags.BerespReason, tags.ObjReason:
 		return ReasonRecord{BaseRecord: blr}, nil
 	case tags.FetchError:
 		return FetchErrorRecord{BaseRecord: blr}, nil
@@ -225,8 +226,14 @@ func processRecord(line string) (Record, error) {
 		return VCLUseRecord{BaseRecord: blr}, nil
 	case tags.Error:
 		return ErrorRecord{BaseRecord: blr}, nil
-	case tags.XBody, tags.YKEY:
+	case tags.XBody, tags.YKEY, tags.BogoHeader, tags.HTTPGarbage, tags.ESIXMLError,
+		tags.LostHeader, tags.Proxy, tags.ProxyGarbage, tags.VCLAcl, tags.VCLError,
+		tags.VCLTrace, tags.Notice, tags.VfpAcct:
 		// tags without a dedicated struct
+		return blr, nil
+	case tags.ExpBan, tags.ExpKill, tags.VSL, tags.SessError:
+		// Non-transactional tags logged under VXID 0.
+		// Only "varnishlog -g raw" surfaces VXID 0, which this parser doesn't support... yet.
 		return blr, nil
 	default:
 		slog.Warn("unknown tag", "tag", t)
