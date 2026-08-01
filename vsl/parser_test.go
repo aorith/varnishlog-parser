@@ -46,11 +46,10 @@ func TestParse(t *testing.T) {
 		vxid   vsl.VXID
 		txType vsl.TxType
 		esi    int
-		level  int
 	}{
-		{vsl.VXID(261), vsl.TxTypeSession, 0, 1},
-		{vsl.VXID(33041), vsl.TxTypeBereq, 0, 3},
-		{vsl.VXID(33032), vsl.TxTypeRequest, 2, 0},
+		{vsl.VXID(261), vsl.TxTypeSession, 0},
+		{vsl.VXID(33041), vsl.TxTypeBereq, 0},
+		{vsl.VXID(33032), vsl.TxTypeRequest, 2},
 	}
 
 	tmap := ts.TransactionsMap()
@@ -62,10 +61,6 @@ func TestParse(t *testing.T) {
 
 		if tx.ESILevel != tt.esi {
 			t.Errorf("tx[%d]: ESILevel wanted: %v, got: %v", tt.vxid, tt.esi, tx.ESILevel)
-		}
-
-		if tt.level != 0 && tx.Level != tt.level {
-			t.Errorf("tx[%d]: Level wanted: %v, got: %v", tt.vxid, tt.level, tx.Level)
 		}
 	}
 }

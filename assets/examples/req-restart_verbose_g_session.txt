@@ -1,0 +1,118 @@
+*              << Session  >>   1         
+-            1 Begin          c sess 0 HTTP/1
+-            1 SessOpen       c 192.168.50.1 41632 http 192.168.50.10 80 1785580604.405925 21
+-            1 Link           c req 2 rxreq
+-            1 SessClose      c REM_CLOSE 0.002
+-            1 End            c 
+**             << Request  >>   2         
+--           2 Begin          c req 1 rxreq
+--           2 Timestamp      c Start: 1785580604.406126 0.000000 0.000000
+--           2 Timestamp      c Req: 1785580604.406126 0.000000 0.000000
+--           2 VCL_use        c boot
+--           2 ReqStart       c 192.168.50.1 41632 http
+--           2 ReqMethod      c GET
+--           2 ReqURL         c /rt
+--           2 ReqProtocol    c HTTP/1.1
+--           2 ReqHeader      c Host: varnishlog.iou.re
+--           2 ReqHeader      c Accept: */*
+--           2 ReqHeader      c User-Agent: hurl/8.0.1
+--           2 ReqHeader      c X-Forwarded-For: 192.168.50.1
+--           2 ReqHeader      c Via: 1.1 7cc51c6415b5 (Varnish/7.7)
+--           2 VCL_call       c RECV
+--           2 VCL_Log        c start custom recv
+--           2 ReqHeader      c x-do-restart: yes
+--           2 ReqHeader      c whoami: 1
+--           2 VCL_Log        c end custom recv
+--           2 VCL_return     c restart
+--           2 VCL_call       c HASH
+--           2 VCL_return     c lookup
+--           2 Timestamp      c Restart: 1785580604.406198 0.000072 0.000072
+--           2 Link           c req 3 restart
+--           2 End            c 
+**             << Request  >>   3         
+--           3 Begin          c req 2 restart
+--           3 Timestamp      c Start: 1785580604.406198 0.000072 0.000000
+--           3 ReqStart       c 192.168.50.1 41632 http
+--           3 ReqMethod      c GET
+--           3 ReqURL         c /rt
+--           3 ReqProtocol    c HTTP/1.1
+--           3 ReqHeader      c Host: varnishlog.iou.re
+--           3 ReqHeader      c Accept: */*
+--           3 ReqHeader      c User-Agent: hurl/8.0.1
+--           3 ReqHeader      c X-Forwarded-For: 192.168.50.1
+--           3 ReqHeader      c Via: 1.1 7cc51c6415b5 (Varnish/7.7)
+--           3 ReqHeader      c x-do-restart: yes
+--           3 ReqHeader      c whoami: 1
+--           3 VCL_call       c RECV
+--           3 VCL_Log        c start custom recv
+--           3 VCL_Log        c end custom recv
+--           3 VCL_return     c hash
+--           3 VCL_call       c HASH
+--           3 VCL_return     c lookup
+--           3 VCL_call       c MISS
+--           3 VCL_return     c fetch
+--           3 Link           c bereq 4 fetch
+--           3 Timestamp      c Fetch: 1785580604.407343 0.001217 0.001145
+--           3 RespProtocol   c HTTP/1.1
+--           3 RespStatus     c 200
+--           3 RespReason     c OK
+--           3 RespHeader     c Date: Sat, 01 Aug 2026 10:36:44 GMT
+--           3 RespHeader     c Content-Length: 312
+--           3 RespHeader     c Content-Type: text/plain; charset=utf-8
+--           3 RespHeader     c Cache-Control: max-age=5
+--           3 RespHeader     c X-Varnish: 3
+--           3 RespHeader     c Age: 0
+--           3 RespHeader     c Via: 1.1 7cc51c6415b5 (Varnish/7.7)
+--           3 RespHeader     c Accept-Ranges: bytes
+--           3 VCL_call       c DELIVER
+--           3 VCL_return     c deliver
+--           3 Timestamp      c Process: 1785580604.407353 0.001226 0.000009
+--           3 Filters        c 
+--           3 RespHeader     c Connection: keep-alive
+--           3 Timestamp      c Resp: 1785580604.407400 0.001274 0.000047
+--           3 ReqAcct        c 82 0 82 249 312 561
+--           3 End            c 
+***            << BeReq    >>   4         
+---          4 Begin          b bereq 3 fetch
+---          4 VCL_use        b boot
+---          4 Timestamp      b Start: 1785580604.406263 0.000000 0.000000
+---          4 BereqMethod    b GET
+---          4 BereqURL       b /rt
+---          4 BereqProtocol  b HTTP/1.1
+---          4 BereqHeader    b Host: varnishlog.iou.re
+---          4 BereqHeader    b Accept: */*
+---          4 BereqHeader    b User-Agent: hurl/8.0.1
+---          4 BereqHeader    b X-Forwarded-For: 192.168.50.1
+---          4 BereqHeader    b Via: 1.1 7cc51c6415b5 (Varnish/7.7)
+---          4 BereqHeader    b x-do-restart: yes
+---          4 BereqHeader    b whoami: 1
+---          4 BereqHeader    b Accept-Encoding: gzip
+---          4 BereqHeader    b X-Varnish: 4
+---          4 VCL_call       b BACKEND_FETCH
+---          4 VCL_return     b fetch
+---          4 Timestamp      b Fetch: 1785580604.406286 0.000022 0.000022
+---          4 Timestamp      b Connected: 1785580604.406495 0.000231 0.000209
+---          4 BackendOpen    b 30 whoami 192.168.50.12 80 192.168.50.10 33384 connect
+---          4 Timestamp      b Bereq: 1785580604.406543 0.000279 0.000047
+---          4 BerespProtocol b HTTP/1.1
+---          4 BerespStatus   b 200
+---          4 BerespReason   b OK
+---          4 BerespHeader   b Date: Sat, 01 Aug 2026 10:36:44 GMT
+---          4 BerespHeader   b Content-Length: 312
+---          4 BerespHeader   b Content-Type: text/plain; charset=utf-8
+---          4 Timestamp      b Beresp: 1785580604.407219 0.000955 0.000676
+---          4 TTL            b RFC 120 10 0 1785580604 1785580604 1785580604 0 0 cacheable
+---          4 VCL_call       b BACKEND_RESPONSE
+---          4 BerespHeader   b Cache-Control: max-age=5
+---          4 TTL            b VCL 5 10 0 1785580604 cacheable
+---          4 VCL_return     b deliver
+---          4 Timestamp      b Process: 1785580604.407245 0.000981 0.000025
+---          4 Filters        b 
+---          4 Storage        b malloc s0
+---          4 Fetch_Body     b 3 length stream
+---          4 BackendClose   b 30 whoami recycle
+---          4 Timestamp      b BerespBody: 1785580604.407302 0.001039 0.000057
+---          4 Length         b 312
+---          4 BereqAcct      b 217 0 217 118 312 430
+---          4 End            b 
+

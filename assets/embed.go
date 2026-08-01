@@ -26,21 +26,44 @@ var (
 
 	//go:embed examples/simple-post.txt
 	VCLSimplePOST string
+	//go:embed examples/simple-post_g_raw.txt
+	VCLSimplePOSTRaw string
 
 	//go:embed examples/cached.txt
 	VCLCached string
 
 	//go:embed examples/streaming-hit.txt
 	VCLStreamingHit string
+	//go:embed examples/streaming-hit_g_raw.txt
+	VCLStreamingHitRaw string
 
 	//go:embed examples/esi-1.txt
 	VCLESI1 string
+	//go:embed examples/esi-1_g_raw.txt
+	VCLESI1Raw string
 
 	//go:embed examples/req-restart.txt
 	VCLRestart string
+	//go:embed examples/req-restart_g_raw.txt
+	VCLRestartRaw string
+	//go:embed examples/req-restart_verbose_g_session.txt
+	VCLRestartVerboseSession string
+	//go:embed examples/req-restart_verbose_g_request.txt
+	VCLRestartVerboseRequest string
+	//go:embed examples/req-restart_verbose_g_vxid.txt
+	VCLRestartVerboseVXID string
+	//go:embed examples/req-restart_verbose_g_raw.txt
+	VCLRestartVerboseRaw string
 
 	//go:embed examples/esi-synth.txt
 	VCLESISynth string
+	//go:embed examples/esi-synth_g_raw.txt
+	VCLESISynthRaw string
+
+	//go:embed examples/backend-retry.txt
+	VCLBackendRetry string
+	//go:embed examples/backend-retry_g_raw.txt
+	VCLBackendRetryRaw string
 )
 
 //go:embed all:css

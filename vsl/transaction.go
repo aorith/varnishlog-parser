@@ -26,71 +26,41 @@ const (
 	TxTypeBereq TxType = "BeReq"
 )
 
-var allTxTypes = []TxType{TxTypeSession, TxTypeRequest, TxTypeBereq}
-
 // Transaction represent a singular Varnish transaction log.
 type Transaction struct {
-	TXID        TXID     // Custom transaction id: {vxid}-{type}-{reason}[-{ESILevel}] - eg: 33030-req-esi-1
-	VXID        VXID     // Transaction ID
-	Level       int      // Transaction level
-	Reason      string   // Reason from the begin tag (rxreq, esi, fetch, ...)
-	ESILevel    int      // ESI level, 0 if not an ESI request
-	TXType      TxType   // Session, Request, BeReq
-	RawLog      string   // Raw log string
-	Records     []Record // VSL log records
-	ReqHeaders  Headers  // Request Headers
-	RespHeaders Headers  // Response Headers
-	Parent      VXID     // Parent ID
-	Children    []VXID   // Transaction VXIDs which are children of this transaction
+	TXID         TXID     // Custom transaction id: {vxid}-{type}-{reason}[-{ESILevel}] - eg: 33030-req-esi-1
+	VXID         VXID     // Transaction ID
+	Reason       string   // Reason from the begin tag (rxreq, esi, fetch, ...)
+	ESILevel     int      // ESI level, 0 if not an ESI request
+	TXType       TxType   // Session, Request, BeReq
+	RawLogHeader string   // Raw log string, empty if the input had no dedicated header line (e.g. "-g raw")
+	Records      []Record // VSL log records
+	ReqHeaders   Headers  // Request Headers
+	RespHeaders  Headers  // Response Headers
+	Parent       VXID     // Parent ID
+	Children     []VXID   // Transaction VXIDs which are children of this transaction
 }
 
-// NewTransaction initializes a new transaction by parsing the first line of the log.
-func NewTransaction(line string) (*Transaction, error) {
-	parts := strings.Fields(line)
-
-	txType := TxType(parts[2])
-	if !slices.Contains(allTxTypes, txType) {
-		return nil, fmt.Errorf("unknown transaction of type '%q' - known types: %q", txType, allTxTypes)
+// txTypeFromRecordType maps a Begin/Link record's own type token ("sess",
+// "req", "bereq") to a TxType.
+func txTypeFromRecordType(recordType string) TxType {
+	switch recordType {
+	case "sess":
+		return TxTypeSession
+	case "bereq":
+		return TxTypeBereq
+	default:
+		return TxTypeRequest
 	}
-
-	vxid, err := parseVXID(parts[4])
-	if err != nil {
-		return nil, fmt.Errorf("incorrect vxid found on line '%q', error: %w", parts, err)
-	}
-
-	level, err := parseLevel(parts[0])
-	if err != nil {
-		return nil, err
-	}
-
-	return &Transaction{
-		VXID:        vxid,
-		Level:       level,
-		TXType:      txType,
-		RawLog:      line,
-		ReqHeaders:  make(map[string]Header),
-		RespHeaders: make(map[string]Header),
-	}, nil
 }
 
 // NewMissingTransaction initializes a dummy transaction that
 // is missing from the VSL logs using a Link tag record.
 func NewMissingTransaction(r LinkRecord) *Transaction {
-	var txType TxType
-
-	switch r.TXType {
-	case "sess":
-		txType = TxTypeSession
-	case "bereq":
-		txType = TxTypeBereq
-	default:
-		txType = TxTypeRequest
-	}
-
 	return &Transaction{
 		TXID:   r.TXID,
 		VXID:   r.VXID,
-		TXType: txType,
+		TXType: txTypeFromRecordType(r.TXType),
 		Records: []Record{
 			BaseRecord{Tag: "__MISSING", RawValue: "This transaction is not present in the provided VSL logs"},
 		},
@@ -261,10 +231,6 @@ func (t TransactionSet) Transactions() []*Transaction {
 			return n
 		}
 
-		if n := cmp.Compare(a.Level, b.Level); n != 0 {
-			return n
-		}
-
 		return cmp.Compare(a.ESILevel, b.ESILevel)
 	})
 
@@ -318,7 +284,9 @@ func (t TransactionSet) RawLog() string {
 			s.WriteString("\n") //nolint:revive
 		}
 
-		fmt.Fprintf(&s, "%s\n", tx.RawLog) //nolint:revive
+		if tx.RawLogHeader != "" { // "-g raw" input has no dedicated header line
+			fmt.Fprintf(&s, "%s\n", tx.RawLogHeader) //nolint:revive
+		}
 
 		for _, r := range tx.Records {
 			fmt.Fprintf(&s, "%s\n", r.GetRawLog()) //nolint:revive
@@ -344,7 +312,9 @@ func (t TransactionSet) RawLogForTx(tx *Transaction, includeChildrenTxs bool) st
 			s.WriteString("\n") //nolint:revive
 		}
 
-		fmt.Fprintf(&s, "%s\n", tx.RawLog) //nolint:revive
+		if tx.RawLogHeader != "" { // "-g raw" input has no dedicated header line
+			fmt.Fprintf(&s, "%s\n", tx.RawLogHeader) //nolint:revive
+		}
 
 		for _, r := range tx.Records {
 			fmt.Fprintf(&s, "%s\n", r.GetRawLog()) //nolint:revive

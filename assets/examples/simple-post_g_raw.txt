@@ -1,0 +1,100 @@
+         1 Begin          c sess 0 HTTP/1
+         1 SessOpen       c 192.168.50.1 49152 http 192.168.50.10 80 1785576181.733349 22
+         1 Link           c req 2 rxreq
+         3 Begin          b bereq 2 pass
+         3 VCL_use        b boot
+         3 Timestamp      b Start: 1785576181.733701 0.000000 0.000000
+         3 BereqMethod    b POST
+         3 BereqURL       b /upload
+         3 BereqProtocol  b HTTP/1.1
+         3 BereqHeader    b Host: varnishlog.iou.re
+         3 BereqHeader    b Accept: */*
+         3 BereqHeader    b X-Session-Id: abcdefghijk-abcdefghijk
+         3 BereqHeader    b Content-Type: application/x-www-form-urlencoded
+         3 BereqHeader    b User-Agent: hurl/8.0.1
+         3 BereqHeader    b Content-Length: 129
+         3 BereqHeader    b X-Forwarded-For: 192.168.50.1
+         3 BereqHeader    b Via: 1.1 1b85fbef92b5 (Varnish/7.7)
+         3 BereqHeader    b whoami: 1
+         3 BereqHeader    b X-Varnish: 3
+         3 VCL_call       b BACKEND_FETCH
+         3 VCL_return     b fetch
+         3 Timestamp      b Fetch: 1785576181.733710 0.000009 0.000009
+         3 Timestamp      b Connected: 1785576181.733883 0.000181 0.000172
+         3 BackendOpen    b 30 whoami 192.168.50.12 80 192.168.50.10 38470 connect
+         3 Timestamp      b Bereq: 1785576181.733943 0.000242 0.000060
+         3 BerespProtocol b HTTP/1.1
+         3 BerespStatus   b 200
+         3 BerespReason   b OK
+         3 BerespHeader   b Date: Sat, 01 Aug 2026 09:23:01 GMT
+         3 BerespHeader   b Content-Length: 513
+         3 BerespHeader   b Content-Type: text/plain; charset=utf-8
+         3 Timestamp      b Beresp: 1785576181.734859 0.001158 0.000915
+         3 VCL_call       b BACKEND_RESPONSE
+         3 BerespHeader   b Cache-Control: max-age=5
+         3 TTL            b VCL 5 0 0 1785576182 uncacheable
+         3 VCL_return     b deliver
+         3 Timestamp      b Process: 1785576181.734874 0.001173 0.000014
+         3 Filters        b 
+         3 Storage        b malloc Transient
+         3 Fetch_Body     b 3 length stream
+         3 BackendClose   b 30 whoami recycle
+         3 Timestamp      b BerespBody: 1785576181.734917 0.001216 0.000043
+         3 Length         b 513
+         3 BereqAcct      b 289 129 418 118 513 631
+         3 End            b 
+         2 Begin          c req 1 rxreq
+         2 Timestamp      c Start: 1785576181.733579 0.000000 0.000000
+         2 Timestamp      c Req: 1785576181.733579 0.000000 0.000000
+         2 VCL_use        c boot
+         2 ReqStart       c 192.168.50.1 49152 http
+         2 ReqMethod      c POST
+         2 ReqURL         c /upload
+         2 ReqProtocol    c HTTP/1.1
+         2 ReqHeader      c Host: varnishlog.iou.re
+         2 ReqHeader      c Accept: */*
+         2 ReqHeader      c X-Session-Id: abcdefghijk-abcdefghijk
+         2 ReqHeader      c Content-Type: application/x-www-form-urlencoded
+         2 ReqHeader      c User-Agent: hurl/8.0.1
+         2 ReqHeader      c Content-Length: 129
+         2 ReqHeader      c X-Forwarded-For: 192.168.50.1
+         2 ReqHeader      c Via: 1.1 1b85fbef92b5 (Varnish/7.7)
+         2 VCL_call       c RECV
+         2 VCL_Log        c start custom recv
+         2 ReqHeader      c whoami: 1
+         2 VCL_Log        c end custom recv
+         2 VCL_return     c pass
+         2 VCL_call       c HASH
+         2 VCL_return     c lookup
+         2 VCL_call       c PASS
+         2 VCL_return     c fetch
+         2 Link           c bereq 3 pass
+         2 Storage        c malloc Transient
+         2 Timestamp      c ReqBody: 1785576181.733936 0.000356 0.000356
+         2 Timestamp      c Fetch: 1785576181.734918 0.001338 0.000982
+         2 RespProtocol   c HTTP/1.1
+         2 RespStatus     c 200
+         2 RespReason     c OK
+         2 RespHeader     c Date: Sat, 01 Aug 2026 09:23:01 GMT
+         2 RespHeader     c Content-Length: 513
+         2 RespHeader     c Content-Type: text/plain; charset=utf-8
+         2 RespHeader     c Cache-Control: max-age=5
+         2 RespHeader     c X-Varnish: 2
+         2 RespHeader     c Age: 0
+         2 RespHeader     c Via: 1.1 1b85fbef92b5 (Varnish/7.7)
+         2 VCL_call       c DELIVER
+         2 VCL_return     c deliver
+         2 Timestamp      c Process: 1785576181.734931 0.001352 0.000013
+         2 Filters        c 
+         2 RespHeader     c Connection: keep-alive
+         2 Timestamp      c Resp: 1785576181.734988 0.001408 0.000056
+         2 ReqAcct        c 196 129 325 227 513 740
+         2 End            c 
+         1 SessClose      c REM_CLOSE 0.002
+         1 End            c 
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785576184 1.0
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785576187 1.0
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785576190 1.0

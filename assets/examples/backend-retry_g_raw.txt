@@ -1,0 +1,133 @@
+         1 Begin          c sess 0 HTTP/1
+         1 SessOpen       c 192.168.50.1 34268 http 192.168.50.10 80 1785576213.510644 21
+         1 Link           c req 2 rxreq
+         3 Begin          b bereq 2 fetch
+         3 VCL_use        b boot
+         3 Timestamp      b Start: 1785576213.510879 0.000000 0.000000
+         3 BereqMethod    b GET
+         3 BereqURL       b /rbt
+         3 BereqProtocol  b HTTP/1.1
+         3 BereqHeader    b Host: varnishlog.iou.re
+         3 BereqHeader    b Accept: */*
+         3 BereqHeader    b User-Agent: hurl/8.0.1
+         3 BereqHeader    b X-Forwarded-For: 192.168.50.1
+         3 BereqHeader    b Via: 1.1 1cd8c2d6270f (Varnish/7.7)
+         3 BereqHeader    b x-do-retry: yes
+         3 BereqHeader    b Accept-Encoding: gzip
+         3 BereqHeader    b X-Varnish: 3
+         3 VCL_call       b BACKEND_FETCH
+         3 VCL_return     b fetch
+         3 Timestamp      b Fetch: 1785576213.510899 0.000020 0.000020
+         3 Timestamp      b Connected: 1785576213.511154 0.000275 0.000254
+         3 BackendOpen    b 30 backend1 192.168.50.11 80 192.168.50.10 48424 connect
+         3 Timestamp      b Bereq: 1785576213.511207 0.000328 0.000053
+         3 BerespProtocol b HTTP/1.1
+         3 BerespStatus   b 200
+         3 BerespReason   b OK
+         3 BerespHeader   b Date: Sat, 01 Aug 2026 09:23:33 GMT
+         3 BerespHeader   b Server: Varnish
+         3 BerespHeader   b X-Varnish: 2
+         3 BerespHeader   b Content-Type: text/plain
+         3 BerespHeader   b X-Default-Response: yes
+         3 BerespHeader   b Content-Length: 16
+         3 BerespHeader   b Connection: keep-alive
+         3 Timestamp      b Beresp: 1785576213.511459 0.000580 0.000251
+         3 TTL            b RFC 120 10 0 1785576214 1785576214 1785576213 0 0 cacheable
+         3 VCL_call       b BACKEND_RESPONSE
+         3 BereqHeader    b x-retry-whoami: 1
+         3 VCL_return     b retry
+         3 BackendClose   b 30 backend1 close RESP_CLOSE
+         3 Timestamp      b Retry: 1785576213.511511 0.000632 0.000051
+         3 Link           b bereq 32769 retry
+         3 End            b 
+     32769 Begin          b bereq 3 retry
+     32769 Timestamp      b Start: 1785576213.511511 0.000632 0.000000
+     32769 BereqMethod    b GET
+     32769 BereqURL       b /rbt
+     32769 BereqProtocol  b HTTP/1.1
+     32769 BereqHeader    b Host: varnishlog.iou.re
+     32769 BereqHeader    b Accept: */*
+     32769 BereqHeader    b User-Agent: hurl/8.0.1
+     32769 BereqHeader    b X-Forwarded-For: 192.168.50.1
+     32769 BereqHeader    b Via: 1.1 1cd8c2d6270f (Varnish/7.7)
+     32769 BereqHeader    b x-do-retry: yes
+     32769 BereqHeader    b Accept-Encoding: gzip
+     32769 BereqHeader    b X-Varnish: 3
+     32769 BereqHeader    b x-retry-whoami: 1
+     32769 BereqUnset     b X-Varnish: 3
+     32769 BereqHeader    b X-Varnish: 32769
+     32769 VCL_call       b BACKEND_FETCH
+     32769 VCL_return     b fetch
+     32769 Timestamp      b Fetch: 1785576213.511516 0.000637 0.000005
+     32769 Timestamp      b Connected: 1785576213.511665 0.000786 0.000148
+     32769 BackendOpen    b 30 whoami 192.168.50.12 80 192.168.50.10 53022 connect
+     32769 Timestamp      b Bereq: 1785576213.511692 0.000813 0.000027
+     32769 BerespProtocol b HTTP/1.1
+     32769 BerespStatus   b 200
+     32769 BerespReason   b OK
+     32769 BerespHeader   b Date: Sat, 01 Aug 2026 09:23:33 GMT
+     32769 BerespHeader   b Content-Length: 323
+     32769 BerespHeader   b Content-Type: text/plain; charset=utf-8
+     32769 Timestamp      b Beresp: 1785576213.512513 0.001634 0.000820
+     32769 TTL            b RFC 120 10 0 1785576214 1785576214 1785576213 0 0 cacheable
+     32769 VCL_call       b BACKEND_RESPONSE
+     32769 VCL_return     b deliver
+     32769 Timestamp      b Process: 1785576213.512524 0.001645 0.000010
+     32769 Filters        b 
+     32769 Storage        b malloc s0
+     32769 Fetch_Body     b 3 length stream
+     32769 BackendClose   b 30 whoami recycle
+     32769 Timestamp      b BerespBody: 1785576213.512597 0.001718 0.000072
+     32769 Length         b 323
+     32769 BereqAcct      b 433 0 433 300 323 623
+     32769 End            b 
+         2 Begin          c req 1 rxreq
+         2 Timestamp      c Start: 1785576213.510769 0.000000 0.000000
+         2 Timestamp      c Req: 1785576213.510769 0.000000 0.000000
+         2 VCL_use        c boot
+         2 ReqStart       c 192.168.50.1 34268 http
+         2 ReqMethod      c GET
+         2 ReqURL         c /rbt
+         2 ReqProtocol    c HTTP/1.1
+         2 ReqHeader      c Host: varnishlog.iou.re
+         2 ReqHeader      c Accept: */*
+         2 ReqHeader      c User-Agent: hurl/8.0.1
+         2 ReqHeader      c X-Forwarded-For: 192.168.50.1
+         2 ReqHeader      c Via: 1.1 1cd8c2d6270f (Varnish/7.7)
+         2 VCL_call       c RECV
+         2 VCL_Log        c start custom recv
+         2 ReqHeader      c x-do-retry: yes
+         2 VCL_Log        c end custom recv
+         2 VCL_return     c hash
+         2 VCL_call       c HASH
+         2 VCL_return     c lookup
+         2 VCL_call       c MISS
+         2 VCL_return     c fetch
+         2 Link           c bereq 3 fetch
+         2 Timestamp      c Fetch: 1785576213.512577 0.001808 0.001808
+         2 RespProtocol   c HTTP/1.1
+         2 RespStatus     c 200
+         2 RespReason     c OK
+         2 RespHeader     c Date: Sat, 01 Aug 2026 09:23:33 GMT
+         2 RespHeader     c Content-Length: 323
+         2 RespHeader     c Content-Type: text/plain; charset=utf-8
+         2 RespHeader     c X-Varnish: 2
+         2 RespHeader     c Age: 0
+         2 RespHeader     c Via: 1.1 1cd8c2d6270f (Varnish/7.7)
+         2 RespHeader     c Accept-Ranges: bytes
+         2 VCL_call       c DELIVER
+         2 VCL_return     c deliver
+         2 Timestamp      c Process: 1785576213.512588 0.001819 0.000011
+         2 Filters        c 
+         2 RespHeader     c Connection: keep-alive
+         2 Timestamp      c Resp: 1785576213.512638 0.001869 0.000050
+         2 ReqAcct        c 83 0 83 223 323 546
+         2 End            c 
+         1 SessClose      c REM_CLOSE 0.003
+         1 End            c 
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785576215 1.0
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785576218 1.0
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785576221 1.0

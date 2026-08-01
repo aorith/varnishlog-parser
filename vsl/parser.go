@@ -19,6 +19,8 @@ type TransactionParser struct {
 
 const maxScanTokenSize = 4 * 1024 * 1024 // 4 MiB per line
 
+// NewTransactionParser creates a new transaction parser from an 'io.Reader'
+// that will feed varnishlog log lines.
 func NewTransactionParser(r io.Reader) *TransactionParser {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 64*1024), maxScanTokenSize)
@@ -28,124 +30,211 @@ func NewTransactionParser(r io.Reader) *TransactionParser {
 	}
 }
 
+// Parse builds a varnishlog TransactionSet.
 func (p *TransactionParser) Parse() (TransactionSet, error) {
+	records, headerRawLog, err := p.tokenize()
+	if err != nil {
+		return TransactionSet{}, err
+	}
+
+	return buildTransactions(records, headerRawLog)
+}
+
+// isUint reports whether s is a non-empty run of decimal digits.
+func isUint(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+
+	return true
+}
+
+// tokenize (pass 1) reads every line of the input and returns an ordered
+// slice of BaseRecords, each stamped with the VXID of the transaction it
+// belongs to, plus the raw header line text seen for each VXID (grouped
+// mode only, used purely for display - see TransactionSet.RawLog).
+//
+// Line shapes are distinguished by their first field(s):
+//
+//   - A grouped-mode header, e.g.
+//
+//     "*   << Session  >> 16812342"
+//     "**  << Request  >> 4"
+//
+//     not a record itself, it only establishes the VXID for the indented
+//     tag lines that follow, until the next header.
+//
+//   - A flat "-g raw" tag line, e.g.
+//
+//     "1 Begin  c sess 0 HTTP/1"
+//
+//     the first field is a plain VXID, present on every line; the third
+//     field is a client/backend/none marker, consumed here but ignored.
+//
+//   - A verbose ("-v") grouped-mode tag line, e.g.
+//
+//     "-   2 Begin  c req 1 rxreq"
+//
+//     same as a plain grouped-mode tag line, but with a VXID and marker
+//     spliced in right after the depth marker, same as "-g raw" above.
+//
+//   - Anything else is a plain grouped-mode tag line, e.g.
+//
+//     "-   Begin  sess 0 HTTP/1"
+func (p *TransactionParser) tokenize() ([]BaseRecord, map[VXID]string, error) {
+	var records []BaseRecord // nolint:prealloc
+
+	headerRawLog := make(map[VXID]string)
+
+	var currentVXID VXID
+
+	for p.scanner.Scan() {
+		line := strings.TrimSpace(p.scanner.Text())
+		fields := strings.Fields(line)
+
+		if len(fields) < 2 {
+			continue
+		}
+
+		switch {
+		case fields[0][0] == '*':
+			// Grouped-mode header, e.g:
+			// *   << Session  >> 16812342
+			// **  << Request  >> 4
+			if len(fields) != 5 || fields[1][0] != '<' {
+				continue
+			}
+
+			vxid, err := parseVXID(fields[4])
+			if err != nil {
+				return nil, nil, fmt.Errorf("incorrect vxid found on line %q, error: %w", line, err)
+			}
+
+			currentVXID = vxid
+			headerRawLog[vxid] = line
+
+		case isUint(fields[0]):
+			// "-g raw" tag line: VXID first, no depth marker.
+			blr, err := newVXIDTaggedBaseRecord(line, fields, 0)
+			if err != nil {
+				continue
+			}
+
+			records = append(records, blr)
+
+		case len(fields) > 1 && isUint(fields[1]):
+			// Verbose ("-v") grouped-mode tag line: depth marker, then VXID.
+			blr, err := newVXIDTaggedBaseRecord(line, fields, 1)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			records = append(records, blr)
+
+		default:
+			blr, err := NewBaseRecord(line)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			blr.TxVXID = currentVXID
+			records = append(records, blr)
+		}
+	}
+
+	return records, headerRawLog, p.scanner.Err()
+}
+
+// buildTransactions (pass 2) assembles a TransactionSet from a flat, ordered
+// stream of BaseRecords.
+func buildTransactions(records []BaseRecord, headerRawLog map[VXID]string) (TransactionSet, error) {
 	ts := TransactionSet{
 		txs: make(map[VXID]*Transaction),
 	}
 
-	for p.scanner.Scan() {
-		line := strings.TrimSpace(p.scanner.Text())
-		parts := strings.Fields(line)
+	open := make(map[VXID]*Transaction)
+	trackers := make(map[VXID]*headerTracker)
 
-		// Look for the start of a transaction, eg:
-		// *   << Session  >> 16812342
-		// **  << Request  >> 4
-		if len(parts) != 5 || parts[0][0] != '*' || parts[1][0] != '<' {
+	for _, blr := range records {
+		vxid := blr.TxVXID
+
+		if vxid == 0 {
+			// Non-transactional records (CLI, Backend_health, Witness,
+			// WorkThread, ...), only surfaced by "-g raw".
 			continue
 		}
 
-		tx, err := NewTransaction(line)
+		r, err := processRecord(blr)
 		if err != nil {
 			return ts, err
 		}
 
-		// Expect a Begin tag after the start of the transaction, eg:
-		// --- Begin          req 2 esi 1
-		if !p.scanner.Scan() {
-			return ts, fmt.Errorf("parser error: expected %s tag, found EOF after %q", tags.Begin, tx.RawLog)
-		}
-
-		line = strings.TrimSpace(p.scanner.Text())
-		if line == "" {
-			return ts, fmt.Errorf("parser error: expected %s tag, found empty line after %q", tags.Begin, tx.RawLog)
-		}
-
-		r, err := processRecord(line)
-		if err != nil {
-			return ts, err
-		}
-
-		if r.GetTag() != tags.Begin {
-			return ts, fmt.Errorf("parser error: expected %s tag, found %q on line %q", tags.Begin, r.GetTag(), line)
-		}
-
-		// Add the data contained in the Begin tag to the new transaction
-		br := r.(BeginRecord) // nolint
-		tx.Parent = br.Parent
-		tx.ESILevel = br.ESILevel
-		tx.TXID = parseTXID(tx.VXID, br.RecordType, br.Reason, br.ESILevel)
-		tx.Reason = br.Reason
-		tx.Records = append(tx.Records, br)
-
-		// Parse the remaining tags
-		complete := false // to check at the end if the transaction finished (found End tag for example)
-		ht := newHeaderTracker(tx.ReqHeaders, tx.RespHeaders)
-
-		for p.scanner.Scan() {
-			line := strings.TrimSpace(p.scanner.Text())
-			// Skip empty lines or invalid lines
-			if len(strings.Fields(line)) < 2 {
-				continue
+		if br, ok := r.(BeginRecord); ok {
+			if _, exists := open[vxid]; exists {
+				return ts, fmt.Errorf("parser error: duplicate %q tag found in the middle of transaction %d", tags.Begin, vxid)
 			}
 
-			r, err := processRecord(line)
-			if err != nil {
-				return ts, err
+			tx := &Transaction{
+				VXID:         vxid,
+				TXType:       txTypeFromRecordType(br.RecordType),
+				Parent:       br.Parent,
+				ESILevel:     br.ESILevel,
+				Reason:       br.Reason,
+				TXID:         parseTXID(vxid, br.RecordType, br.Reason, br.ESILevel),
+				RawLogHeader: headerRawLog[vxid],
+				Records:      []Record{br},
+				ReqHeaders:   make(map[string]Header),
+				RespHeaders:  make(map[string]Header),
 			}
 
-			tx.Records = append(tx.Records, r)
-			ht.observe(r)
+			open[vxid] = tx
+			trackers[vxid] = newHeaderTracker(tx.ReqHeaders, tx.RespHeaders)
 
-			switch record := r.(type) {
-			case LinkRecord:
-				if slices.Contains(tx.Children, record.VXID) {
-					slog.Warn("Parse() duplicate children assignment", "txid", tx.TXID, "linkTXID", record.TXID)
+			continue
+		}
 
-					continue
-				}
+		tx, ok := open[vxid]
+		if !ok {
+			return ts, fmt.Errorf("parser error: %s tag found for vxid %d with no open transaction", r.GetTag(), vxid)
+		}
 
-				tx.Children = append(tx.Children, record.VXID)
+		tx.Records = append(tx.Records, r)
+		trackers[vxid].observe(r)
 
-			case BeginRecord:
-				// A Begin tag was found in the middle of a transaction
-				return ts, fmt.Errorf("parser error: duplicate %q tag found in the middle of transaction %d", tags.Begin, tx.VXID)
-
-			default:
-			}
-
-			// Check if the tx is complete, this is outside of the switch case to be able to break the for loop
-			if r.GetTag() == tags.End {
-				ts.txs[tx.VXID] = tx
-				complete = true
-
-				break
+		if link, ok := r.(LinkRecord); ok {
+			if slices.Contains(tx.Children, link.VXID) {
+				slog.Warn("Parse() duplicate children assignment", "txid", tx.TXID, "linkTXID", link.TXID)
+			} else {
+				tx.Children = append(tx.Children, link.VXID)
 			}
 		}
 
-		err = p.scanner.Err()
-		if err != nil {
-			return ts, err
-		}
-
-		if !complete {
-			return ts, fmt.Errorf("parser error: transaction %q finished without %s tag at EOL", tx.RawLog, tags.End)
+		if r.GetTag() == tags.End {
+			ts.txs[vxid] = tx
+			delete(open, vxid)
+			delete(trackers, vxid)
 		}
 	}
 
-	err := p.scanner.Err()
-	if err != nil {
-		return ts, err
+	// Here, 'open' might still contain transactions that were cut off mid-stream
+	// rather than corrupt, expected when capturing a "-g raw" window.
+	// Ignoring those partial txs to avoid having to deal with them.
+	if len(open) > 0 {
+		slog.Warn("buildTransactions() ended with some open (partial) transactions, those are ignored.", "open", len(open))
 	}
 
 	return ts, nil
 }
 
-func processRecord(line string) (Record, error) {
-	blr, err := NewBaseRecord(line)
-	if err != nil {
-		return blr, err
-	}
-
+// processRecord builds the appropriate dedicated Record type for blr's tag,
+// falling back to the untyped BaseRecord itself for tags without one.
+func processRecord(blr BaseRecord) (Record, error) {
 	t := blr.GetTag()
 
 	switch t { // nolint:revive
@@ -238,9 +327,7 @@ func processRecord(line string) (Record, error) {
 		return blr, nil
 	case tags.ExpBan, tags.ExpKill, tags.VSL, tags.SessError,
 		tags.CLI, tags.BackendHealth, tags.Witness, tags.WorkThread:
-		// Non-transactional tags logged under VXID 0 (health probes, thread
-		// pool events, master/child CLI traffic, lock witness data, ...).
-		// Only "varnishlog -g raw" surfaces VXID 0, which this parser doesn't support... yet.
+		// Non-transactional tags, only ever seen under VXID 0 in "-g raw".
 		return blr, nil
 	default:
 		slog.Warn("unknown tag", "tag", t)

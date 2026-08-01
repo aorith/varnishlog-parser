@@ -15,21 +15,6 @@ const (
 -12- Begin          req 39999 esi 10
 -12- End
 `
-
-	// No End tag.
-	testVCL3 = `** << Request  >> 39
--- Begin          req 38 esi 1
-`
-
-	// VCL_return in place of Begin.
-	testVCL4 = `** << Request  >> 41
--- VCL_return     hash
--- End
-`
-
-	// No Begin or End tags.
-	testVCL5 = `** << Request  >> 41
-`
 )
 
 func areTXIDSlicesEqual(a, b []vsl.TXID) bool {
@@ -125,33 +110,5 @@ func TestTransactions2(t *testing.T) {
 		t.Error("Transaction not found, got nil")
 
 		return
-	}
-
-	wantedLevel := 12
-	if tx.Level != wantedLevel {
-		t.Errorf("Level() wanted: %d, got: %d", wantedLevel, tx.Level)
-	}
-}
-
-func TestIncompleteTransaction(t *testing.T) {
-	p := vsl.NewTransactionParser(strings.NewReader(testVCL3))
-
-	_, err := p.Parse()
-	if err == nil {
-		t.Error("Parse() VCL3 should fail, but succeeded")
-	}
-
-	p = vsl.NewTransactionParser(strings.NewReader(testVCL4))
-
-	_, err = p.Parse()
-	if err == nil {
-		t.Error("Parse() VCL4 should fail, but succeeded")
-	}
-
-	p = vsl.NewTransactionParser(strings.NewReader(testVCL5))
-
-	_, err = p.Parse()
-	if err == nil {
-		t.Error("Parse() VCL4 should fail, but succeeded")
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -86,34 +85,6 @@ func parseTXID(vxid VXID, recordType, reason string, esiLevel int) TXID {
 	}
 
 	return TXID(fmt.Sprintf("%d-%s-%s", vxid, recordType, reason))
-}
-
-// parseLevel returns the level of the transaction parsing the initial transaction header
-// e.g.  '**  << Request  >> 2'
-// it checks the first field of the line ('*', '**', '*3*' ...).
-func parseLevel(s string) (int, error) {
-	stars := strings.Count(s, "*")
-	if stars == len(s) {
-		return stars, nil
-	}
-
-	// If we are here, the string must be something like '*5*'
-	var sb strings.Builder
-
-	for _, r := range s {
-		if r != '*' {
-			sb.WriteRune(r) //nolint:revive
-		}
-	}
-
-	levelStr := sb.String()
-
-	level, err := strconv.Atoi(levelStr)
-	if err != nil {
-		return 0, err
-	}
-
-	return level, nil
 }
 
 // parseVXID parses an string as a VXID.

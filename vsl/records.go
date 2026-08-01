@@ -47,6 +47,7 @@ type Record interface {
 
 // BaseRecord is a single VSL log line split by tag and value.
 type BaseRecord struct {
+	TxVXID   VXID   `json:"tx_vxid"`   // VXID of the transaction this record belongs to
 	Tag      string `json:"tag"`       // VSL Tag (Begin, Timestamp, ReqURL, ReqHeader, ...)
 	RawValue string `json:"raw_value"` // Value after the tag
 
@@ -64,6 +65,37 @@ func NewBaseRecord(rawLog string) (BaseRecord, error) {
 	value := strings.TrimLeft(after, " \t")
 
 	return BaseRecord{Tag: tag, RawValue: value, rawLog: rawLog}, nil
+}
+
+// newVXIDTaggedBaseRecord parses a tag line that carries its own VXID and a
+// client/backend/none level marker inline, immediately followed by the tag.
+// Two line shapes use this: "-g raw" (VXID first, no depth marker) and
+// verbose ("-v") grouped mode (depth marker, then VXID), e.g:
+//
+//	1 Begin c sess 0 HTTP/1    ("-g raw", vxidField 0)
+//	- 2 Begin c req 1 rxreq    (verbose grouped, vxidField 1)
+//
+// vxidField is the index of the VXID token. The level marker is consumed
+// here and discarded.
+func newVXIDTaggedBaseRecord(rawLog string, fields []string, vxidField int) (BaseRecord, error) {
+	if len(fields) < vxidField+3 {
+		return BaseRecord{}, fmt.Errorf("could not parse line %q", rawLog)
+	}
+
+	vxid, err := parseVXID(fields[vxidField])
+	if err != nil {
+		return BaseRecord{}, fmt.Errorf("incorrect vxid found on line %q: %w", rawLog, err)
+	}
+
+	tag := fields[vxidField+1]
+	_, afterTag, _ := strings.Cut(rawLog, tag)
+	afterTag = strings.TrimLeft(afterTag, " \t")
+
+	// afterTag now starts with the level marker; cut past it too.
+	_, value, _ := strings.Cut(afterTag, " ")
+	value = strings.TrimLeft(value, " \t")
+
+	return BaseRecord{Tag: tag, RawValue: value, TxVXID: vxid, rawLog: rawLog}, nil
 }
 
 func (r BaseRecord) String() string {
