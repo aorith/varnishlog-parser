@@ -96,6 +96,8 @@ func Run(ts vsl.TransactionSet) []Finding {
 		findings = append(findings, checkMalformedRequest(tx)...)
 		findings = append(findings, checkAbnormalSessionClose(tx)...)
 		findings = append(findings, checkHostHeaderCase(tx)...)
+		findings = append(findings, checkGzipError(tx)...)
+		findings = append(findings, checkObjectInTransientStorage(tx)...)
 	}
 
 	findings = append(findings, checkRetryStorms(ts)...)

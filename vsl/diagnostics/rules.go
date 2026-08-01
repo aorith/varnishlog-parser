@@ -441,3 +441,43 @@ func checkExpiryThreadPressure(ts vsl.TransactionSet) []Finding {
 
 	return findings
 }
+
+// checkGzipError flags a failed gzip/gunzip operation.
+func checkGzipError(tx *vsl.Transaction) []Finding {
+	var findings []Finding
+
+	for _, r := range tx.Records {
+		gz, ok := r.(vsl.GzipRecord)
+		if !ok || gz.Error == "" {
+			continue
+		}
+
+		findings = append(findings, newFinding(tx, "gzip-error", SeverityWarning,
+			"Gzip/gunzip operation failed on the object body",
+			gz.Error))
+	}
+
+	return findings
+}
+
+// checkObjectInTransientStorage flags a cacheable object that ended up in
+// Transient storage.
+func checkObjectInTransientStorage(tx *vsl.Transaction) []Finding {
+	if tx.TXType != vsl.TxTypeBereq {
+		return nil
+	}
+
+	storage, ok := tx.RecordByTag(tags.Storage, true).(vsl.StorageRecord)
+	if !ok || storage.Name != "Transient" {
+		return nil
+	}
+
+	ttl, ok := tx.RecordByTag(tags.TTL, false).(vsl.TTLRecord)
+	if !ok || ttl.CacheStatus != "cacheable" {
+		return nil
+	}
+
+	return []Finding{newFinding(tx, "object-in-transient-storage", SeverityWarning,
+		"Cacheable object was stored in Transient storage instead of the configured storage backend",
+		fmt.Sprintf("TTL: %s (source: %s); check storage size and nuke_limit", ttl.TTL, ttl.Source))}
+}

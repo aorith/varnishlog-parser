@@ -274,6 +274,84 @@ func TestHostHeaderCase(t *testing.T) {
 	}
 }
 
+func TestGzipError(t *testing.T) {
+	const rawLog = `*** << BeReq    >> 24
+--- Begin          bereq 1 fetch
+--- Gzip           G(un)zip error: -3 ((null))
+--- End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "gzip-error") {
+		t.Errorf("expected a gzip-error finding, got: %v", findings)
+	}
+}
+
+func TestGzipErrorIgnoresNormalStats(t *testing.T) {
+	const rawLog = `*** << BeReq    >> 25
+--- Begin          bereq 1 fetch
+--- Gzip           U F E 182 159 80 80 1392
+--- End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "gzip-error") {
+		t.Errorf("did not expect a gzip-error finding, got: %v", findings)
+	}
+}
+
+func TestObjectInTransientStorage(t *testing.T) {
+	const rawLog = `*** << BeReq    >> 26
+--- Begin          bereq 1 fetch
+--- TTL            RFC 120 10 0 1785584633 1785584633 1785584632 0 0 cacheable
+--- Storage        malloc Transient
+--- End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "object-in-transient-storage") {
+		t.Errorf("expected an object-in-transient-storage finding, got: %v", findings)
+	}
+}
+
+func TestObjectInTransientStorageIgnoresNormalStorage(t *testing.T) {
+	const rawLog = `*** << BeReq    >> 27
+--- Begin          bereq 1 fetch
+--- TTL            RFC 120 10 0 1785584633 1785584633 1785584632 0 0 cacheable
+--- Storage        malloc s0
+--- End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "object-in-transient-storage") {
+		t.Errorf("did not expect an object-in-transient-storage finding, got: %v", findings)
+	}
+}
+
+func TestObjectInTransientStorageIgnoresUncacheable(t *testing.T) {
+	const rawLog = `*** << BeReq    >> 28
+--- Begin          bereq 1 fetch
+--- TTL            VCL 120 10 0 1785584633 uncacheable
+--- Storage        malloc Transient
+--- End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "object-in-transient-storage") {
+		t.Errorf("did not expect an object-in-transient-storage finding, got: %v", findings)
+	}
+}
+
 func TestRetryStorm(t *testing.T) {
 	const rawLog = `*   << Session  >> 1
 -   Begin          sess 0 HTTP/1
