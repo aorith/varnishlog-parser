@@ -64,6 +64,9 @@ var (
 	VCLBackendRetry string
 	//go:embed examples/backend-retry_g_raw.txt
 	VCLBackendRetryRaw string
+
+	//go:embed examples/cache-expiry_g_raw.txt
+	VCLCacheExpiryRaw string
 )
 
 //go:embed all:css

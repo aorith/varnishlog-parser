@@ -44,6 +44,9 @@ TESTS=(
     "1 ./tests/esi1.hurl          ./output/esi-1_g_raw.txt         varnish        -g raw"
     "1 ./tests/esi1.hurl          ./output/esi-synth_g_raw.txt     varnishbackend -g raw"
     "3 ./tests/streaming-hit.hurl ./output/streaming-hit_g_raw.txt varnish        -g raw"
+    # caches a few distinct objects, to catch non-transactional (VXID 0)
+    # ExpKill events from the expiry thread, not just CLI ping/pong
+    "1 ./tests/cache-expiry.hurl  ./output/cache-expiry_g_raw.txt  varnish        -g raw"
     # with verbose mode ("-v"), one capture per grouping mode
     "1 ./tests/req-restart.hurl ./output/req-restart_verbose_g_session.txt varnish -v -g session"
     "1 ./tests/req-restart.hurl ./output/req-restart_verbose_g_request.txt varnish -v -g request"

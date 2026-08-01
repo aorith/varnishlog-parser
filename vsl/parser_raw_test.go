@@ -9,6 +9,7 @@ import (
 
 	"github.com/aorith/varnishlog-parser/assets"
 	"github.com/aorith/varnishlog-parser/vsl"
+	"github.com/aorith/varnishlog-parser/vsl/tags"
 )
 
 // rawFixturePairs are captures of the same hurl scenario, once in grouped
@@ -153,6 +154,37 @@ func TestRawFormatIgnoresVXIDZero(t *testing.T) {
 				t.Errorf("expected no transaction for vxid 0, got: %+v", got)
 			}
 		})
+	}
+}
+
+// TestNonTransactionalRecords checks that VXID 0 records are collected on
+// TransactionSet.NonTransactional() rather than discarded.
+func TestNonTransactionalRecords(t *testing.T) {
+	ts := mustParse(t, "cache-expiry", assets.VCLCacheExpiryRaw)
+
+	if got := ts.GetTX(0); got != nil {
+		t.Errorf("expected no transaction for vxid 0, got: %+v", got)
+	}
+
+	var cliCount, expKillCount int
+
+	for _, r := range ts.NonTransactional() {
+		switch r.GetTag() {
+		case tags.CLI:
+			cliCount++
+		case tags.ExpKill:
+			expKillCount++
+		default:
+			t.Errorf("unexpected non-transactional tag: %s", r.GetTag())
+		}
+	}
+
+	if cliCount != 6 {
+		t.Errorf("CLI count = %d, want 6", cliCount)
+	}
+
+	if expKillCount != 10 {
+		t.Errorf("ExpKill count = %d, want 10", expKillCount)
 	}
 }
 

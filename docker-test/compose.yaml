@@ -1,6 +1,6 @@
 services:
   varnish:
-    image: varnish:7.7
+    image: varnish:8
     volumes:
       - ./main.vcl:/etc/varnish/default.vcl:ro
     tmpfs:
@@ -13,9 +13,12 @@ services:
     networks:
       varnish_network:
         ipv4_address: 192.168.50.10
+    command:
+      - -p
+      - vsl_mask=all,-Debug
 
   varnishbackend:
-    image: varnish:7.7
+    image: varnish:8
     volumes:
       - ./backend.vcl:/etc/varnish/default.vcl:ro
     tmpfs:
@@ -25,6 +28,9 @@ services:
     networks:
       varnish_network:
         ipv4_address: 192.168.50.11
+    command:
+      - -p
+      - vsl_mask=all,-Debug
 
   whoami:
     image: traefik/whoami

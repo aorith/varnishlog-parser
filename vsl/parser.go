@@ -165,8 +165,9 @@ func buildTransactions(records []BaseRecord, headerRawLog map[VXID]string) (Tran
 		vxid := blr.TxVXID
 
 		if vxid == 0 {
-			// Non-transactional records (CLI, Backend_health, Witness,
-			// WorkThread, ...), only surfaced by "-g raw".
+			// Non-transactional records (CLI, ExpKill, ...) only present with "-g raw".
+			ts.nonTransactional = append(ts.nonTransactional, blr)
+
 			continue
 		}
 
@@ -317,7 +318,7 @@ func processRecord(blr BaseRecord) (Record, error) {
 		return ErrorRecord{BaseRecord: blr}, nil
 	case tags.XBody, tags.YKEY, tags.BogoHeader, tags.HTTPGarbage, tags.ESIXMLError,
 		tags.LostHeader, tags.Proxy, tags.ProxyGarbage, tags.VCLAcl, tags.VCLError,
-		tags.VCLTrace, tags.Notice, tags.VfpAcct,
+		tags.VCLTrace, tags.Notice, tags.VfpAcct, tags.VdpAcct,
 		tags.ADNS, tags.Backend, tags.BackendSSL, tags.Body, tags.ConnectAcct,
 		tags.Crypto, tags.DataDome, tags.Debug, tags.Edgestash,
 		tags.H2RxBody, tags.H2RxHdr, tags.H2TxBody, tags.H2TxHdr, tags.Hash,

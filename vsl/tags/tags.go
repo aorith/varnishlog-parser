@@ -204,6 +204,8 @@ const (
 	VHA6 = "VHA6"
 	// VSL API warnings and error message.
 	VSL = "VSL"
+	// Deliver filter accounting.
+	VdpAcct = "VdpAcct"
 	// Fetch filter accounting.
 	VfpAcct = "VfpAcct"
 	// WAF diagnostic message.

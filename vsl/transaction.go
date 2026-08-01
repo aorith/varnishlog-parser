@@ -212,11 +212,20 @@ func (t *Transaction) Duration() time.Duration {
 // TransactionSet groups multiple Varnish transaction logs together.
 type TransactionSet struct {
 	txs map[VXID]*Transaction // map[{vxid}]*tx
+
+	// nonTransactional holds VXID 0 records (CLI, ExpKill, ...).
+	nonTransactional []Record
 }
 
 // TransactionsMap returns the transactions map.
 func (t TransactionSet) TransactionsMap() map[VXID]*Transaction {
 	return t.txs
+}
+
+// NonTransactional returns the VXID 0 records seen while parsing in log order.
+// Only present when parsing "-g raw" input, empty otherwise.
+func (t TransactionSet) NonTransactional() []Record {
+	return t.nonTransactional
 }
 
 // Transactions returns a sorted slice with all the transactions.
