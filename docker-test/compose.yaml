@@ -1,6 +1,6 @@
 services:
   varnish:
-    image: varnish:8
+    image: varnish:9
     volumes:
       - ./main.vcl:/etc/varnish/default.vcl:ro
     tmpfs:
@@ -9,6 +9,7 @@ services:
       - "8001:80"
     depends_on:
       - whoami
+      - httpbin
       - varnishbackend
     networks:
       varnish_network:
@@ -18,13 +19,14 @@ services:
       - vsl_mask=all,-Debug
 
   varnishbackend:
-    image: varnish:8
+    image: varnish:9
     volumes:
       - ./backend.vcl:/etc/varnish/default.vcl:ro
     tmpfs:
       - /var/lib/varnish/varnishd:exec
     depends_on:
       - whoami
+      - httpbin
     networks:
       varnish_network:
         ipv4_address: 192.168.50.11
@@ -37,6 +39,12 @@ services:
     networks:
       varnish_network:
         ipv4_address: 192.168.50.12
+
+  httpbin:
+    image: kennethreitz/httpbin
+    networks:
+      varnish_network:
+        ipv4_address: 192.168.50.13
 
 networks:
   varnish_network:

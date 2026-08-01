@@ -48,7 +48,7 @@ func TestVary(t *testing.T) {
 	ts := parse(t, rawLog)
 	findings := diagnostics.Run(ts)
 
-	for _, rule := range []string{"vary-user-agent", "vary-accept-encoding", "vary-cookie", "vary-wildcard"} {
+	for _, rule := range []string{"vary-user-agent", "vary-cookie", "vary-wildcard"} {
 		if !hasRule(findings, rule) {
 			t.Errorf("expected a %q finding, got: %v", rule, findings)
 		}
@@ -271,6 +271,39 @@ func TestHostHeaderCase(t *testing.T) {
 
 	if !hasRule(findings, "host-header-case") {
 		t.Errorf("expected a host-header-case finding, got: %v", findings)
+	}
+}
+
+func TestVaryDuplicateHeaders(t *testing.T) {
+	// nolint: dupword
+	const rawLog = `*   << Request  >> 29
+-   Begin          req 1 rxreq
+-   RespStatus     200
+-   RespHeader     Vary: Accept-Encoding, Accept-Encoding, X-Device
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "vary-duplicate-header") {
+		t.Errorf("expected a vary-duplicate-header finding, got: %v", findings)
+	}
+}
+
+func TestVaryNoDuplicateHeaders(t *testing.T) {
+	const rawLog = `*   << Request  >> 30
+-   Begin          req 1 rxreq
+-   RespStatus     200
+-   RespHeader     Vary: Accept-Encoding, X-Device, Origin
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "vary-duplicate-header") {
+		t.Errorf("did not expect a vary-duplicate-header finding, got: %v", findings)
 	}
 }
 

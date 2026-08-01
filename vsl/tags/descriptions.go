@@ -10,7 +10,7 @@ var Descriptions = map[string]string{ // nolint:gosec
 	VCLReturn:    "The action returned by the VCL subroutine, deciding what happens next, e.g. hash, deliver, pipe.",
 	VCLAcl:       "Result of an ACL (access control list) match performed in VCL.",
 	Link:         "Links this transaction to a child transaction spawned from it, such as a backend fetch or an ESI include.",
-	Hit:          "The request was served from cache; includes the cached object's VXID, TTL, grace and keep values.",
+	Hit:          "The request was served from cache; includes the cached object's VXID, TTL, grace and keep values. If 'Fetched' is present and > 0 its an streaming hit.",
 	HitMiss:      "Hit-for-miss: an object marked uncacheable was found, so the request passes to the backend instead of being served from cache.",
 	HitPass:      "Hit-for-pass: a previous response told Varnish not to cache this request, so it passes straight to the backend.",
 	Gzip:         "Details of a gzip/gunzip transformation performed on the object body.",

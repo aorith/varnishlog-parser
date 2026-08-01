@@ -715,7 +715,7 @@ type HitRecord struct {
 	TTL           time.Duration // remaining TTL
 	Grace         time.Duration // grace period
 	Keep          time.Duration // keep period
-	Fetched       SizeValue     // bytes fetched so far
+	Fetched       SizeValue     // bytes fetched so far, if present and > 0 this is an streaming-hit
 	ContentLength SizeValue     // Content length
 }
 

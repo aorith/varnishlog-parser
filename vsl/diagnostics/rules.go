@@ -75,15 +75,51 @@ func checkVary(tx *vsl.Transaction) []Finding {
 			findings = append(findings, newFinding(tx, "vary-cookie", SeverityWarning,
 				"Vary: Cookie fragments the cache per cookie value",
 				fmt.Sprintf("Vary header: %q", vary)))
-		case "accept-encoding":
-			findings = append(findings, newFinding(tx, "vary-accept-encoding", SeverityInfo,
-				"Vary: Accept-Encoding present, verify it's normalized to a small set of values before hashing",
-				fmt.Sprintf("Vary header: %q", vary)))
 		default:
 		}
 	}
 
 	return findings
+}
+
+// checkVaryDuplicateHeaders flags a Vary header that lists the same header name more than once.
+func checkVaryDuplicateHeaders(tx *vsl.Transaction) []Finding {
+	if tx.TXType == vsl.TxTypeSession {
+		return nil
+	}
+
+	vary := tx.RespHeaders.Get("Vary", false)
+	if vary == "" {
+		return nil
+	}
+
+	seen := make(map[string]bool)
+
+	var duplicates []string
+
+	for tok := range strings.SplitSeq(vary, ",") {
+		tok = strings.TrimSpace(tok)
+		if tok == "" {
+			continue
+		}
+
+		key := strings.ToLower(tok)
+		if seen[key] {
+			duplicates = append(duplicates, tok)
+
+			continue
+		}
+
+		seen[key] = true
+	}
+
+	if len(duplicates) == 0 {
+		return nil
+	}
+
+	return []Finding{newFinding(tx, "vary-duplicate-header", SeverityWarning,
+		"Vary header lists the same header name more than once",
+		fmt.Sprintf("Duplicated: %s (Vary: %q)", strings.Join(duplicates, ", "), vary))}
 }
 
 // checkSetCookieOnHit flags a Set-Cookie header served from a cache hit: the
@@ -285,11 +321,15 @@ var singleTagFindings = []struct {
 		"VCL runtime error",
 		func(raw string) string { return raw },
 	},
+	{
+		tags.Error, "error-tag", SeverityWarning,
+		"Varnish logged an internal error",
+		func(raw string) string { return raw },
+	},
 }
 
-// checkSingleTagMessages flags a handful of independent tags (a lost header,
-// an ESI parser error, a VCL runtime error, ...) that each produce a single
-// finding straight from their raw log value when present.
+// checkSingleTagMessages flags a handful of independent tags that with
+// their presence and value alone produce a finding.
 func checkSingleTagMessages(tx *vsl.Transaction) []Finding {
 	var findings []Finding
 
@@ -297,6 +337,13 @@ func checkSingleTagMessages(tx *vsl.Transaction) []Finding {
 		r := tx.RecordByTag(c.tag, true)
 		if r == nil {
 			continue
+		}
+
+		// Skip common errors
+		if c.tag == tags.Error {
+			if strings.Contains(r.GetRawValue(), "getaddrinfo() failed to resolve") {
+				continue
+			}
 		}
 
 		findings = append(findings, newFinding(tx, c.rule, c.severity, c.summary, c.detail(r.GetRawValue())))

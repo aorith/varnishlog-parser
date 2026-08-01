@@ -10,19 +10,25 @@ run_test() {
     local query=("$@")
 
     docker compose up -d --force-recreate
-    docker compose exec -d "$container" sh -c "timeout 12 varnishlog ${query[*]} > /tmp/output.txt 2>&1"
-
     until docker compose exec varnish varnishadm ping; do
         sleep 0.1
     done
-    sleep 0.5
+
+    docker compose exec -d "$container" sh -c "timeout 20 varnishlog ${query[*]} > /tmp/output.txt 2>&1"
+    sleep 1
+
     for _ in $(seq 1 "$runs"); do
         (
             hurl "$hurlfile" >/dev/null
         ) &
+
+        if [[ "$hurlfile" =~ "streaming" ]]; then
+            sleep 0.5
+        fi
     done
     wait
-    sleep 12
+
+    sleep 2
 
     docker compose cp "${container}:/tmp/output.txt" "$output"
 }

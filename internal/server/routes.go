@@ -73,7 +73,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 		case "eg-cached":
 			data.Logs.Textinput = assets.VCLCached
 		case "eg-streaming-hit":
-			data.Logs.Textinput = assets.VCLStreamingHit
+			data.Logs.Textinput = assets.VCLStreamingHitRaw
 		case "eg-esi1":
 			data.Logs.Textinput = assets.VCLESI1
 		case "eg-req-restart":

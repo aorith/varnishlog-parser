@@ -87,6 +87,7 @@ func Run(ts vsl.TransactionSet) []Finding {
 
 	for _, tx := range ts.Transactions() {
 		findings = append(findings, checkVary(tx)...)
+		findings = append(findings, checkVaryDuplicateHeaders(tx)...)
 		findings = append(findings, checkSetCookieOnHit(tx)...)
 		findings = append(findings, checkAuthorizationCached(tx)...)
 		findings = append(findings, checkHitForPassLongTTL(tx)...)

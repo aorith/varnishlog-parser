@@ -1,231 +1,231 @@
          1 Begin          c sess 0 HTTP/1
-         1 SessOpen       c 192.168.50.1 39512 http 192.168.50.10 80 1785576264.672969 26
+         1 SessOpen       c 192.168.50.1 48256 http 192.168.50.10 80 1785600572.161422 23
+         1 Link           c req 2 rxreq
+         0 ExpKill        - EXP_Inbox flg=1e p=0xee7324000ce0 e=0.000000 f=0x0
+         0 ExpKill        - EXP_When p=0xee7324000ce0 e=1785600882.174079 f=0x1e
+         0 ExpKill        - EXP_Inspect p=0xee7324000ce0 e=309.999890 f=0x0
      32769 Begin          c sess 0 HTTP/1
-     32769 SessOpen       c 192.168.50.1 39508 http 192.168.50.10 80 1785576264.673124 29
+     32769 SessOpen       c 192.168.50.1 48262 http 192.168.50.10 80 1785600572.677466 26
      32769 Link           c req 32770 rxreq
      65537 Begin          c sess 0 HTTP/1
-     65537 SessOpen       c 192.168.50.1 39520 http 192.168.50.10 80 1785576264.673295 22
+     65537 SessOpen       c 192.168.50.1 48266 http 192.168.50.10 80 1785600573.188714 29
      65537 Link           c req 65538 rxreq
-         1 Link           c req 2 rxreq
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576264.673542 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576264.704114 0.030572 0.030572
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576264.704351 0.030809 0.000237
-     32771 Begin          b bereq 32770 fetch
-     32771 VCL_use        b boot
-     32771 Timestamp      b Start: 1785576264.673336 0.000000 0.000000
-     32771 BereqMethod    b GET
-     32771 BereqURL       b /stream-bytes/100
-     32771 BereqProtocol  b HTTP/1.1
-     32771 BereqHeader    b Host: httpbin.org
-     32771 BereqHeader    b Accept: application/octet-stream
-     32771 BereqHeader    b User-Agent: hurl/8.0.1
-     32771 BereqHeader    b X-Forwarded-For: 192.168.50.1
-     32771 BereqHeader    b Via: 1.1 f89d17ddb9ab (Varnish/7.7)
-     32771 BereqHeader    b httpbin: 1
-     32771 BereqHeader    b Accept-Encoding: gzip
-     32771 BereqHeader    b X-Varnish: 32771
-     32771 VCL_call       b BACKEND_FETCH
-     32771 BereqUnset     b Host: httpbin.org
-     32771 BereqHeader    b host: httpbin.org
-     32771 VCL_return     b fetch
-     32771 Timestamp      b Fetch: 1785576264.704392 0.031056 0.031056
-     32771 Timestamp      b Connected: 1785576264.836329 0.162992 0.131936
-     32771 BackendOpen    b 32 d(54.88.217.255:80) 54.88.217.255 80 192.168.50.10 45780 connect
-     32771 Timestamp      b Bereq: 1785576264.836527 0.163191 0.000198
-     32771 BerespProtocol b HTTP/1.1
-     32771 BerespStatus   b 503
-     32771 BerespReason   b Service Temporarily Unavailable
-     32771 BerespHeader   b Server: awselb/2.0
-     32771 BerespHeader   b Date: Sat, 01 Aug 2026 09:24:24 GMT
-     32771 BerespHeader   b Content-Type: text/html
-     32771 BerespHeader   b Content-Length: 162
-     32771 BerespHeader   b Connection: keep-alive
-     32771 Timestamp      b Beresp: 1785576264.938039 0.264702 0.101511
-     32771 TTL            b RFC -1 10 0 1785576265 1785576265 1785576264 0 0 cacheable
-     32771 VCL_call       b BACKEND_RESPONSE
-     32771 BerespHeader   b Cache-Control: max-age=300
-     32771 TTL            b VCL 300 10 0 1785576265 cacheable
-     32771 VCL_return     b deliver
-     32771 Timestamp      b Process: 1785576264.938165 0.264829 0.000126
-     32771 Filters        b 
-     32771 Storage        b malloc s0
-     32771 Fetch_Body     b 3 length stream
-     32771 BackendClose   b 32 d(54.88.217.255:80) recycle
-     32771 Timestamp      b BerespBody: 1785576264.938399 0.265063 0.000234
-     32771 Length         b 162
-     32771 BereqAcct      b 232 0 232 175 162 337
-     32771 End            b 
-         2 Begin          c req 1 rxreq
-         2 Timestamp      c Start: 1785576264.673381 0.000000 0.000000
-         2 Timestamp      c Req: 1785576264.673381 0.000000 0.000000
-         2 VCL_use        c boot
-         2 ReqStart       c 192.168.50.1 39512 http
-         2 ReqMethod      c GET
-         2 ReqURL         c /stream-bytes/100
-         2 ReqProtocol    c HTTP/1.1
-         2 ReqHeader      c Host: httpbin.org
-         2 ReqHeader      c Accept: application/octet-stream
-         2 ReqHeader      c User-Agent: hurl/8.0.1
-         2 ReqHeader      c X-Forwarded-For: 192.168.50.1
-         2 ReqHeader      c Via: 1.1 f89d17ddb9ab (Varnish/7.7)
-         2 VCL_call       c RECV
-         2 VCL_Log        c start custom recv
-         2 ReqHeader      c httpbin: 1
-         2 VCL_Log        c end custom recv
-         2 VCL_return     c hash
-         2 VCL_call       c HASH
-         2 VCL_return     c lookup
-         2 Hit            c 32771 300.264657 10.000000 0.000000 162 162
-         2 Timestamp      c Waitinglist: 1785576264.938437 0.265055 0.265055
-         2 VCL_call       c HIT
-         2 VCL_return     c deliver
-         2 RespProtocol   c HTTP/1.1
-         2 RespStatus     c 503
-         2 RespReason     c Service Temporarily Unavailable
-         2 RespHeader     c Server: awselb/2.0
-         2 RespHeader     c Date: Sat, 01 Aug 2026 09:24:24 GMT
-         2 RespHeader     c Content-Type: text/html
-         2 RespHeader     c Content-Length: 162
-         2 RespHeader     c Cache-Control: max-age=300
-         2 RespHeader     c X-Varnish: 2 32771
-         2 RespHeader     c Age: 0
-         2 RespHeader     c Via: 1.1 f89d17ddb9ab (Varnish/7.7)
-         2 VCL_call       c DELIVER
-         2 VCL_return     c deliver
-         2 Timestamp      c Process: 1785576264.938460 0.265078 0.000023
-         2 Filters        c 
-         2 RespHeader     c Connection: keep-alive
-         2 Timestamp      c Resp: 1785576264.938610 0.265228 0.000149
-         2 ReqAcct        c 111 0 111 268 162 430
-         2 End            c 
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785600573 1.0
+         0 CLI            - Rd ping
+         0 CLI            - Wr 200 19 PONG 1785600576 1.0
+         3 Begin          b bereq 2 fetch
+         3 VCL_use        b boot
+         3 Timestamp      b Start: 1785600572.161617 0.000000 0.000000
+         3 BereqMethod    b GET
+         3 BereqURL       b /drip?duration=5&numbytes=1024
+         3 BereqProtocol  b HTTP/1.1
+         3 BereqHeader    b Host: httpbin.org
+         3 BereqHeader    b Accept: application/octet-stream
+         3 BereqHeader    b User-Agent: hurl/8.0.1
+         3 BereqHeader    b X-Forwarded-For: 192.168.50.1
+         3 BereqHeader    b Via: 1.1 95354be7c9ad (Varnish/9.0)
+         3 BereqHeader    b httpbin: 1
+         3 BereqHeader    b Accept-Encoding: gzip
+         3 BereqHeader    b X-Varnish: 3
+         3 VCL_call       b BACKEND_FETCH
+         3 BereqUnset     b Host: httpbin.org
+         3 BereqHeader    b host: httpbin.org
+         3 VCL_return     b fetch
+         3 Timestamp      b Fetch: 1785600572.161631 0.000013 0.000013
+         3 Timestamp      b Connected: 1785600572.161796 0.000178 0.000164
+         3 BackendOpen    b 30 httpbin 192.168.50.13 80 192.168.50.10 43220 connect
+         3 VdpAcct        b V1B 0 0
+         3 Timestamp      b Bereq: 1785600572.161840 0.000222 0.000043
+         3 BerespProtocol b HTTP/1.1
+         3 BerespStatus   b 200
+         3 BerespReason   b OK
+         3 BerespHeader   b Server: gunicorn/19.9.0
+         3 BerespHeader   b Date: Sat, 01 Aug 2026 16:09:32 GMT
+         3 BerespHeader   b Connection: keep-alive
+         3 BerespHeader   b Content-Type: application/octet-stream
+         3 BerespHeader   b Content-Length: 1024
+         3 BerespHeader   b Access-Control-Allow-Origin: *
+         3 BerespHeader   b Access-Control-Allow-Credentials: true
+         3 Timestamp      b Beresp: 1785600572.174078 0.012461 0.012238
+         3 TTL            b RFC 120 10 0 1785600572 1785600572 1785600572 0 0 cacheable
+         3 VCL_call       b BACKEND_RESPONSE
+         3 BerespHeader   b Cache-Control: max-age=300
+         3 TTL            b VCL 300 10 0 1785600572 cacheable
+         3 VCL_return     b deliver
+         3 Timestamp      b Process: 1785600572.174106 0.012489 0.000027
+         3 Filters        b 
+         3 Storage        b malloc s0
+         3 ObjProtocol    b HTTP/1.1
+         3 ObjStatus      b 200
+         3 ObjReason      b OK
+         3 ObjHeader      b Server: gunicorn/19.9.0
+         3 ObjHeader      b Date: Sat, 01 Aug 2026 16:09:32 GMT
+         3 ObjHeader      b Content-Type: application/octet-stream
+         3 ObjHeader      b Content-Length: 1024
+         3 ObjHeader      b Access-Control-Allow-Origin: *
+         3 ObjHeader      b Access-Control-Allow-Credentials: true
+         3 ObjHeader      b Cache-Control: max-age=300
+         3 Fetch_Body     b 3 length stream
+         3 VfpAcct        b V1F_STRAIGHT 1024 1024
+         3 BackendClose   b 30 httpbin recycle
+         3 Timestamp      b BerespBody: 1785600578.589759 6.428141 6.415652
+         3 Length         b 1024
+         3 BereqAcct      b 241 0 241 239 1024 1263
+         3 End            b 
      65538 Begin          c req 65537 rxreq
-     65538 Timestamp      c Start: 1785576264.673323 0.000000 0.000000
-     65538 Timestamp      c Req: 1785576264.673323 0.000000 0.000000
+     65538 Timestamp      c Start: 1785600573.188752 0.000000 0.000000
+     65538 Timestamp      c Req: 1785600573.188752 0.000000 0.000000
+     65538 ReqTarget      c /drip?duration=5&numbytes=1024
      65538 VCL_use        c boot
-     65538 ReqStart       c 192.168.50.1 39520 http
+     65538 ReqStart       c 192.168.50.1 48266 http
      65538 ReqMethod      c GET
-     65538 ReqURL         c /stream-bytes/100
+     65538 ReqURL         c /drip?duration=5&numbytes=1024
      65538 ReqProtocol    c HTTP/1.1
      65538 ReqHeader      c Host: httpbin.org
      65538 ReqHeader      c Accept: application/octet-stream
      65538 ReqHeader      c User-Agent: hurl/8.0.1
      65538 ReqHeader      c X-Forwarded-For: 192.168.50.1
-     65538 ReqHeader      c Via: 1.1 f89d17ddb9ab (Varnish/7.7)
+     65538 ReqHeader      c Via: 1.1 95354be7c9ad (Varnish/9.0)
      65538 VCL_call       c RECV
      65538 VCL_Log        c start custom recv
      65538 ReqHeader      c httpbin: 1
      65538 VCL_Log        c end custom recv
      65538 VCL_return     c hash
      65538 VCL_call       c HASH
+     65538 Hash           c "/drip?duration=5&numbytes=1024%00"
+     65538 Hash           c "httpbin.org%00"
      65538 VCL_return     c lookup
-     65538 Hit            c 32771 300.264715 10.000000 0.000000 162 162
-     65538 Timestamp      c Waitinglist: 1785576264.938514 0.265190 0.265190
+     65538 Hit            c 3 298.985326 10.000000 0.000000 165 1024
      65538 VCL_call       c HIT
      65538 VCL_return     c deliver
      65538 RespProtocol   c HTTP/1.1
-     65538 RespStatus     c 503
-     65538 RespReason     c Service Temporarily Unavailable
-     65538 RespHeader     c Server: awselb/2.0
-     65538 RespHeader     c Date: Sat, 01 Aug 2026 09:24:24 GMT
-     65538 RespHeader     c Content-Type: text/html
-     65538 RespHeader     c Content-Length: 162
+     65538 RespStatus     c 200
+     65538 RespReason     c OK
+     65538 RespHeader     c Server: gunicorn/19.9.0
+     65538 RespHeader     c Date: Sat, 01 Aug 2026 16:09:32 GMT
+     65538 RespHeader     c Content-Type: application/octet-stream
+     65538 RespHeader     c Content-Length: 1024
+     65538 RespHeader     c Access-Control-Allow-Origin: *
+     65538 RespHeader     c Access-Control-Allow-Credentials: true
      65538 RespHeader     c Cache-Control: max-age=300
-     65538 RespHeader     c X-Varnish: 65538 32771
-     65538 RespHeader     c Age: 0
-     65538 RespHeader     c Via: 1.1 f89d17ddb9ab (Varnish/7.7)
+     65538 RespHeader     c X-Varnish: 65538 3
+     65538 RespHeader     c Age: 1
+     65538 RespHeader     c Via: 1.1 95354be7c9ad (Varnish/9.0)
+     65538 RespHeader     c Accept-Ranges: bytes
      65538 VCL_call       c DELIVER
      65538 VCL_return     c deliver
-     65538 Timestamp      c Process: 1785576264.938529 0.265205 0.000014
+     65538 Timestamp      c Process: 1785600573.188784 0.000032 0.000032
      65538 Filters        c 
      65538 RespHeader     c Connection: keep-alive
-     65538 Timestamp      c Resp: 1785576264.938633 0.265309 0.000104
-     65538 ReqAcct        c 111 0 111 272 162 434
+     65538 VdpAcct        c V1B 860 1024
+     65538 Timestamp      c Resp: 1785600578.589872 5.401120 5.401087
+     65538 ReqAcct        c 124 0 124 354 1024 1378
      65538 End            c 
      32770 Begin          c req 32769 rxreq
-     32770 Timestamp      c Start: 1785576264.673154 0.000000 0.000000
-     32770 Timestamp      c Req: 1785576264.673154 0.000000 0.000000
+     32770 Timestamp      c Start: 1785600572.677701 0.000000 0.000000
+     32770 Timestamp      c Req: 1785600572.677701 0.000000 0.000000
+     32770 ReqTarget      c /drip?duration=5&numbytes=1024
      32770 VCL_use        c boot
-     32770 ReqStart       c 192.168.50.1 39508 http
+     32770 ReqStart       c 192.168.50.1 48262 http
      32770 ReqMethod      c GET
-     32770 ReqURL         c /stream-bytes/100
+     32770 ReqURL         c /drip?duration=5&numbytes=1024
      32770 ReqProtocol    c HTTP/1.1
      32770 ReqHeader      c Host: httpbin.org
      32770 ReqHeader      c Accept: application/octet-stream
      32770 ReqHeader      c User-Agent: hurl/8.0.1
      32770 ReqHeader      c X-Forwarded-For: 192.168.50.1
-     32770 ReqHeader      c Via: 1.1 f89d17ddb9ab (Varnish/7.7)
+     32770 ReqHeader      c Via: 1.1 95354be7c9ad (Varnish/9.0)
      32770 VCL_call       c RECV
      32770 VCL_Log        c start custom recv
      32770 ReqHeader      c httpbin: 1
      32770 VCL_Log        c end custom recv
      32770 VCL_return     c hash
      32770 VCL_call       c HASH
+     32770 Hash           c "/drip?duration=5&numbytes=1024%00"
+     32770 Hash           c "httpbin.org%00"
      32770 VCL_return     c lookup
-     32770 VCL_call       c MISS
-     32770 VCL_return     c fetch
-     32770 Link           c bereq 32771 fetch
-     32770 Timestamp      c Fetch: 1785576264.938332 0.265178 0.265178
+     32770 Hit            c 3 299.496377 10.000000 0.000000 84 1024
+     32770 VCL_call       c HIT
+     32770 VCL_return     c deliver
      32770 RespProtocol   c HTTP/1.1
-     32770 RespStatus     c 503
-     32770 RespReason     c Service Temporarily Unavailable
-     32770 RespHeader     c Server: awselb/2.0
-     32770 RespHeader     c Date: Sat, 01 Aug 2026 09:24:24 GMT
-     32770 RespHeader     c Content-Type: text/html
-     32770 RespHeader     c Content-Length: 162
+     32770 RespStatus     c 200
+     32770 RespReason     c OK
+     32770 RespHeader     c Server: gunicorn/19.9.0
+     32770 RespHeader     c Date: Sat, 01 Aug 2026 16:09:32 GMT
+     32770 RespHeader     c Content-Type: application/octet-stream
+     32770 RespHeader     c Content-Length: 1024
+     32770 RespHeader     c Access-Control-Allow-Origin: *
+     32770 RespHeader     c Access-Control-Allow-Credentials: true
      32770 RespHeader     c Cache-Control: max-age=300
-     32770 RespHeader     c X-Varnish: 32770
+     32770 RespHeader     c X-Varnish: 32770 3
      32770 RespHeader     c Age: 0
-     32770 RespHeader     c Via: 1.1 f89d17ddb9ab (Varnish/7.7)
+     32770 RespHeader     c Via: 1.1 95354be7c9ad (Varnish/9.0)
+     32770 RespHeader     c Accept-Ranges: bytes
      32770 VCL_call       c DELIVER
      32770 VCL_return     c deliver
-     32770 Timestamp      c Process: 1785576264.938369 0.265215 0.000036
+     32770 Timestamp      c Process: 1785600572.677759 0.000057 0.000057
      32770 Filters        c 
      32770 RespHeader     c Connection: keep-alive
-     32770 Timestamp      c Resp: 1785576264.938612 0.265458 0.000242
-     32770 ReqAcct        c 111 0 111 266 162 428
+     32770 VdpAcct        c V1B 941 1024
+     32770 Timestamp      c Resp: 1785600578.589872 5.912171 5.912113
+     32770 ReqAcct        c 124 0 124 354 1024 1378
      32770 End            c 
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576265.704389 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576265.708468 0.004079 0.004079
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576265.708485 0.004097 0.000017
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576266.709952 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576266.714814 0.004862 0.004862
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576266.714833 0.004881 0.000019
-         0 CLI            - Rd ping
-         0 CLI            - Wr 200 19 PONG 1785576266 1.0
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576267.715257 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576267.720480 0.005223 0.005223
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576267.720498 0.005242 0.000019
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576268.722149 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576268.727245 0.005096 0.005096
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576268.727267 0.005118 0.000021
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576269.729984 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576269.734901 0.004917 0.004917
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576269.734921 0.004937 0.000020
-         1 SessClose      c RX_CLOSE_IDLE 5.268
-         1 End            c 
-     32769 SessClose      c RX_CLOSE_IDLE 5.267
-     32769 End            c 
-     65537 SessClose      c RX_CLOSE_IDLE 5.271
+         2 Begin          c req 1 rxreq
+         2 Timestamp      c Start: 1785600572.161491 0.000000 0.000000
+         2 Timestamp      c Req: 1785600572.161491 0.000000 0.000000
+         2 ReqTarget      c /drip?duration=5&numbytes=1024
+         2 VCL_use        c boot
+         2 ReqStart       c 192.168.50.1 48256 http
+         2 ReqMethod      c GET
+         2 ReqURL         c /drip?duration=5&numbytes=1024
+         2 ReqProtocol    c HTTP/1.1
+         2 ReqHeader      c Host: httpbin.org
+         2 ReqHeader      c Accept: application/octet-stream
+         2 ReqHeader      c User-Agent: hurl/8.0.1
+         2 ReqHeader      c X-Forwarded-For: 192.168.50.1
+         2 ReqHeader      c Via: 1.1 95354be7c9ad (Varnish/9.0)
+         2 VCL_call       c RECV
+         2 VCL_Log        c start custom recv
+         2 ReqHeader      c httpbin: 1
+         2 VCL_Log        c end custom recv
+         2 VCL_return     c hash
+         2 VCL_call       c HASH
+         2 Hash           c "/drip?duration=5&numbytes=1024%00"
+         2 Hash           c "httpbin.org%00"
+         2 VCL_return     c lookup
+         2 VCL_call       c MISS
+         2 VCL_return     c fetch
+         2 Link           c bereq 3 fetch
+         2 Timestamp      c Fetch: 1785600572.174181 0.012689 0.012689
+         2 RespProtocol   c HTTP/1.1
+         2 RespStatus     c 200
+         2 RespReason     c OK
+         2 RespHeader     c Server: gunicorn/19.9.0
+         2 RespHeader     c Date: Sat, 01 Aug 2026 16:09:32 GMT
+         2 RespHeader     c Content-Type: application/octet-stream
+         2 RespHeader     c Content-Length: 1024
+         2 RespHeader     c Access-Control-Allow-Origin: *
+         2 RespHeader     c Access-Control-Allow-Credentials: true
+         2 RespHeader     c Cache-Control: max-age=300
+         2 RespHeader     c X-Varnish: 2
+         2 RespHeader     c Age: 0
+         2 RespHeader     c Via: 1.1 95354be7c9ad (Varnish/9.0)
+         2 RespHeader     c Accept-Ranges: bytes
+         2 VCL_call       c DELIVER
+         2 VCL_return     c deliver
+         2 Timestamp      c Process: 1785600572.174193 0.012701 0.000011
+         2 Filters        c 
+         2 RespHeader     c Connection: keep-alive
+         2 VdpAcct        c V1B 1025 1024
+         2 Timestamp      c Resp: 1785600578.590083 6.428592 6.415890
+         2 ReqAcct        c 124 0 124 348 1024 1372
+         2 End            c 
+     65537 SessClose      c REM_CLOSE 5.403
      65537 End            c 
+     32769 SessClose      c REM_CLOSE 5.915
+     32769 End            c 
+         1 SessClose      c REM_CLOSE 6.431
+         1 End            c 
          0 CLI            - Rd ping
-         0 CLI            - Wr 200 19 PONG 1785576269 1.0
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576270.735517 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576270.740421 0.004903 0.004903
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576270.740438 0.004921 0.000018
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576271.741416 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576271.745929 0.004513 0.004513
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576271.745947 0.004531 0.000018
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576272.747530 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576272.752993 0.005464 0.005464
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576272.753011 0.005482 0.000018
-         0 CLI            - Rd ping
-         0 CLI            - Wr 200 19 PONG 1785576272 1.0
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576273.754075 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576273.759363 0.005288 0.005288
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576273.759382 0.005307 0.000018
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576274.760784 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576274.765985 0.005200 0.005200
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576274.766001 0.005217 0.000016
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Lookup: 1785576275.767443 0.000000 0.000000
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Results: 1785576275.772648 0.005205 0.005205
-         0 Timestamp      - vmod-dynamic boot.d(httpbin.org:80) Update: 1785576275.772665 0.005222 0.000017
+         0 CLI            - Wr 200 19 PONG 1785600579 1.0

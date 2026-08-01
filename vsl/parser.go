@@ -202,7 +202,9 @@ func buildTransactions(records []BaseRecord, headerRawLog map[VXID]string) (Tran
 
 		tx, ok := open[vxid]
 		if !ok {
-			return ts, fmt.Errorf("parser error: %s tag found for vxid %d with no open transaction", r.GetTag(), vxid)
+			slog.Warn("buildTransactions() tag without open transaction discarded", "tag", r.GetTag(), "vxid", vxid)
+
+			continue
 		}
 
 		tx.Records = append(tx.Records, r)

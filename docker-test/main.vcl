@@ -1,7 +1,6 @@
 vcl 4.0;
 
 import std;
-import dynamic;
 
 backend backend1 {
     .host = "192.168.50.11";
@@ -13,14 +12,15 @@ backend whoami {
     .port = "80";
 }
 
-sub vcl_init {
-    new d = dynamic.director(port = 80, ttl = 1s);
+backend httpbin {
+    .host = "192.168.50.13";
+    .port = "80";
 }
 
 sub vcl_recv {
     std.log("start custom recv");
 
-    if (req.url ~ "^(/delay|/range|/stream-bytes)") {
+    if (req.url ~ "^(/delay|/range|/stream-bytes|/drip)") {
         set req.http.httpbin = "1";
 
     } else if (req.url ~ "^/rbt") {
@@ -56,7 +56,7 @@ sub vcl_recv {
 sub vcl_backend_fetch {
     if (bereq.http.httpbin == "1") {
         set bereq.http.host = "httpbin.org";
-        set bereq.backend = d.backend(bereq.http.host).resolve();
+        set bereq.backend = httpbin;
     }
 
     if (bereq.http.x-retry-whoami == "1") {
@@ -74,7 +74,7 @@ sub vcl_backend_response {
         set beresp.ttl = 5s;
     }
 
-    if (bereq.url ~ "/stream-bytes") {
+    if (bereq.url ~ "/(stream-bytes|drip)") {
         set beresp.do_stream = true;
         set beresp.http.Cache-Control = "max-age=300";
         set beresp.ttl = 300s;
