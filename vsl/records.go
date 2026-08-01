@@ -54,7 +54,7 @@ type BaseRecord struct {
 	rawLog string // Raw log line
 }
 
-func NewBaseRecord(rawLog string) (BaseRecord, error) {
+func newBaseRecord(rawLog string) (BaseRecord, error) {
 	fields := strings.Fields(rawLog)
 	if len(fields) < 2 {
 		return BaseRecord{}, fmt.Errorf("could not parse line %q", rawLog)
@@ -124,7 +124,7 @@ type BeginRecord struct {
 	Reason     string // reason of the transaction
 }
 
-func NewBeginRecord(blr BaseRecord) (BeginRecord, error) {
+func newBeginRecord(blr BaseRecord) (BeginRecord, error) {
 	ref, err := parseTxRef(blr, "BeginRecord")
 	if err != nil {
 		return BeginRecord{}, err
@@ -142,8 +142,8 @@ type HeaderRecord struct {
 	HeaderType string // Type (ReqHeader, BereqHeader, ...)
 }
 
-// NewHeaderRecord creates a new header record.
-func NewHeaderRecord(blr BaseRecord) (HeaderRecord, error) {
+// newHeaderRecord creates a new header record.
+func newHeaderRecord(blr BaseRecord) (HeaderRecord, error) {
 	fields := strings.SplitAfterN(blr.GetRawValue(), ":", 2)
 	if len(fields) < 2 {
 		return HeaderRecord{}, fmt.Errorf("conversion to HeaderRecord failed on line %q", blr.GetRawLog())
@@ -199,7 +199,7 @@ type HeaderUnsetRecord struct {
 	HeaderType string // Type (ReqUnset, BereqUnset, ...)
 }
 
-func NewHeaderUnsetRecord(blr BaseRecord) (HeaderUnsetRecord, error) {
+func newHeaderUnsetRecord(blr BaseRecord) (HeaderUnsetRecord, error) {
 	fields := strings.SplitAfterN(blr.GetRawValue(), ":", 2)
 	if len(fields) < 2 {
 		return HeaderUnsetRecord{}, fmt.Errorf("conversion to HeaderUnsetRecord failed on line %q", blr.GetRawLog())
@@ -260,7 +260,7 @@ type BackendOpenRecord struct {
 	Reason         string // connect or reuse
 }
 
-func NewBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
+func newBackendOpenRecord(blr BaseRecord) (BackendOpenRecord, error) {
 	f := newFieldScanner(blr, "BackendOpenRecord")
 	f.requireMin(6)
 
@@ -299,7 +299,7 @@ type BackendStartRecord struct {
 	RemotePort int    // Remote port
 }
 
-func NewBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
+func newBackendStartRecord(blr BaseRecord) (BackendStartRecord, error) {
 	f := newFieldScanner(blr, "BackendStartRecord")
 	f.requireMin(2)
 
@@ -335,7 +335,7 @@ type BackendCloseRecord struct {
 	OptionalReason string // Optional reason
 }
 
-func NewBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
+func newBackendCloseRecord(blr BaseRecord) (BackendCloseRecord, error) {
 	f := newFieldScanner(blr, "BackendCloseRecord")
 	f.requireMin(2)
 
@@ -365,7 +365,7 @@ type BackendReuseRecord struct {
 	Name           string // Backend display name
 }
 
-func NewBackendReuseRecord(blr BaseRecord) (BackendReuseRecord, error) {
+func newBackendReuseRecord(blr BaseRecord) (BackendReuseRecord, error) {
 	f := newFieldScanner(blr, "BackendReuseRecord")
 	if f.count() < 2 {
 		return BackendReuseRecord{BaseRecord: blr}, nil
@@ -402,7 +402,7 @@ type AcctRecord struct {
 	TotalRx  SizeValue // Total bytes received
 }
 
-func NewAcctRecord(blr BaseRecord) (AcctRecord, error) {
+func newAcctRecord(blr BaseRecord) (AcctRecord, error) {
 	f := newFieldScanner(blr, "AcctRecord")
 	f.require(6)
 
@@ -454,7 +454,7 @@ type PipeAcctRecord struct {
 	PipedTo           SizeValue // Piped bytes to client
 }
 
-func NewPipeAcctRecord(blr BaseRecord) (PipeAcctRecord, error) {
+func newPipeAcctRecord(blr BaseRecord) (PipeAcctRecord, error) {
 	f := newFieldScanner(blr, "PipeAcctRecord")
 	f.require(4)
 
@@ -494,7 +494,7 @@ type TimestampRecord struct {
 	SinceLast    time.Duration // Duration since the last timestamp
 }
 
-func NewTimestampRecord(blr BaseRecord) (TimestampRecord, error) {
+func newTimestampRecord(blr BaseRecord) (TimestampRecord, error) {
 	f := newFieldScanner(blr, "TimestampRecord")
 	f.require(4)
 
@@ -536,7 +536,7 @@ type ReqStartRecord struct {
 	Scheme     string // Protocol scheme ("http" or "https")
 }
 
-func NewReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
+func newReqStartRecord(blr BaseRecord) (ReqStartRecord, error) {
 	f := newFieldScanner(blr, "ReqStartRecord")
 	f.requireMin(3)
 
@@ -575,7 +575,7 @@ type LinkRecord struct {
 	ESILevel int    // Child task sub-level
 }
 
-func NewLinkRecord(blr BaseRecord) (LinkRecord, error) {
+func newLinkRecord(blr BaseRecord) (LinkRecord, error) {
 	ref, err := parseTxRef(blr, "LinkRecord")
 	if err != nil {
 		return LinkRecord{}, err
@@ -630,7 +630,7 @@ type URLRecord struct {
 	URL url.URL // Request URL
 }
 
-func NewURLRecord(blr BaseRecord) (URLRecord, error) {
+func newURLRecord(blr BaseRecord) (URLRecord, error) {
 	u, err := url.Parse(blr.GetRawValue())
 	if err != nil {
 		return URLRecord{}, fmt.Errorf("conversion to URLRecord failed, could not parse URL on line %q", blr.GetRawLog())
@@ -669,7 +669,7 @@ type FiltersRecord struct {
 	Filters []string // List of filters applied to the body
 }
 
-func NewFiltersRecord(blr BaseRecord) (FiltersRecord, error) {
+func newFiltersRecord(blr BaseRecord) (FiltersRecord, error) {
 	return FiltersRecord{BaseRecord: blr, Filters: strings.Fields(blr.GetRawValue())}, nil
 }
 
@@ -680,7 +680,7 @@ type StatusRecord struct {
 	Status int // HTTP Status code
 }
 
-func NewStatusRecord(blr BaseRecord) (StatusRecord, error) {
+func newStatusRecord(blr BaseRecord) (StatusRecord, error) {
 	v, err := strconv.Atoi(blr.GetRawValue())
 	if err != nil {
 		return StatusRecord{}, fmt.Errorf("conversion to StatusRecord failed, bad field status on line %q", blr.GetRawLog())
@@ -696,7 +696,7 @@ type LengthRecord struct {
 	Size SizeValue // Size of the fetch body
 }
 
-func NewLengthRecord(blr BaseRecord) (LengthRecord, error) {
+func newLengthRecord(blr BaseRecord) (LengthRecord, error) {
 	size, err := strconv.Atoi(blr.GetRawValue())
 	if err != nil {
 		return LengthRecord{}, fmt.Errorf("conversion to LengthRecord failed, bad size value on line %q", blr.GetRawLog())
@@ -719,7 +719,7 @@ type HitRecord struct {
 	ContentLength SizeValue     // Content length
 }
 
-func NewHitRecord(blr BaseRecord) (HitRecord, error) {
+func newHitRecord(blr BaseRecord) (HitRecord, error) {
 	f := newFieldScanner(blr, "HitRecord")
 	f.require(2, 4, 5, 6)
 
@@ -795,7 +795,7 @@ type TTLRecord struct {
 	CacheStatus string        // "cacheable" or "uncacheable"
 }
 
-func NewTTLRecord(blr BaseRecord) (TTLRecord, error) {
+func newTTLRecord(blr BaseRecord) (TTLRecord, error) {
 	// RFC 120 10 0 1606398419 1606398419 1606398419 0 0 cacheable
 	// VCL 120 10 0 1606400537 uncacheable
 	// HFP 10 0 0 1606402666 uncacheable
@@ -867,7 +867,7 @@ type VCLLogRecord struct {
 	Value string
 }
 
-func NewVCLLogRecord(blr BaseRecord) (VCLLogRecord, error) {
+func newVCLLogRecord(blr BaseRecord) (VCLLogRecord, error) {
 	fields := strings.SplitAfterN(blr.GetRawValue(), ":", 2)
 	if len(fields) < 2 {
 		return VCLLogRecord{BaseRecord: blr, Key: "", Value: blr.GetRawValue()}, nil
@@ -895,7 +895,7 @@ type StorageRecord struct {
 	Name        string // Name of storage backend
 }
 
-func NewStorageRecord(blr BaseRecord) (StorageRecord, error) {
+func newStorageRecord(blr BaseRecord) (StorageRecord, error) {
 	f := newFieldScanner(blr, "StorageRecord")
 	f.requireMin(2)
 
@@ -918,7 +918,7 @@ type FetchBodyRecord struct {
 	Stream      bool   // Whether it is a stream fetch
 }
 
-func NewFetchBodyRecord(blr BaseRecord) (FetchBodyRecord, error) {
+func newFetchBodyRecord(blr BaseRecord) (FetchBodyRecord, error) {
 	f := newFieldScanner(blr, "FetchBodyRecord")
 	f.require(3)
 
@@ -951,7 +951,7 @@ type SessOpenRecord struct {
 	FileDescriptor int       // File descriptor number
 }
 
-func NewSessOpenRecord(blr BaseRecord) (SessOpenRecord, error) {
+func newSessOpenRecord(blr BaseRecord) (SessOpenRecord, error) {
 	f := newFieldScanner(blr, "SessOpenRecord")
 	f.require(7)
 
@@ -998,7 +998,7 @@ type SessCloseRecord struct {
 	Duration time.Duration // How long the session was open
 }
 
-func NewSessCloseRecord(blr BaseRecord) (SessCloseRecord, error) {
+func newSessCloseRecord(blr BaseRecord) (SessCloseRecord, error) {
 	f := newFieldScanner(blr, "SessCloseRecord")
 	f.require(2)
 
@@ -1035,7 +1035,7 @@ type GzipRecord struct {
 	Error                     string    // Parser failure (probably a gzip error)
 }
 
-func NewGzipRecord(blr BaseRecord) (GzipRecord, error) {
+func newGzipRecord(blr BaseRecord) (GzipRecord, error) {
 	f := newFieldScanner(blr, "GzipRecord")
 	if f.count() != 8 {
 		// It could be a gzip error like: G(un)zip error: -3 ((null))
@@ -1130,7 +1130,7 @@ type MSE4NewObjectRecord struct {
 	IsPersisted          bool          // Whether this object was persisted to disk
 }
 
-func NewMSE4NewObjectRecord(blr BaseRecord) (MSE4NewObjectRecord, error) {
+func newMSE4NewObjectRecord(blr BaseRecord) (MSE4NewObjectRecord, error) {
 	f := newFieldScanner(blr, "MSE4NewObjectRecord")
 	f.require(5, 8)
 
@@ -1194,7 +1194,7 @@ type MSE4ObjIterRecord struct {
 	IsPersisted          bool          // Whether this object was persisted to disk
 }
 
-func NewMSE4ObjIterRecord(blr BaseRecord) (MSE4ObjIterRecord, error) {
+func newMSE4ObjIterRecord(blr BaseRecord) (MSE4ObjIterRecord, error) {
 	f := newFieldScanner(blr, "MSE4ObjIterRecord")
 	f.require(4, 6)
 
@@ -1252,7 +1252,7 @@ type MSE4ChunkFaultRecord struct {
 	TimeDiskIOWait       time.Duration // Time spent waiting for disk IO (seconds)
 }
 
-func NewMSE4ChunkFaultRecord(blr BaseRecord) (MSE4ChunkFaultRecord, error) {
+func newMSE4ChunkFaultRecord(blr BaseRecord) (MSE4ChunkFaultRecord, error) {
 	f := newFieldScanner(blr, "MSE4ChunkFaultRecord")
 	f.require(5)
 
@@ -1294,7 +1294,7 @@ type BrotliRecord struct {
 	BytesOutput SizeValue // Bytes output
 }
 
-func NewBrotliRecord(blr BaseRecord) (BrotliRecord, error) {
+func newBrotliRecord(blr BaseRecord) (BrotliRecord, error) {
 	f := newFieldScanner(blr, "BrotliRecord")
 	f.require(4)
 

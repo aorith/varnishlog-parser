@@ -138,7 +138,7 @@ func (p *TransactionParser) tokenize() ([]BaseRecord, map[VXID]string, error) {
 			records = append(records, blr)
 
 		default:
-			blr, err := NewBaseRecord(line)
+			blr, err := newBaseRecord(line)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -245,68 +245,68 @@ func processRecord(blr BaseRecord) (Record, error) {
 	case tags.FetchError:
 		return FetchErrorRecord{BaseRecord: blr}, nil
 	case tags.Begin:
-		return NewBeginRecord(blr)
+		return newBeginRecord(blr)
 	case tags.Link:
-		return NewLinkRecord(blr)
+		return newLinkRecord(blr)
 
 		// Headers
 	case tags.ReqHeader, tags.RespHeader, tags.BereqHeader, tags.BerespHeader, tags.ObjHeader:
-		return NewHeaderRecord(blr)
+		return newHeaderRecord(blr)
 	case tags.ObjUnset, tags.ReqUnset, tags.RespUnset, tags.BereqUnset, tags.BerespUnset:
-		return NewHeaderUnsetRecord(blr)
+		return newHeaderUnsetRecord(blr)
 
 	case tags.ReqMethod, tags.BereqMethod:
 		return MethodRecord{BaseRecord: blr}, nil
 	case tags.ReqProtocol, tags.RespProtocol, tags.BereqProtocol, tags.BerespProtocol, tags.ObjProtocol:
 		return ProtocolRecord{BaseRecord: blr}, nil
 	case tags.BackendOpen:
-		return NewBackendOpenRecord(blr)
+		return newBackendOpenRecord(blr)
 	case tags.BackendStart:
-		return NewBackendStartRecord(blr)
+		return newBackendStartRecord(blr)
 	case tags.BackendClose:
-		return NewBackendCloseRecord(blr)
+		return newBackendCloseRecord(blr)
 	case tags.BackendReuse:
-		return NewBackendReuseRecord(blr)
+		return newBackendReuseRecord(blr)
 	case tags.Brotli:
-		return NewBrotliRecord(blr)
+		return newBrotliRecord(blr)
 	case tags.ReqAcct, tags.BereqAcct:
-		return NewAcctRecord(blr)
+		return newAcctRecord(blr)
 	case tags.PipeAcct:
-		return NewPipeAcctRecord(blr)
+		return newPipeAcctRecord(blr)
 	case tags.Timestamp:
-		return NewTimestampRecord(blr)
+		return newTimestampRecord(blr)
 	case tags.ReqStart:
-		return NewReqStartRecord(blr)
+		return newReqStartRecord(blr)
 	case tags.ReqURL, tags.BereqURL:
-		return NewURLRecord(blr)
+		return newURLRecord(blr)
 	case tags.Filters:
-		return NewFiltersRecord(blr)
+		return newFiltersRecord(blr)
 	case tags.RespStatus, tags.BerespStatus, tags.ObjStatus:
-		return NewStatusRecord(blr)
+		return newStatusRecord(blr)
 	case tags.Length:
-		return NewLengthRecord(blr)
+		return newLengthRecord(blr)
 	case tags.MSE4NewObject:
-		return NewMSE4NewObjectRecord(blr)
+		return newMSE4NewObjectRecord(blr)
 	case tags.MSE4ObjIter:
-		return NewMSE4ObjIterRecord(blr)
+		return newMSE4ObjIterRecord(blr)
 	case tags.MSE4ChunkFault:
-		return NewMSE4ChunkFaultRecord(blr)
+		return newMSE4ChunkFaultRecord(blr)
 	case tags.Hit, tags.HitMiss, tags.HitPass:
-		return NewHitRecord(blr)
+		return newHitRecord(blr)
 	case tags.TTL:
-		return NewTTLRecord(blr)
+		return newTTLRecord(blr)
 	case tags.VCLLog:
-		return NewVCLLogRecord(blr)
+		return newVCLLogRecord(blr)
 	case tags.Storage:
-		return NewStorageRecord(blr)
+		return newStorageRecord(blr)
 	case tags.FetchBody:
-		return NewFetchBodyRecord(blr)
+		return newFetchBodyRecord(blr)
 	case tags.SessOpen:
-		return NewSessOpenRecord(blr)
+		return newSessOpenRecord(blr)
 	case tags.SessClose:
-		return NewSessCloseRecord(blr)
+		return newSessCloseRecord(blr)
 	case tags.Gzip:
-		return NewGzipRecord(blr)
+		return newGzipRecord(blr)
 	case tags.VCLCall:
 		return VCLCallRecord{BaseRecord: blr}, nil
 	case tags.VCLReturn:
