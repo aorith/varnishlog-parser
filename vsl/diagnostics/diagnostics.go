@@ -68,6 +68,18 @@ func newFinding(tx *vsl.Transaction, rule string, severity Severity, summary, de
 	}
 }
 
+// newNonTransactionalFinding builds a Finding for a VXID 0 record.
+// TXID is set to "nontransactional" to match the HTML anchor of VCL Log Tree view.
+func newNonTransactionalFinding(rule string, severity Severity, summary, detail string) Finding {
+	return Finding{
+		Rule:     rule,
+		Severity: severity,
+		Summary:  summary,
+		Detail:   detail,
+		TXID:     "nontransactional",
+	}
+}
+
 // Run inspects every transaction in the set and returns all the Findings,
 // sorted by severity (most severe first) and then by VXID.
 func Run(ts vsl.TransactionSet) []Finding {
@@ -87,6 +99,7 @@ func Run(ts vsl.TransactionSet) []Finding {
 	}
 
 	findings = append(findings, checkRetryStorms(ts)...)
+	findings = append(findings, checkExpiryThreadPressure(ts)...)
 
 	slices.SortStableFunc(findings, func(a, b Finding) int {
 		if c := cmp.Compare(b.Severity, a.Severity); c != 0 {

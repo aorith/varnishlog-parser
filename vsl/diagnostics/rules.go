@@ -396,3 +396,48 @@ func checkRetryStorms(ts vsl.TransactionSet) []Finding {
 
 	return findings
 }
+
+// expKillSubEvent returns the first whitespace-delimited token of an
+// ExpKill record's raw value, e.g. "LRU_Fail" from "LRU_Fail" or "LRU" from
+// "LRU x=32771".
+func expKillSubEvent(raw string) string {
+	sub, _, _ := strings.Cut(raw, " ")
+
+	return sub
+}
+
+// checkExpiryThreadPressure flags signs that the expiry thread is running
+// low on storage to evict from by checking non-transactional ExpKill records.
+func checkExpiryThreadPressure(ts vsl.TransactionSet) []Finding {
+	var lruCount, lruFailCount int
+
+	for _, r := range ts.NonTransactional() {
+		if r.GetTag() != tags.ExpKill {
+			continue
+		}
+
+		switch expKillSubEvent(r.GetRawValue()) {
+		case "LRU":
+			lruCount++
+		case "LRU_Fail":
+			lruFailCount++
+		default:
+		}
+	}
+
+	var findings []Finding
+
+	if lruFailCount > 0 {
+		findings = append(findings, newNonTransactionalFinding("expiry-lru-fail", SeverityWarning,
+			"Varnish couldn't find any object to evict under storage pressure",
+			fmt.Sprintf("LRU_Fail occurred %d time(s); check storage size (malloc/file/mse) against the working set", lruFailCount)))
+	}
+
+	if lruCount > 0 {
+		findings = append(findings, newNonTransactionalFinding("expiry-lru-eviction", SeverityInfo,
+			"Objects were evicted from cache early under storage pressure (LRU), not via natural TTL expiry",
+			fmt.Sprintf("%d object(s) force-evicted by LRU", lruCount)))
+	}
+
+	return findings
+}

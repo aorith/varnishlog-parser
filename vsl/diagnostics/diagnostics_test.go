@@ -313,6 +313,30 @@ func TestRetryStorm(t *testing.T) {
 	}
 }
 
+func TestExpiryThreadPressure(t *testing.T) {
+	const rawLog = `0 ExpKill        - LRU_Fail
+0 ExpKill        - LRU x=100
+0 ExpKill        - LRU x=101
+0 ExpKill        - LRU_Cand x=102 f=0x0 r=1
+0 ExpKill        - EXP_Removed x=103 t=-0 h=1
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	for _, rule := range []string{"expiry-lru-fail", "expiry-lru-eviction"} {
+		if !hasRule(findings, rule) {
+			t.Errorf("expected a %q finding, got: %v", rule, findings)
+		}
+	}
+
+	for _, f := range findings {
+		if f.TXID != "nontransactional" {
+			t.Errorf("%s: TXID = %q, want %q (should link to the non-transactional records section)", f.Rule, f.TXID, "nontransactional")
+		}
+	}
+}
+
 // TestClean ensures a normal, well-behaved transaction set doesn't trigger any finding.
 func TestClean(t *testing.T) {
 	ts := parse(t, assets.VCLCached)
