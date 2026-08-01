@@ -258,43 +258,51 @@ func checkFetchError(tx *vsl.Transaction) []Finding {
 	return []Finding{newFinding(tx, rule, severity, summary, msg)}
 }
 
-// checkLostHeader flags a header that couldn't be added to a request or
-// response, typically because http_max_hdr or http_req_hdr_len/
-// http_resp_hdr_len was exceeded (or, over HTTP/2, h2_max_header_list_size).
-func checkLostHeader(tx *vsl.Transaction) []Finding {
-	r := tx.RecordByTag(tags.LostHeader, true)
-	if r == nil {
-		return nil
-	}
-
-	return []Finding{newFinding(tx, "lost-header", SeverityWarning,
+// singleTagFindings are tags that each map 1:1 to a single finding when
+// present, differing only in rule id, summary and how the raw value is
+// formatted into the finding's detail.
+var singleTagFindings = []struct {
+	tag      string
+	rule     string
+	severity Severity
+	summary  string
+	detail   func(raw string) string
+}{
+	{
+		tags.LostHeader, "lost-header", SeverityWarning,
 		"A header could not be added, exceeding a header count or size limit",
-		fmt.Sprintf("Lost header: %q (check http_max_hdr, http_req_hdr_len/http_resp_hdr_len)", r.GetRawValue()))}
-}
-
-// checkESIError flags ESI parser errors or warnings.
-func checkESIError(tx *vsl.Transaction) []Finding {
-	r := tx.RecordByTag(tags.ESIXMLError, true)
-	if r == nil {
-		return nil
-	}
-
-	return []Finding{newFinding(tx, "esi-xml-error", SeverityWarning,
+		func(raw string) string {
+			return fmt.Sprintf("Lost header: %q (check http_max_hdr, http_req_hdr_len/http_resp_hdr_len)", raw)
+		},
+	},
+	{
+		tags.ESIXMLError, "esi-xml-error", SeverityWarning,
 		"ESI parser error or warning",
-		r.GetRawValue())}
+		func(raw string) string { return raw },
+	},
+	{
+		tags.VCLError, "vcl-error", SeverityWarning,
+		"VCL runtime error",
+		func(raw string) string { return raw },
+	},
 }
 
-// checkVCLError flags VCL runtime errors (e.g. calling std.* with bad
-// arguments, backend errors raised from VCL, ...).
-func checkVCLError(tx *vsl.Transaction) []Finding {
-	r := tx.RecordByTag(tags.VCLError, true)
-	if r == nil {
-		return nil
+// checkSingleTagMessages flags a handful of independent tags (a lost header,
+// an ESI parser error, a VCL runtime error, ...) that each produce a single
+// finding straight from their raw log value when present.
+func checkSingleTagMessages(tx *vsl.Transaction) []Finding {
+	var findings []Finding
+
+	for _, c := range singleTagFindings {
+		r := tx.RecordByTag(c.tag, true)
+		if r == nil {
+			continue
+		}
+
+		findings = append(findings, newFinding(tx, c.rule, c.severity, c.summary, c.detail(r.GetRawValue())))
 	}
 
-	return []Finding{newFinding(tx, "vcl-error", SeverityWarning,
-		"VCL runtime error",
-		r.GetRawValue())}
+	return findings
 }
 
 // checkMalformedRequest flags garbage/bogus data received on the wire,

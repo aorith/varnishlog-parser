@@ -228,11 +228,18 @@ func processRecord(line string) (Record, error) {
 		return ErrorRecord{BaseRecord: blr}, nil
 	case tags.XBody, tags.YKEY, tags.BogoHeader, tags.HTTPGarbage, tags.ESIXMLError,
 		tags.LostHeader, tags.Proxy, tags.ProxyGarbage, tags.VCLAcl, tags.VCLError,
-		tags.VCLTrace, tags.Notice, tags.VfpAcct:
+		tags.VCLTrace, tags.Notice, tags.VfpAcct,
+		tags.ADNS, tags.Backend, tags.BackendSSL, tags.Body, tags.ConnectAcct,
+		tags.Crypto, tags.DataDome, tags.Debug, tags.Edgestash,
+		tags.H2RxBody, tags.H2RxHdr, tags.H2TxBody, tags.H2TxHdr, tags.Hash,
+		tags.MSE4Eviction, tags.MSE4YKEYIter, tags.Nodes, tags.OCSP, tags.OCSPError,
+		tags.ReqTarget, tags.TLS, tags.VHA6, tags.WAF:
 		// tags without a dedicated struct
 		return blr, nil
-	case tags.ExpBan, tags.ExpKill, tags.VSL, tags.SessError:
-		// Non-transactional tags logged under VXID 0.
+	case tags.ExpBan, tags.ExpKill, tags.VSL, tags.SessError,
+		tags.CLI, tags.BackendHealth, tags.Witness, tags.WorkThread:
+		// Non-transactional tags logged under VXID 0 (health probes, thread
+		// pool events, master/child CLI traffic, lock witness data, ...).
 		// Only "varnishlog -g raw" surfaces VXID 0, which this parser doesn't support... yet.
 		return blr, nil
 	default:
