@@ -72,6 +72,9 @@ var funcMap = template.FuncMap{
 	"renderTXLogTree": func(ts vsl.TransactionSet, tx *vsl.Transaction) template.HTML {
 		return asHTML(render.TxTreeHTML(ts, tx))
 	},
+	"nonTransactionalLogTree": func(ts vsl.TransactionSet) template.HTML {
+		return asHTML(render.NonTransactionalTreeHTML(ts))
+	},
 	"isTxTypeSession": func(tx *vsl.Transaction) bool { return tx.TXType == vsl.TxTypeSession },
 	"curlCommand": func(tx *vsl.Transaction, cfg PageData) template.HTML {
 		return asHTML(curlCommand(tx, cfg))

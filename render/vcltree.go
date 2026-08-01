@@ -27,6 +27,21 @@ func TxAnchorID(txid vsl.TXID) string {
 	return "tx-" + html.EscapeString(string(txid))
 }
 
+// NonTransactionalTreeHTML renders the VXID 0 records.
+func NonTransactionalTreeHTML(ts vsl.TransactionSet) string {
+	var s rowBuilder
+
+	s.WriteString(`<tx-logs id="tx-nontransactional">`) // nolint
+
+	for _, r := range ts.NonTransactional() {
+		s.addRow(r.GetTag(), "", r.GetRawValue(), "")
+	}
+
+	s.WriteString("</tx-logs>") // nolint
+
+	return s.String()
+}
+
 func renderTxTree(s *rowBuilder, ts vsl.TransactionSet, tx *vsl.Transaction, visited map[vsl.VXID]bool) {
 	if visited[tx.VXID] {
 		slog.Warn("renderTxTree(): loop detected", "transaction", tx.TXID)

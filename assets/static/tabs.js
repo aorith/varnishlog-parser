@@ -3,7 +3,7 @@
 // nested inside a view (e.g. #tx-262-req-rxreq). Both are handled the same
 // way: find the target element, activate its containing .view, and scroll
 // to the target.
-(function () {
+(function() {
   // nav is position:sticky, so it stays on screen after scrolling to an
   // anchor; --nav-height feeds html's scroll-padding-top so the anchor
   // itself doesn't land underneath it.
@@ -62,10 +62,24 @@
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+
+  // Sync the URL and nav-link hash (#) after clicking the PARSE button.
+  function syncHashToActiveView() {
+    const active = document.querySelector(".view.active");
+    if (active) {
+      history.replaceState(null, "", `#${active.id}`);
+      activateView(active);
+    }
+  }
+
   window.addEventListener("hashchange", goToHash);
   window.addEventListener("resize", updateNavHeight);
   document.addEventListener("DOMContentLoaded", () => {
     updateNavHeight();
-    goToHash();
+    if (location.hash) {
+      goToHash();
+    } else {
+      syncHashToActiveView();
+    }
   });
 })();

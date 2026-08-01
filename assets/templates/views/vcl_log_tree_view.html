@@ -26,5 +26,16 @@
 			</details>
 			{{ $state = "" }}
 		{{ end }}
+
+		{{ if .Transactions.Set.NonTransactional }}
+			<details>
+				<summary>Non-transactional records (VXID 0)</summary>
+				<div class="txtree">
+					{{ nonTransactionalLogTree .Transactions.Set }}
+				</div>
+				<br>
+				<br>
+			</details>
+		{{ end }}
 	</div>
 </div>

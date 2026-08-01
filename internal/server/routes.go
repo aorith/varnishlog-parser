@@ -80,6 +80,8 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 			data.Logs.Textinput = assets.VCLRestart
 		case "eg-esi-synth":
 			data.Logs.Textinput = assets.VCLESISynth
+		case "eg-cache-expiry":
+			data.Logs.Textinput = assets.VCLCacheExpiryRaw
 		default:
 			data.Logs.Textinput = r.Form.Get("logs")
 		}
