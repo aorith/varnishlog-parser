@@ -39,6 +39,19 @@ func indexHandler(version string) func(http.ResponseWriter, *http.Request) {
 
 const maxRequestBodyBytes = 32 * 1024 * 1024 // 32 MiB
 
+// clampInt restricts v to [min, max].
+func clampInt(v, minVal, maxVal int) int {
+	if v < minVal {
+		return minVal
+	}
+
+	if v > maxVal {
+		return maxVal
+	}
+
+	return v
+}
+
 func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := html.PageData{Version: version}
@@ -80,7 +93,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		data.Sequence.Distance = distance
+		data.Sequence.Distance = clampInt(distance, 50, 1000)
 
 		stepHeight, err := strconv.Atoi(r.Form.Get("stepHeight"))
 		if err != nil {
@@ -90,7 +103,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		data.Sequence.StepHeight = stepHeight
+		data.Sequence.StepHeight = clampInt(stepHeight, 10, 120)
 
 		data.Sequence.IncludeCalls = r.Form.Get("includeCalls") == "yes"
 		data.Sequence.IncludeReturns = r.Form.Get("includeReturns") == "yes"
@@ -108,7 +121,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		data.Timeline.Width = width
+		data.Timeline.Width = clampInt(width, 100, 5000)
 
 		numTicks, err := strconv.Atoi(r.Form.Get("ticks"))
 		if err != nil {
@@ -118,7 +131,7 @@ func parseHandler(version string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		data.Timeline.Ticks = numTicks
+		data.Timeline.Ticks = clampInt(numTicks, 1, 50)
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
