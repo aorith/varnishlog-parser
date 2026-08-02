@@ -228,12 +228,19 @@ func addTransactionLogs(s *svgsequence.Sequence, ts vsl.TransactionSet, tx *vsl.
 				addStep(svgsequence.Step{Source: H, Target: V, Text: s1, Color: ColorHit})
 
 			case "MISS", "PASS":
+				text := r.GetRawValue()
 				color := ColorGray
-				if r.GetRawValue() == "MISS" {
+
+				if text == "MISS" {
 					color = ColorWarn
 				}
 
-				addStep(svgsequence.Step{Source: H, Target: V, Text: r.GetRawValue(), Color: color})
+				// A HitMiss/HitPass record means the lookup found an object already known to be uncacheable.
+				if hitRecord := getLastHitRecord(tx, i); hitRecord != nil {
+					text = hitRecord.Tag + "\n" + hitRecord.String()
+				}
+
+				addStep(svgsequence.Step{Source: H, Target: V, Text: text, Color: color})
 
 			case "SYNTH":
 				lastStatus := tx.LastRecordByTag(tags.RespStatus, i)
