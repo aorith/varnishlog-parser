@@ -144,10 +144,31 @@ func checkSetCookieOnHit(tx *vsl.Transaction) []Finding {
 		"Set-Cookie: "+sc)}
 }
 
+// checkCacheControlPrivateOnHit flags a Cache-Control: private or no-store header served from a cache hit.
+func checkCacheControlPrivateOnHit(tx *vsl.Transaction) []Finding {
+	if tx.TXType != vsl.TxTypeRequest {
+		return nil
+	}
+
+	if tx.RecordByTag(tags.Hit, true) == nil {
+		return nil
+	}
+
+	cc := tx.RespHeaders.Get("Cache-Control", false)
+
+	lower := strings.ToLower(cc)
+	if !strings.Contains(lower, "private") && !strings.Contains(lower, "no-store") {
+		return nil
+	}
+
+	return []Finding{newFinding(tx, "cache-control-private-on-hit", SeverityCritical,
+		"Cache-Control: private/no-store response served from a cache hit, a private response may be leaking to other clients",
+		"Cache-Control: "+cc)}
+}
+
 // checkAuthorizationCached flags requests that carried an Authorization
-// header but were nonetheless served from cache: Varnish's default vcl_recv
-// passes such requests straight to the backend, so a Hit here means custom
-// VCL removed that default protection.
+// header but were served from cache.
+// Varnish's default vcl_recv does pass such requests, so it is custom VCL.
 func checkAuthorizationCached(tx *vsl.Transaction) []Finding {
 	if tx.TXType != vsl.TxTypeRequest {
 		return nil

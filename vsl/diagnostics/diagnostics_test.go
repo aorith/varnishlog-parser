@@ -71,6 +71,51 @@ func TestSetCookieOnHit(t *testing.T) {
 	}
 }
 
+func TestCacheControlPrivateOnHit(t *testing.T) {
+	const rawLog = `*   << Request  >> 24
+-   Begin          req 1 rxreq
+-   Hit            3 5.000000 10.000000 0.000000
+-   RespHeader     Cache-Control: private, max-age=0
+-   End
+*   << Request  >> 25
+-   Begin          req 1 rxreq
+-   Hit            3 5.000000 10.000000 0.000000
+-   RespHeader     Cache-Control: no-store
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	var count int
+
+	for _, f := range findings {
+		if f.Rule == "cache-control-private-on-hit" {
+			count++
+		}
+	}
+
+	if count != 2 {
+		t.Errorf("expected 2 cache-control-private-on-hit findings, got %d: %v", count, findings)
+	}
+}
+
+func TestCacheControlPrivateOnHitIgnoresNormalCacheControl(t *testing.T) {
+	const rawLog = `*   << Request  >> 26
+-   Begin          req 1 rxreq
+-   Hit            3 5.000000 10.000000 0.000000
+-   RespHeader     Cache-Control: public, max-age=3600
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "cache-control-private-on-hit") {
+		t.Errorf("did not expect a cache-control-private-on-hit finding, got: %v", findings)
+	}
+}
+
 func TestAuthorizationCached(t *testing.T) {
 	const rawLog = `*   << Request  >> 13
 -   Begin          req 1 rxreq
