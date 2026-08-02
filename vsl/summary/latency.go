@@ -164,7 +164,7 @@ func TimestampEventsSummary(ts vsl.TransactionSet) []*LatencyCounter {
 		processEvents(tx)
 	}
 
-	events := []*LatencyCounter{} // nolint
+	events := make([]*LatencyCounter, 0, len(tsEvents))
 	for _, e := range tsEvents {
 		events = append(events, e)
 	}
