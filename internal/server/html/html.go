@@ -90,6 +90,7 @@ var funcMap = template.FuncMap{
 	},
 	"timestampEventsSummary": summary.TimestampEventsSummary,
 	"bandwidth":              summary.Bandwidth,
+	"cacheStatus":            summary.CacheStatus,
 	"diagnostics":            diagnostics.Run,
 }
 

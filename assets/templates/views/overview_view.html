@@ -15,6 +15,29 @@
 			For easier reference, transactions have a custom identifier formatted as <code>{vxid}-{txType}-{reason}[-{ESILevel}]</code>.
 		</p>
 
+		{{ $cache := cacheStatus .Transactions.Set }}
+		<h3>Cache Status</h3>
+		<table>
+			<thead>
+				<tr>
+                    <th><abbr title="Served from cache.">Hit</abbr></th>
+					<th><abbr title="Cache miss.">Miss</abbr></th>
+					<th><abbr title="Forced to the backend because the object was uncacheable, avoiding request serialization (positive TTL marked as uncacheable - Varnish will try to cache it if conditions change).">Hit-for-Miss</abbr></th>
+					<th><abbr title="Previously marked as a pass (same as HfM but Varnish won't try to cache it, even if the response or VCL change).">Hit-for-Pass</abbr></th>
+					<th>Hit Ratio</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>{{ $cache.Hit }}</td>
+					<td>{{ $cache.Miss }}</td>
+					<td>{{ $cache.HitMiss }}</td>
+					<td>{{ $cache.HitPass }}</td>
+					<td>{{ printf "%.1f" $cache.HitRatio }}%</td>
+				</tr>
+			</tbody>
+		</table>
+
 		{{ $findings := diagnostics .Transactions.Set }}
 		<details open>
 			<summary>Diagnostics</summary>
