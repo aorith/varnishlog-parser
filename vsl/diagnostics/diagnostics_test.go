@@ -213,6 +213,31 @@ func TestVCLError(t *testing.T) {
 	}
 }
 
+func TestSingleTagMessagesRepeated(t *testing.T) {
+	const rawLog = `*   << Request  >> 18
+-   Begin          req 1 rxreq
+-   Error          What is this 1
+-   Error          What is this 2
+-   Error          What is this 3
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	var count int
+
+	for _, f := range findings {
+		if f.Rule == "error-tag" {
+			count++
+		}
+	}
+
+	if count != 3 {
+		t.Errorf("expected 3 error-tag findings (one per Error record), got %d: %v", count, findings)
+	}
+}
+
 func TestMalformedRequest(t *testing.T) {
 	const rawLog = `*   << Session  >> 19
 -   Begin          sess 0 HTTP/1
@@ -445,6 +470,58 @@ func TestExpiryThreadPressure(t *testing.T) {
 		if f.TXID != "nontransactional" {
 			t.Errorf("%s: TXID = %q, want %q (should link to the non-transactional records section)", f.Rule, f.TXID, "nontransactional")
 		}
+	}
+}
+
+func TestGroupByRule(t *testing.T) {
+	const rawLog = `*   << Request  >> 10
+-   Begin          req 1 rxreq
+-   RespHeader     Vary: User-Agent
+-   End
+*   << Request  >> 11
+-   Begin          req 1 rxreq
+-   RespHeader     Vary: User-Agent
+-   End
+*   << Request  >> 12
+-   Begin          req 1 rxreq
+-   RespHeader     Vary: Cookie
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+	groups := diagnostics.GroupByRule(findings)
+
+	var uaGroup, cookieGroup *diagnostics.RuleGroup
+
+	for i := range groups {
+		switch groups[i].Rule {
+		case "vary-user-agent":
+			uaGroup = &groups[i]
+		case "vary-cookie":
+			cookieGroup = &groups[i]
+		default:
+		}
+	}
+
+	if uaGroup == nil {
+		t.Fatalf("expected a vary-user-agent group, got: %v", groups)
+	}
+
+	if uaGroup.Count != 2 {
+		t.Errorf("vary-user-agent Count = %d, want 2", uaGroup.Count)
+	}
+
+	if len(uaGroup.Examples) != 2 {
+		t.Errorf("vary-user-agent Examples = %d, want 2", len(uaGroup.Examples))
+	}
+
+	if cookieGroup == nil {
+		t.Fatalf("expected a vary-cookie group, got: %v", groups)
+	}
+
+	if cookieGroup.Count != 1 {
+		t.Errorf("vary-cookie Count = %d, want 1", cookieGroup.Count)
 	}
 }
 

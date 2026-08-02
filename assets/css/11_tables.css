@@ -1,77 +1,88 @@
 table {
-  border-collapse: collapse;
-  margin-bottom: 18px;
-  border: none;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+    border: none;
 }
 
 th {
-  font-size: var(--fsize-xs);
-  color: var(--fg-0);
-  font-weight: 600;
-  text-decoration: underline;
-  padding: 4px 10px;
-  text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+    font-size: var(--fsize-xs);
+    color: var(--fg-0);
+    font-weight: 600;
+    text-decoration: underline;
+    padding: 4px 10px;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 tbody tr {
-  border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 tbody tr:hover {
-  background-color: var(--table-bg-hover);
+    background-color: var(--table-bg-hover);
 }
 
 tbody tr:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
 td {
-  padding: 6px 10px;
-  color: var(--fg-1);
+    padding: 6px 10px;
+    color: var(--fg-1);
 }
 
 td {
-  font-family: var(--font-mono);
-  font-size: var(--fsize-xs);
+    font-family: var(--font-mono);
+    font-size: var(--fsize-xs);
 }
 
 table.diagnostics-table {
-  width: 100%;
+    width: 100%;
 }
 
 table.diagnostics-table th:nth-child(1),
 table.diagnostics-table td:nth-child(1),
 table.diagnostics-table th:nth-child(2),
-table.diagnostics-table td:nth-child(2),
+table.diagnostics-table td:nth-child(2) {
+    width: 1%;
+    white-space: nowrap;
+}
+
 table.diagnostics-table th:nth-child(3),
 table.diagnostics-table td:nth-child(3) {
-  width: 1%;
-  white-space: nowrap;
+    width: 25%;
 }
 
-table.diagnostics-table th:nth-child(4),
+table.diagnostics-table td:nth-child(3),
 table.diagnostics-table td:nth-child(4) {
-  width: 25%;
-}
-
-table.diagnostics-table td:nth-child(4),
-table.diagnostics-table td:nth-child(5) {
-  white-space: normal;
-  overflow-wrap: anywhere;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 table.diagnostics-table .severity-Critical {
-  color: var(--red-0);
-  font-weight: 600;
+    color: var(--red-0);
+    font-weight: 600;
 }
 
 table.diagnostics-table .severity-Warning {
-  color: var(--yellow-0);
-  font-weight: 600;
+    color: var(--yellow-0);
+    font-weight: 600;
 }
 
 table.diagnostics-table .severity-Info {
-  color: var(--gray-0);
+    color: var(--gray-0);
+}
+
+/* Per-rule examples */
+table.diagnostics-table details summary {
+    font-weight: 400;
+    font-size: var(--fsize-xs);
+    color: var(--fg-1);
+    margin: 0;
+    cursor: pointer;
+}
+
+table.diagnostics-table details table {
+    margin: 6px 0 0 0;
 }

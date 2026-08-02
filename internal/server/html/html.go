@@ -92,6 +92,7 @@ var funcMap = template.FuncMap{
 	"bandwidth":              summary.Bandwidth,
 	"cacheStatus":            summary.CacheStatus,
 	"diagnostics":            diagnostics.Run,
+	"groupByRule":            diagnostics.GroupByRule,
 }
 
 var (

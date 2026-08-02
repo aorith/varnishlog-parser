@@ -329,24 +329,29 @@ var singleTagFindings = []struct {
 }
 
 // checkSingleTagMessages flags a handful of independent tags that with
-// their presence and value alone produce a finding.
+// their presence and value alone produce a finding. A transaction can log
+// the same tag more than once (e.g. several Error records), so every
+// occurrence is walked rather than just the first.
 func checkSingleTagMessages(tx *vsl.Transaction) []Finding {
 	var findings []Finding
 
-	for _, c := range singleTagFindings {
-		r := tx.RecordByTag(c.tag, true)
-		if r == nil {
-			continue
-		}
+	for _, r := range tx.Records {
+		tag := r.GetTag()
 
-		// Skip common errors
-		if c.tag == tags.Error {
-			if strings.Contains(r.GetRawValue(), "getaddrinfo() failed to resolve") {
+		for _, c := range singleTagFindings {
+			if tag != c.tag {
 				continue
 			}
-		}
 
-		findings = append(findings, newFinding(tx, c.rule, c.severity, c.summary, c.detail(r.GetRawValue())))
+			raw := r.GetRawValue()
+
+			// Skip common errors
+			if c.tag == tags.Error && strings.Contains(raw, "getaddrinfo() failed to resolve") {
+				continue
+			}
+
+			findings = append(findings, newFinding(tx, c.rule, c.severity, c.summary, c.detail(raw)))
+		}
 	}
 
 	return findings

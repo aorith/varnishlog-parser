@@ -80,6 +80,36 @@ func newNonTransactionalFinding(rule string, severity Severity, summary, detail 
 	}
 }
 
+// RuleGroup collects every Finding for a single rule to collapse them in the web UI.
+type RuleGroup struct {
+	Rule     string
+	Severity Severity
+	Summary  string
+	Count    int
+	Examples []Finding
+}
+
+// GroupByRule collapses findings into one RuleGroup per rule id.
+func GroupByRule(findings []Finding) []RuleGroup {
+	var groups []RuleGroup // nolint:prealloc
+
+	index := make(map[string]int)
+
+	for _, f := range findings {
+		i, ok := index[f.Rule]
+		if !ok {
+			i = len(groups)
+			index[f.Rule] = i
+			groups = append(groups, RuleGroup{Rule: f.Rule, Severity: f.Severity, Summary: f.Summary})
+		}
+
+		groups[i].Count++
+		groups[i].Examples = append(groups[i].Examples, f)
+	}
+
+	return groups
+}
+
 // Run inspects every transaction in the set and returns all the Findings,
 // sorted by severity (most severe first) and then by VXID.
 func Run(ts vsl.TransactionSet) []Finding {

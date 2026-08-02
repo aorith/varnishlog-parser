@@ -49,19 +49,33 @@
 						<tr>
 							<th>Severity</th>
 							<th>Rule</th>
-							<th>Transaction</th>
 							<th>Summary</th>
-							<th>Detail</th>
+							<th>Transactions</th>
 						</tr>
 					</thead>
 					<tbody>
-						{{- range $findings }}
+						{{- range groupByRule $findings }}
 						<tr>
 							<td class="severity-{{ .Severity }}">{{ .Severity }}</td>
 							<td>{{ .Rule }}</td>
-							<td><a class="tx-link" href="#tx-{{ .TXID }}">{{ .TXID }}</a></td>
 							<td>{{ .Summary }}</td>
-							<td>{{ .Detail }}</td>
+							<td>
+								<details>
+									<summary>
+										{{ .Count }} occurrence(s)
+									</summary>
+									<table>
+										<tbody>
+											{{- range .Examples }}
+											<tr>
+												<td><a class="tx-link" href="#tx-{{ .TXID }}">{{ .TXID }}</a></td>
+												<td>{{ .Detail }}</td>
+											</tr>
+											{{- end }}
+										</tbody>
+									</table>
+								</details>
+							</td>
 						</tr>
 						{{- end }}
 					</tbody>
