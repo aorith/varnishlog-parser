@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	// hitForPassLongTTL flags hit-for-pass objects with a TTL well above
-	// Varnish's default of 120s, since it means the uncacheable state can
-	// outlive the condition (e.g. a transient Set-Cookie) that caused it.
-	hitForPassLongTTL = 10 * time.Minute
+	// uncacheableLongTTL flags hit-for-pass/hit-for-miss objects with a TTL
+	// well above Varnish's default of 120s, since it means the uncacheable
+	// state can outlive the condition (e.g. a transient Set-Cookie) that
+	// caused it.
+	uncacheableLongTTL = 10 * time.Minute
 
 	// longGrace flags objects configured to be served stale for a very long
 	// time if the backend is unreachable.
@@ -33,6 +34,7 @@ const (
 // closing the connection normally.
 var abnormalSessionCloseReasons = map[string]bool{
 	"REQ_HTTP10":    true,
+	"REQ_HTTP20":    true,
 	"RX_BAD":        true,
 	"RX_BODY":       true,
 	"RX_JUNK":       true,
@@ -43,6 +45,8 @@ var abnormalSessionCloseReasons = map[string]bool{
 	"PIPE_OVERFLOW": true,
 	"RANGE_SHORT":   true,
 	"VCL_FAILURE":   true,
+	"RAPID_RESET":   true,
+	"BANKRUPT":      true,
 }
 
 // checkVary flags Vary header values known to fragment the cache badly
@@ -195,13 +199,30 @@ func checkHitForPassLongTTL(tx *vsl.Transaction) []Finding {
 	}
 
 	hr, ok := r.(vsl.HitRecord)
-	if !ok || hr.TTL < hitForPassLongTTL {
+	if !ok || hr.TTL < uncacheableLongTTL {
 		return nil
 	}
 
 	return []Finding{newFinding(tx, "hit-for-pass-long-ttl", SeverityWarning,
 		"Hit-for-pass object has an unusually long TTL",
 		fmt.Sprintf("Hit-for-pass TTL: %s (Varnish's default is 120s)", hr.TTL))}
+}
+
+// checkHitForMissLongTTL flags hit-for-miss objects with an unusually long TTL.
+func checkHitForMissLongTTL(tx *vsl.Transaction) []Finding {
+	r := tx.RecordByTag(tags.HitMiss, true)
+	if r == nil {
+		return nil
+	}
+
+	hr, ok := r.(vsl.HitRecord)
+	if !ok || hr.TTL < uncacheableLongTTL {
+		return nil
+	}
+
+	return []Finding{newFinding(tx, "hit-for-miss-long-ttl", SeverityWarning,
+		"Hit-for-miss object has an unusually long TTL",
+		fmt.Sprintf("Hit-for-miss TTL: %s (Varnish's default is 120s)", hr.TTL))}
 }
 
 // checkLongGrace flags objects configured with a very long grace period,
@@ -371,6 +392,11 @@ func checkSingleTagMessages(tx *vsl.Transaction) []Finding {
 				continue
 			}
 
+			// Workspace overflows get their own specific finding in checkWorkspaceOverflow.
+			if c.tag == tags.Error && strings.HasPrefix(raw, "out of workspace") {
+				continue
+			}
+
 			findings = append(findings, newFinding(tx, c.rule, c.severity, c.summary, c.detail(raw)))
 		}
 	}
@@ -378,8 +404,77 @@ func checkSingleTagMessages(tx *vsl.Transaction) []Finding {
 	return findings
 }
 
-// checkMalformedRequest flags garbage/bogus data received on the wire,
-// which is either a broken client/proxy in front of Varnish or scanning traffic.
+// workspaceOverflowClassifications maps the workspace id varnishd reports in
+// its "out of workspace (<id>)" Error message (see http_fail() in
+// varnishd's cache_http.c) to the runtime parameter that controls its size.
+var workspaceOverflowClassifications = map[string]struct {
+	rule    string
+	summary string
+}{
+	"req": {"workspace-overflow-client", "Client-side workspace ran out of space, raise workspace_client"},
+	"bo":  {"workspace-overflow-backend", "Backend-side workspace ran out of space, raise workspace_backend"},
+	"ses": {"workspace-overflow-session", "Session workspace ran out of space, raise workspace_session"},
+	"wrk": {"workspace-overflow-thread", "Worker thread workspace ran out of space, raise workspace_thread"},
+}
+
+// checkWorkspaceOverflow flags a workspace exhaustion, classified by which
+// workspace (client, backend, session or worker thread) overflowed.
+func checkWorkspaceOverflow(tx *vsl.Transaction) []Finding {
+	var findings []Finding
+
+	for _, r := range tx.Records {
+		if r.GetTag() != tags.Error {
+			continue
+		}
+
+		raw := r.GetRawValue()
+
+		id, ok := strings.CutPrefix(raw, "out of workspace (")
+		if !ok {
+			continue
+		}
+
+		id = strings.TrimSuffix(id, ")")
+
+		c, ok := workspaceOverflowClassifications[id]
+		if !ok {
+			continue
+		}
+
+		findings = append(findings, newFinding(tx, c.rule, SeverityCritical, c.summary, raw))
+	}
+
+	return findings
+}
+
+// checkMalformedRequest flags garbage/bogus data received.
+var bogoHeaderClassifications = []struct {
+	substr  string
+	rule    string
+	summary string
+}{
+	{
+		"Too many headers", "bogo-header-too-many-headers",
+		"Request/response exceeded the maximum header count, check http_max_hdr",
+	},
+	{
+		"Header too long", "bogo-header-too-long",
+		"A single header line was too long, check http_req_hdr_len/http_resp_hdr_len",
+	},
+}
+
+// classifyBogoHeader matches a BogoHeader message against
+// bogoHeaderClassifications, returning ok=false when nothing matches.
+func classifyBogoHeader(msg string) (string, string, bool) {
+	for _, c := range bogoHeaderClassifications {
+		if strings.Contains(msg, c.substr) {
+			return c.rule, c.summary, true
+		}
+	}
+
+	return "", "", false
+}
+
 func checkMalformedRequest(tx *vsl.Transaction) []Finding {
 	malformedTags := []string{tags.BogoHeader, tags.HTTPGarbage, tags.ProxyGarbage, tags.SessError}
 
@@ -391,12 +486,58 @@ func checkMalformedRequest(tx *vsl.Transaction) []Finding {
 			continue
 		}
 
+		raw := r.GetRawValue()
+
+		if tag == tags.BogoHeader {
+			if rule, summary, ok := classifyBogoHeader(raw); ok {
+				findings = append(findings, newFinding(tx, rule, SeverityWarning, summary, raw))
+
+				continue
+			}
+		}
+
 		findings = append(findings, newFinding(tx, "malformed-request", SeverityWarning,
 			fmt.Sprintf("Malformed data received (%s)", tag),
-			r.GetRawValue()))
+			raw))
 	}
 
 	return findings
+}
+
+// sessCloseClassifications maps a subset of SessClose reasons to a specific rule.
+var sessCloseClassifications = []struct {
+	reason   string
+	rule     string
+	severity Severity
+	summary  string
+}{
+	{
+		"OVERLOAD", "session-close-overload", SeverityCritical,
+		"Session closed due to resource exhaustion, likely the worker thread pools; check thread_pool_max/thread_queue_limit",
+	},
+	{
+		"RX_OVERFLOW", "session-close-rx-overflow", SeverityWarning,
+		"Request exceeded the request buffer size, check http_req_size/http_resp_size",
+	},
+	{
+		"RAPID_RESET", "session-close-rapid-reset", SeverityCritical,
+		"Possible HTTP/2 Rapid Reset attack (CVE-2023-44487), tune h2_rapid_reset_limit/h2_rapid_reset_period",
+	},
+	{
+		"BANKRUPT", "session-close-h2-bankrupt", SeverityWarning,
+		"HTTP/2 client exhausted its flow-control credit, check for a misbehaving or malicious client",
+	},
+}
+
+// classifySessClose matches a SessClose reason against sessCloseClassifications.
+func classifySessClose(reason string) (string, Severity, string) {
+	for _, c := range sessCloseClassifications {
+		if reason == c.reason {
+			return c.rule, c.severity, c.summary
+		}
+	}
+
+	return "abnormal-session-close", SeverityWarning, "Session closed for an error reason"
 }
 
 // checkAbnormalSessionClose flags sessions closed for a reason Varnish
@@ -413,8 +554,9 @@ func checkAbnormalSessionClose(tx *vsl.Transaction) []Finding {
 		return nil
 	}
 
-	return []Finding{newFinding(tx, "abnormal-session-close", SeverityWarning,
-		"Session closed for an error reason",
+	rule, severity, summary := classifySessClose(sc.Reason)
+
+	return []Finding{newFinding(tx, rule, severity, summary,
 		fmt.Sprintf("Reason: %s, Duration: %s", sc.Reason, sc.Duration))}
 }
 

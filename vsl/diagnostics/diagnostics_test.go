@@ -329,6 +329,153 @@ func TestAbnormalSessionCloseIgnoresNormalReasons(t *testing.T) {
 	}
 }
 
+func TestAbnormalSessionCloseNewReasons(t *testing.T) {
+	for _, reason := range []string{"REQ_HTTP20", "RAPID_RESET", "BANKRUPT"} {
+		rawLog := "*   << Session  >> 20\n" +
+			"-   Begin          sess 0 HTTP/1\n" +
+			"-   SessClose      " + reason + " 0.001\n" +
+			"-   End\n"
+
+		ts := parse(t, rawLog)
+		findings := diagnostics.Run(ts)
+
+		if len(findings) == 0 {
+			t.Errorf("reason %q: expected a finding, got none", reason)
+		}
+	}
+}
+
+func TestSessCloseClassification(t *testing.T) {
+	tests := []struct {
+		reason string
+		rule   string
+	}{
+		{"OVERLOAD", "session-close-overload"},
+		{"RX_OVERFLOW", "session-close-rx-overflow"},
+		{"RAPID_RESET", "session-close-rapid-reset"},
+		{"BANKRUPT", "session-close-h2-bankrupt"},
+	}
+
+	for _, tt := range tests {
+		rawLog := "*   << Session  >> 20\n" +
+			"-   Begin          sess 0 HTTP/1\n" +
+			"-   SessClose      " + tt.reason + " 0.001\n" +
+			"-   End\n"
+
+		ts := parse(t, rawLog)
+		findings := diagnostics.Run(ts)
+
+		if !hasRule(findings, tt.rule) {
+			t.Errorf("reason %q: expected a %q finding, got: %v", tt.reason, tt.rule, findings)
+		}
+	}
+}
+
+func TestWorkspaceOverflow(t *testing.T) {
+	tests := []struct {
+		id   string
+		rule string
+	}{
+		{"req", "workspace-overflow-client"},
+		{"bo", "workspace-overflow-backend"},
+		{"ses", "workspace-overflow-session"},
+		{"wrk", "workspace-overflow-thread"},
+	}
+
+	for _, tt := range tests {
+		rawLog := "*   << Request  >> 30\n" +
+			"-   Begin          req 1 rxreq\n" +
+			"-   Error          out of workspace (" + tt.id + ")\n" +
+			"-   End\n"
+
+		ts := parse(t, rawLog)
+		findings := diagnostics.Run(ts)
+
+		if !hasRule(findings, tt.rule) {
+			t.Errorf("id %q: expected a %q finding, got: %v", tt.id, tt.rule, findings)
+		}
+	}
+}
+
+func TestWorkspaceOverflowDoesNotDoubleFireGenericError(t *testing.T) {
+	const rawLog = `*   << Request  >> 31
+-   Begin          req 1 rxreq
+-   Error          out of workspace (req)
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "error-tag") {
+		t.Errorf("did not expect an error-tag finding alongside workspace-overflow-client, got: %v", findings)
+	}
+}
+
+func TestBogoHeaderTooManyHeaders(t *testing.T) {
+	const rawLog = `*   << Request  >> 32
+-   Begin          req 1 rxreq
+-   BogoHeader     Too many headers: X-Extra
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "bogo-header-too-many-headers") {
+		t.Errorf("expected a bogo-header-too-many-headers finding, got: %v", findings)
+	}
+}
+
+func TestBogoHeaderTooLong(t *testing.T) {
+	const rawLog = `*   << Request  >> 33
+-   Begin          req 1 rxreq
+-   BogoHeader     Header too long: X-Very-Long-Header-Value
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "bogo-header-too-long") {
+		t.Errorf("expected a bogo-header-too-long finding, got: %v", findings)
+	}
+}
+
+func TestBogoHeaderFallsBackToGeneric(t *testing.T) {
+	const rawLog = `*   << Request  >> 34
+-   Begin          req 1 rxreq
+-   BogoHeader     Header without ':' X-Foo
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "malformed-request") {
+		t.Errorf("expected a malformed-request finding, got: %v", findings)
+	}
+
+	if hasRule(findings, "bogo-header-too-many-headers") || hasRule(findings, "bogo-header-too-long") {
+		t.Errorf("did not expect a classified bogo-header finding, got: %v", findings)
+	}
+}
+
+func TestHitForMissLongTTL(t *testing.T) {
+	const rawLog = `*   << Request  >> 35
+-   Begin          req 1 rxreq
+-   HitMiss        3 900.000000
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if !hasRule(findings, "hit-for-miss-long-ttl") {
+		t.Errorf("expected a hit-for-miss-long-ttl finding, got: %v", findings)
+	}
+}
+
 func TestHostHeaderCase(t *testing.T) {
 	const rawLog = `*   << Request  >> 22
 -   Begin          req 1 rxreq
