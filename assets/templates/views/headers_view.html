@@ -12,7 +12,13 @@
 			showing how they were modified by VCL code.
 		</p>
 
-		<div class="hdr-legend">
+		<p class="note">
+			Byte sizes shown below are estimates computed from the header text as it appears in the log.<br/>
+			Varnish truncates each log record to its <code>vsl_reclen</code> runtime parameter, records
+			longer than that limit are cut off by varnishlog.
+		</p>
+
+        <div class="hdr-legend">
 			<div class="hdr-legend-item">
 				<div class="hdr-legend-color diff-received"></div>
 				<span><b>Received/Unchanged</b></span>

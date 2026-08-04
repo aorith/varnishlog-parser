@@ -3,6 +3,14 @@
     color: var(--fg-2);
 }
 
+#headers-view .note {
+    margin-top: 0.4rem;
+    margin-bottom: 0.4rem;
+    font-size: var(--fsize-xxs);
+    font-style: italic;
+    color: var(--gray-0);
+}
+
 .hdr-legend {
     display: flex;
     flex-direction: column;
