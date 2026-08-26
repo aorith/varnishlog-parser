@@ -1,6 +1,6 @@
 module github.com/aorith/varnishlog-parser
 
-go 1.26.0
+go 1.27
 
 require (
 	github.com/alecthomas/chroma/v2 v2.27.0

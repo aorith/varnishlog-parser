@@ -9,11 +9,11 @@ import (
 )
 
 func newTestHeaderRecord(tag, name, value string) HeaderRecord {
-	return HeaderRecord{BaseRecord: BaseRecord{Tag: tag}, Name: name, Value: value, HeaderType: tag}
+	return HeaderRecord{Tag: tag, Name: name, Value: value, HeaderType: tag}
 }
 
 func newTestHeaderUnsetRecord(tag, name, value string) HeaderUnsetRecord {
-	return HeaderUnsetRecord{BaseRecord: BaseRecord{Tag: tag}, Name: name, Value: value, HeaderType: tag}
+	return HeaderUnsetRecord{Tag: tag, Name: name, Value: value, HeaderType: tag}
 }
 
 // TestIsVarnishModifiedHeader_CanonicalMismatch is a regression test: every entry in
