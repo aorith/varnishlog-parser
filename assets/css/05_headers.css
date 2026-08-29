@@ -3,6 +3,10 @@
     color: var(--fg-2);
 }
 
+#headers-duplicate-panel .dup-headers-form {
+    margin-bottom: 0.6rem;
+}
+
 #headers-view .note {
     margin-top: 0.4rem;
     margin-bottom: 0.4rem;

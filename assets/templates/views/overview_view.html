@@ -3,44 +3,46 @@
 <div class="view {{ .Views.Overview }}" id="overview-view">
 	<div class="view-content">
 		<h1>Overview</h1>
-		<p>
-			A total of
-			<b>{{ .Transactions.Count }}</b>
-			transactions have been parsed and organized
-			into
-			<b>{{ .Transactions.GroupCount }}</b>
-			<abbr title="Transactions are grouped into related sets, called transaction groups. This grouping occurs because individual transactions can have parent and child relationships. For example, a client request transaction often has a child transaction of type backend request if the object is not in cache. Varnishlog can group transactions using the '-g' flag.">transaction group(s)</abbr>.
-		</p>
-		<p>
-			For easier reference, transactions have a custom identifier formatted as <code>{vxid}-{txType}-{reason}[-{ESILevel}]</code>.
-		</p>
-
-		{{ $cache := cacheStatus .Transactions.Set }}
-		<h3>Cache Status</h3>
-		<table>
-			<thead>
-				<tr>
-                    <th><abbr title="Served from cache.">Hit</abbr></th>
-					<th><abbr title="Cache miss.">Miss</abbr></th>
-					<th><abbr title="Forced to the backend because the object was uncacheable, avoiding request serialization (positive TTL marked as uncacheable - Varnish will try to cache it if conditions change).">Hit-for-Miss</abbr></th>
-					<th><abbr title="Previously marked as a pass (same as HfM but Varnish won't try to cache it, even if the response or VCL change).">Hit-for-Pass</abbr></th>
-					<th>Hit Ratio</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>{{ $cache.Hit }}</td>
-					<td>{{ $cache.Miss }}</td>
-					<td>{{ $cache.HitMiss }}</td>
-					<td>{{ $cache.HitPass }}</td>
-					<td>{{ printf "%.1f" $cache.HitRatio }}%</td>
-				</tr>
-			</tbody>
-		</table>
 
 		{{ $findings := diagnostics .Transactions.Set }}
-		<details open>
-			<summary>Diagnostics</summary>
+		<div class="view-submenu">
+			<a class="subnav-link active" data-target="overview-main-panel">Overview</a>
+			|
+			<a class="subnav-link" data-target="overview-diagnostics-panel">Diagnostics ({{ len $findings }})</a>
+			|
+			<a class="subnav-link" data-target="overview-cache-panel">Cache</a>
+		</div>
+
+		<div class="subview" id="overview-main-panel">
+			<p>
+				A total of
+				<b>{{ .Transactions.Count }}</b>
+				transactions have been parsed and organized
+				into
+				<b>{{ .Transactions.GroupCount }}</b>
+				<abbr title="Transactions are grouped into related sets, called transaction groups. This grouping occurs because individual transactions can have parent and child relationships. For example, a client request transaction often has a child transaction of type backend request if the object is not in cache. Varnishlog can group transactions using the '-g' flag.">transaction group(s)</abbr>.
+			</p>
+			<p>
+				For easier reference, transactions have a custom identifier formatted as <code>{vxid}-{txType}-{reason}[-{ESILevel}]</code>.
+			</p>
+
+			{{ $set := .Transactions.Set }}
+			{{ $cfg := .Sequence }}
+			{{ $state := "open" }}
+			{{ range .Transactions.Set.UniqueRootParents false }}
+				<details {{ $state }}>
+					<summary>{{ .TXID }}</summary>
+					<h4>Sequence Diagram</h4>
+					<div class="sequence">{{ sequence $set . $cfg }}</div>
+					<h4>VSL Log</h4>
+					<pre>{{ $set.RawLogForTx . true }}</pre>
+					<br>
+				</details>
+				{{ $state = "" }}
+			{{ end }}
+		</div>
+
+		<div class="subview" id="overview-diagnostics-panel" hidden>
 			{{ if not $findings }}
 				<p>No issues detected.</p>
 			{{ else }}
@@ -81,21 +83,30 @@
 					</tbody>
 				</table>
 			{{ end }}
-		</details>
+		</div>
 
-		{{ $set := .Transactions.Set }}
-		{{ $cfg := .Sequence }}
-		{{ $state := "open" }}
-		{{ range .Transactions.Set.UniqueRootParents false }}
-			<details {{ $state }}>
-				<summary>{{ .TXID }}</summary>
-				<h4>Sequence Diagram</h4>
-				<div class="sequence">{{ sequence $set . $cfg }}</div>
-				<h4>VSL Log</h4>
-				<pre>{{ $set.RawLogForTx . true }}</pre>
-				<br>
-			</details>
-			{{ $state = "" }}
-		{{ end }}
+		<div class="subview" id="overview-cache-panel" hidden>
+			{{ $cache := cacheStatus .Transactions.Set }}
+			<table>
+				<thead>
+					<tr>
+                        <th><abbr title="Served from cache.">Hit</abbr></th>
+						<th><abbr title="Cache miss.">Miss</abbr></th>
+						<th><abbr title="Forced to the backend because the object was uncacheable, avoiding request serialization (positive TTL marked as uncacheable - Varnish will try to cache it if conditions change).">Hit-for-Miss</abbr></th>
+						<th><abbr title="Previously marked as a pass (same as HfM but Varnish won't try to cache it, even if the response or VCL change).">Hit-for-Pass</abbr></th>
+						<th>Hit Ratio</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>{{ $cache.Hit }}</td>
+						<td>{{ $cache.Miss }}</td>
+						<td>{{ $cache.HitMiss }}</td>
+						<td>{{ $cache.HitPass }}</td>
+						<td>{{ printf "%.1f" $cache.HitRatio }}%</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
 </div>

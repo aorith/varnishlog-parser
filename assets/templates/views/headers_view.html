@@ -4,57 +4,99 @@
 	<div class="view-content">
 		<h1>Headers</h1>
 
-		<p>
-			State of HTTP headers for each transaction.
-			For transactions of type <code>client request</code>
-			or <code>backend request</code>,
-			headers are displayed in order: first the request headers, then the response headers,
-			showing how they were modified by VCL code.
-		</p>
-
-		<p class="note">
-			Byte sizes shown below are estimates computed from the header text as it appears in the log.<br/>
-			Varnish truncates each log record to its <code>vsl_reclen</code> runtime parameter, records
-			longer than that limit are cut off by varnishlog.
-		</p>
-
-        <div class="hdr-legend">
-			<div class="hdr-legend-item">
-				<div class="hdr-legend-color diff-received"></div>
-				<span><b>Received/Unchanged</b></span>
-				<span>Headers present before any VCL processing, as originally received.</span>
-			</div>
-			<div class="hdr-legend-item">
-				<div class="hdr-legend-color diff-added"></div>
-				<span><b>Added</b></span>
-				<span>Headers introduced by VCL code.</span>
-			</div>
-			<div class="hdr-legend-item">
-				<div class="hdr-legend-color diff-modified"></div>
-				<span><b>Modified</b></span>
-				<span>Headers that were present in the received set but were later changed by VCL code.</span>
-			</div>
-			<div class="hdr-legend-item">
-				<div class="hdr-legend-color diff-deleted"></div>
-				<span><b>Deleted/Unset</b></span>
-				<span>Headers that were removed at any point during processing.</span>
-			</div>
+		<div class="view-submenu">
+			<a class="subnav-link active" data-target="headers-state-panel">State</a>
+			|
+			<a class="subnav-link" data-target="headers-duplicate-panel">Duplicated</a>
 		</div>
 
-		<br>
+		<div class="subview" id="headers-state-panel">
+			<p>
+				State of HTTP headers for each transaction.
+				For transactions of type <code>client request</code>
+				or <code>backend request</code>,
+				headers are displayed in order: first the request headers, then the response headers,
+				showing how they were modified by VCL code.
+			</p>
 
-		{{ $set := .Transactions.Set }}
-		{{ $state := "open" }}
-		{{ range .Transactions.Set.UniqueRootParents false }}
-			<details {{ $state }}>
-				<summary>{{ .TXID }}</summary>
-				<div class="hdr-table">
-					{{ range headersView $set . }}
-					{{ . }}
-					{{ end }}
+			<p class="note">
+				Byte sizes shown below are estimates computed from the header text as it appears in the log.<br/>
+				Varnish truncates each log record to its <code>vsl_reclen</code> runtime parameter, records
+				longer than that limit are cut off by varnishlog.
+			</p>
+
+	        <div class="hdr-legend">
+				<div class="hdr-legend-item">
+					<div class="hdr-legend-color diff-received"></div>
+					<span><b>Received/Unchanged</b></span>
+					<span>Headers present before any VCL processing, as originally received.</span>
 				</div>
-			</details>
-			{{ $state = "" }}
-		{{ end }}
+				<div class="hdr-legend-item">
+					<div class="hdr-legend-color diff-added"></div>
+					<span><b>Added</b></span>
+					<span>Headers introduced by VCL code.</span>
+				</div>
+				<div class="hdr-legend-item">
+					<div class="hdr-legend-color diff-modified"></div>
+					<span><b>Modified</b></span>
+					<span>Headers that were present in the received set but were later changed by VCL code.</span>
+				</div>
+				<div class="hdr-legend-item">
+					<div class="hdr-legend-color diff-deleted"></div>
+					<span><b>Deleted/Unset</b></span>
+					<span>Headers that were removed at any point during processing.</span>
+				</div>
+			</div>
+
+			<br>
+
+			{{ $set := .Transactions.Set }}
+			{{ $state := "open" }}
+			{{ range .Transactions.Set.UniqueRootParents false }}
+				<details {{ $state }}>
+					<summary>{{ .TXID }}</summary>
+					<div class="hdr-table">
+						{{ range headersView $set . }}
+						{{ . }}
+						{{ end }}
+					</div>
+				</details>
+				{{ $state = "" }}
+			{{ end }}
+		</div>
+
+		<div class="subview" id="headers-duplicate-panel" hidden>
+			<p>Header/value pairs sent more than once on the same <code>client request</code>, counted across every transaction.
+
+			<form class="dup-headers-form" onsubmit="return false">
+				<label>
+					Minimum duplicate count:
+					<input type="number" id="dupMinDupInput" name="minDup" min="2" step="1"
+					       value="{{ .Headers.DuplicateMinDup }}"
+					       oninput="filterDuplicateHeaders(this.value)">
+				</label>
+			</form>
+            <p>
+
+			<table id="duplicateHeadersTable">
+				<thead>
+					<tr>
+						<th>Count</th>
+						<th>Header</th>
+						<th>Value</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{ range duplicateRequestHeaders .Transactions.Set }}
+					<tr data-count="{{ .Count }}">
+						<td>{{ .Count }}</td>
+						<td>{{ .Name }}</td>
+						<td>{{ .Value }}</td>
+					</tr>
+					{{ end }}
+				</tbody>
+			</table>
+			<p id="dupHeadersEmpty" class="note" hidden>No duplicate headers match this threshold.</p>
+		</div>
 	</div>
 </div>

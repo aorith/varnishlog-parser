@@ -43,6 +43,9 @@ type PageData struct {
 		Backend         string // auto, none, <host:port>
 		ConnectCustom   string // <host:port>
 	}
+	Headers struct {
+		DuplicateMinDup int // default value for the duplicate headers form
+	}
 	Timeline struct {
 		Sessions bool // include sessions
 		Width    int  // timeline width
@@ -91,6 +94,9 @@ var funcMap = template.FuncMap{
 	"timestampEventsSummary": summary.TimestampEventsSummary,
 	"bandwidth":              summary.Bandwidth,
 	"cacheStatus":            summary.CacheStatus,
+	"duplicateRequestHeaders": func(ts vsl.TransactionSet) []summary.DuplicateHeader {
+		return summary.DuplicateHeaders(ts, vsl.TxTypeRequest, 2)
+	},
 	"diagnostics":            diagnostics.Run,
 	"groupByRule":            diagnostics.GroupByRule,
 }
@@ -144,6 +150,7 @@ func Parsed(w http.ResponseWriter, data PageData) error {
 		data.Transactions.GroupCount = len(ts.GroupRelatedTransactions())
 		data.Logs.Raw = ts.RawLog()
 		data.Title = fmt.Sprintf("%d txs parsed", data.Transactions.Count)
+		data.Headers.DuplicateMinDup = max(2, len(ts.Transactions())/2)
 	}
 
 	return executeTemplate(w, parsed, "main_layout.html", data)

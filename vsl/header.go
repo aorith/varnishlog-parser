@@ -73,7 +73,8 @@ func (h Header) Name() string {
 	return h.name
 }
 
-// Values returns all the values
+// Values returns all the values.
+//
 // When received is true, it returns the receivedValues.
 func (h Header) Values(received bool) []HdrValue {
 	if received {
@@ -93,6 +94,16 @@ func (h HdrValue) String() string {
 	return fmt.Sprintf("{Value: %s, State: %s}", h.value, h.state)
 }
 
+// Value returns the header value.
+func (h HdrValue) Value() string {
+	return h.value
+}
+
+// State returns the header state.
+func (h HdrValue) State() HdrState {
+	return h.state
+}
+
 func (h HdrValue) MarshalJSON() ([]byte, error) {
 	aux := struct {
 		Value string
@@ -103,16 +114,6 @@ func (h HdrValue) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(aux) // nolint
-}
-
-// Value returns the header value.
-func (h HdrValue) Value() string {
-	return h.value
-}
-
-// State returns the header state.
-func (h HdrValue) State() HdrState {
-	return h.state
 }
 
 // Headers represents a set of HTTP headers within the VSL.

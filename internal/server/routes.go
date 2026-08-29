@@ -185,6 +185,7 @@ func (s *vlogServer) registerRoutes() http.Handler {
 	mux.Handle("GET /static/", http.FileServerFS(assets.Assets))
 	mux.HandleFunc("GET /static/style.css", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Add("Content-Type", "text/css; charset=utf-8")
+		w.Header().Add("Cache-Control", "no-cache")
 
 		_, err := w.Write(assets.CombinedCSS)
 		if err != nil {

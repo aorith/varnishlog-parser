@@ -107,6 +107,46 @@ nav a.nav-link.active {
     padding: 1rem;
 }
 
+/* Remove the h1 border-bottom when a sub-menu is present */
+h1:has(+ .view-submenu) {
+    margin-bottom: 0;
+}
+
+.view-submenu {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 4px;
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-bottom: 1px solid var(--accent);
+}
+
+.view-submenu .subnav-link {
+    color: var(--fg-0);
+    font-size: var(--fsize-xs);
+    font-family: var(--font-text2);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 2px;
+    text-decoration: none;
+}
+
+.view-submenu .subnav-link:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+.view-submenu .subnav-link:focus-visible {
+    outline: 2px solid var(--accent-hover);
+    outline-offset: 2px;
+}
+
+.view-submenu .subnav-link.active {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
 /* Links to a transaction's anchor in the VCL Log Tree view (headers, timings). */
 .tx-link {
     color: inherit;
