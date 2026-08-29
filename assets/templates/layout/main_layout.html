@@ -6,8 +6,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta name="color-scheme" content="light dark">
 		<meta name="robots" content="index, follow">
-		<script src="/static/vendor/htmx.min-2.0.8.js"></script>
-		<script src="/static/vendor/htmx-ext-response-targets-2.0.4.js"></script>
+		<script src="/static/vendor/htmx.min-4.0.0.js"></script>
 		<script src="/static/history.js"></script>
 		<script src="/static/tabs.js" defer></script>
 		<script src="/static/submenu.js" defer></script>
@@ -17,7 +16,7 @@
 		<title>{{- if .Title -}}{{- .Title -}}{{ else }}Varnishlog Parser{{- end -}}</title>
 	</head>
 
-	<body hx-ext="response-targets">
+	<body>
 		<!-- Navigation -->
 		<nav>
 			<div>
