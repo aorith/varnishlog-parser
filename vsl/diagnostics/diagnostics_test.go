@@ -100,6 +100,28 @@ func TestCacheControlPrivateOnHit(t *testing.T) {
 	}
 }
 
+func TestCacheControlPrivateOnHitIgnoresDeliverRewrite(t *testing.T) {
+	const rawLog = `*   << Request  >> 27
+-   Begin          req 1 rxreq
+-   Hit            3 5.000000 10.000000 0.000000
+-   VCL_call       HIT
+-   VCL_return     deliver
+-   RespHeader     Cache-Control: max-age=30, public, stale-while-revalidate=1
+-   VCL_call       DELIVER
+-   RespUnset      Cache-Control: max-age=30, public, stale-while-revalidate=1
+-   RespHeader     Cache-Control: no-cache, no-store
+-   VCL_return     deliver
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "cache-control-private-on-hit") {
+		t.Errorf("did not expect a cache-control-private-on-hit finding, got: %v", findings)
+	}
+}
+
 func TestCacheControlPrivateOnHitIgnoresNormalCacheControl(t *testing.T) {
 	const rawLog = `*   << Request  >> 26
 -   Begin          req 1 rxreq

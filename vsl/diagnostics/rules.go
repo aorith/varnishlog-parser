@@ -149,6 +149,9 @@ func checkSetCookieOnHit(tx *vsl.Transaction) []Finding {
 }
 
 // checkCacheControlPrivateOnHit flags a Cache-Control: private or no-store header served from a cache hit.
+//
+// It looks at the header's received value, i.e. as it was on the cached object
+// itself, before vcl_deliver ran to avoid false positives.
 func checkCacheControlPrivateOnHit(tx *vsl.Transaction) []Finding {
 	if tx.TXType != vsl.TxTypeRequest {
 		return nil
@@ -158,7 +161,7 @@ func checkCacheControlPrivateOnHit(tx *vsl.Transaction) []Finding {
 		return nil
 	}
 
-	cc := tx.RespHeaders.Get("Cache-Control", false)
+	cc := tx.RespHeaders.Get("Cache-Control", true)
 
 	lower := strings.ToLower(cc)
 	if !strings.Contains(lower, "private") && !strings.Contains(lower, "no-store") {
