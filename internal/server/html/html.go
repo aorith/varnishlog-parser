@@ -97,8 +97,8 @@ var funcMap = template.FuncMap{
 	"duplicateRequestHeaders": func(ts vsl.TransactionSet) []summary.DuplicateHeader {
 		return summary.DuplicateHeaders(ts, vsl.TxTypeRequest, 2)
 	},
-	"diagnostics":            diagnostics.Run,
-	"groupByRule":            diagnostics.GroupByRule,
+	"diagnostics": diagnostics.Run,
+	"groupByRule": diagnostics.GroupByRule,
 }
 
 var (

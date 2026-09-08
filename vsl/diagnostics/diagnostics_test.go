@@ -305,6 +305,23 @@ func TestSingleTagMessagesRepeated(t *testing.T) {
 	}
 }
 
+func TestSingleTagMessagesSkipsNoError(t *testing.T) {
+	const rawLog = `*   << Request  >> 18
+-   Begin          req 1 rxreq
+-   Error          H2: send error (NO_ERROR)
+-   Error          H2: sync 0 NO_ERROR "Graceful shutdown"
+-   Error          H2: delivery error (NO_ERROR)
+-   End
+`
+
+	ts := parse(t, rawLog)
+	findings := diagnostics.Run(ts)
+
+	if hasRule(findings, "error-tag") {
+		t.Errorf("did not expect an error-tag finding for NO_ERROR messages, got: %v", findings)
+	}
+}
+
 func TestMalformedRequest(t *testing.T) {
 	const rawLog = `*   << Session  >> 19
 -   Begin          sess 0 HTTP/1

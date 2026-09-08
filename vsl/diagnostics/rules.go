@@ -395,6 +395,12 @@ func checkSingleTagMessages(tx *vsl.Transaction) []Finding {
 				continue
 			}
 
+			// NO_ERROR is Varnish's own H2 code for a normal stream/session
+			// close (e.g. graceful shutdown), not an actual error.
+			if c.tag == tags.Error && strings.Contains(raw, "NO_ERROR") {
+				continue
+			}
+
 			// Workspace overflows get their own specific finding in checkWorkspaceOverflow.
 			if c.tag == tags.Error && strings.HasPrefix(raw, "out of workspace") {
 				continue
