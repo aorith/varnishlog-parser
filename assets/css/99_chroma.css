@@ -1,5 +1,5 @@
 .chr_bg { color: #f8f8f2; background-color: #272822; }
-.chr_chroma { color: #f8f8f2; background-color: #272822; }
+.chr_chroma { color: #f8f8f2; background-color: #272822; -webkit-text-size-adjust: none; }
 .chr_chroma .chr_err { color: #960050; background-color: #1e0010 }
 .chr_chroma .chr_lnlinks { outline: none; text-decoration: none; color: inherit }
 .chr_chroma .chr_lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
@@ -49,6 +49,7 @@
 .chr_chroma .chr_mo { color: #ae81ff }
 .chr_chroma .chr_o { color: #f92672 }
 .chr_chroma .chr_ow { color: #f92672 }
+.chr_chroma .chr_or { color: #f92672 }
 .chr_chroma .chr_c { color: #75715e }
 .chr_chroma .chr_ch { color: #75715e }
 .chr_chroma .chr_cm { color: #75715e }

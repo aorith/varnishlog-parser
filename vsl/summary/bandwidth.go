@@ -37,13 +37,14 @@ type BandwidthRow struct {
 	TXType vsl.TxType
 }
 
-// BandwidthReport summarizes byte accounting (ReqAcct/BereqAcct) across a
-// transaction set, split between client-facing traffic (client Request
-// transactions) and backend-facing traffic (BeReq transactions).
+// BandwidthReport summarizes byte accounting (ReqAcct/BereqAcct/PipeAcct)
+// across a transaction set, split between client-facing traffic (client
+// Request transactions) and backend-facing traffic (BeReq transactions).
 //
-// Piped transactions (PipeAcct) tunnel the same bytes over both the client
-// and backend leg at once, so they don't split the same way and are left
-// out of this report.
+// A piped request logs PipeAcct on the client transaction and an all-zero
+// BereqAcct on its BeReq, so the backend leg is taken from the parent's
+// PipeAcct instead. Piped bytes towards the client include the raw backend
+// response headers, so they only count towards TotalTx/TotalRx.
 type BandwidthReport struct {
 	Client  BandwidthTotals
 	Backend BandwidthTotals
@@ -55,8 +56,30 @@ func Bandwidth(ts vsl.TransactionSet) BandwidthReport {
 
 	for _, tx := range ts.Transactions() {
 		for _, r := range tx.Records {
-			acct, ok := r.(vsl.AcctRecord)
-			if !ok {
+			var acct vsl.AcctRecord
+
+			switch r := r.(type) {
+			case vsl.AcctRecord:
+				acct = r
+
+				if tx.TXType == vsl.TxTypeBereq {
+					if pa, ok := pipeAcct(ts.GetTX(tx.Parent)); ok {
+						acct = vsl.AcctRecord{
+							HeaderTx: pa.BackendReqHeaders,
+							BodyTx:   pa.PipedFrom,
+							TotalTx:  pa.BackendReqHeaders + pa.PipedFrom,
+							TotalRx:  pa.PipedTo,
+						}
+					}
+				}
+			case vsl.PipeAcctRecord:
+				acct = vsl.AcctRecord{
+					HeaderRx: r.ClientReqHeaders,
+					BodyRx:   r.PipedFrom,
+					TotalRx:  r.ClientReqHeaders + r.PipedFrom,
+					TotalTx:  r.PipedTo,
+				}
+			default:
 				continue
 			}
 
@@ -77,4 +100,18 @@ func Bandwidth(ts vsl.TransactionSet) BandwidthReport {
 	})
 
 	return report
+}
+
+func pipeAcct(tx *vsl.Transaction) (vsl.PipeAcctRecord, bool) {
+	if tx == nil {
+		return vsl.PipeAcctRecord{}, false
+	}
+
+	for _, r := range tx.Records {
+		if pa, ok := r.(vsl.PipeAcctRecord); ok {
+			return pa, true
+		}
+	}
+
+	return vsl.PipeAcctRecord{}, false
 }

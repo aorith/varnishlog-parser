@@ -67,6 +67,9 @@ var (
 
 	//go:embed examples/cache-expiry_g_raw.txt
 	VCLCacheExpiryRaw string
+
+	//go:embed examples/pipe.txt
+	VCLPipe string
 )
 
 //go:embed all:css

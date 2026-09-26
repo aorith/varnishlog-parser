@@ -1,0 +1,54 @@
+*   << Request  >> 14541     
+-   Begin          req 14540 rxreq
+-   Timestamp      Start: 1790424666.141227 0.000000 0.000000
+-   Timestamp      Req: 1790424666.141227 0.000000 0.000000
+-   ReqStart       127.0.0.1 57062 a0 http
+-   ReqMethod      POST
+-   ReqURL         /p
+-   ReqProtocol    HTTP/1.1
+-   ReqHeader      Host: pipe.test
+-   ReqHeader      User-Agent: curl/8.14.1
+-   ReqHeader      Accept: */*
+-   ReqHeader      X-Drop: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+-   ReqHeader      Content-Length: 3000
+-   ReqHeader      Content-Type: application/x-www-form-urlencoded
+-   ReqHeader      X-Forwarded-For: 127.0.0.1
+-   VCL_call       RECV
+-   VCL_return     pipe
+-   VCL_call       HASH
+-   VCL_return     lookup
+-   Link           bereq 14542 pipe
+-   Timestamp      Process: 1790424666.141253 0.000027 0.000027
+-   Timestamp      Pipe: 1790424666.141325 0.000098 0.000072
+-   Timestamp      PipeSess: 1790424666.141834 0.000608 0.000509
+-   PipeAcct       200 319 3000 5133
+-   End            
+
+*   << BeReq    >> 14542     
+-   Begin          bereq 14541 pipe
+-   Timestamp      Start: 1790424666.141248 0.000000 0.000000
+-   BereqMethod    POST
+-   BereqURL       /p
+-   BereqProtocol  HTTP/1.1
+-   BereqHeader    Host: pipe.test
+-   BereqHeader    User-Agent: curl/8.14.1
+-   BereqHeader    Accept: */*
+-   BereqHeader    X-Drop: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+-   BereqHeader    Content-Length: 3000
+-   BereqHeader    Content-Type: application/x-www-form-urlencoded
+-   BereqHeader    X-Forwarded-For: 127.0.0.1
+-   BereqHeader    X-Varnish: 14541
+-   BereqHeader    Connection: close
+-   VCL_call       PIPE
+-   BereqHeader    X-Pad: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+-   BereqUnset     X-Drop: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+-   VCL_return     pipe
+-   Timestamp      Process: 1790424666.141253 0.000005 0.000005
+-   Timestamp      Connected: 1790424666.141304 0.000056 0.000051
+-   BackendOpen    89 reload_20260926_121059_11798.be 127.0.0.1 7160 127.0.0.1 37844 connect
+-   BackendStart   127.0.0.1 7160
+-   Timestamp      Bereq: 1790424666.141324 0.000075 0.000019
+-   BackendClose   89 reload_20260926_121059_11798.be
+-   BereqAcct      0 0 0 0 0 0
+-   End            
+

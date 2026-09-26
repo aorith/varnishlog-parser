@@ -43,3 +43,31 @@ func TestBandwidth(t *testing.T) {
 		t.Errorf("Rows[0].TXType = %s, want %s (higher total bytes should sort first)", report.Rows[0].TXType, vsl.TxTypeRequest)
 	}
 }
+
+func TestBandwidthPipe(t *testing.T) {
+	p := vsl.NewTransactionParser(strings.NewReader(assets.VCLPipe))
+
+	ts, err := p.Parse()
+	if err != nil {
+		t.Fatalf("Parse() failed: %s", err)
+	}
+
+	report := summary.Bandwidth(ts)
+
+	// assets/examples/pipe.txt:
+	//   PipeAcct  200 319 3000 5133  (client hdr, backend hdr, piped from client, piped to client)
+	//   BereqAcct 0 0 0 0 0 0        (ignored in favor of the parent's PipeAcct)
+	want := summary.BandwidthTotals{TotalTx: 5133, HeaderRx: 200, BodyRx: 3000, TotalRx: 3200}
+	if report.Client != want {
+		t.Errorf("Client totals = %+v, want %+v", report.Client, want)
+	}
+
+	want = summary.BandwidthTotals{HeaderTx: 319, BodyTx: 3000, TotalTx: 3319, TotalRx: 5133}
+	if report.Backend != want {
+		t.Errorf("Backend totals = %+v, want %+v", report.Backend, want)
+	}
+
+	if len(report.Rows) != 2 {
+		t.Fatalf("len(Rows) = %d, want 2", len(report.Rows))
+	}
+}

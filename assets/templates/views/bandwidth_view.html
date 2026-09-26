@@ -5,9 +5,10 @@
 		<h1>Bandwidth</h1>
 
 		<p>
-			Bytes transferred (<code>ReqAcct</code>/<code>BereqAcct</code>), split between
+			Bytes transferred (<code>ReqAcct</code>/<code>BereqAcct</code>/<code>PipeAcct</code>), split between
 			<b>client</b> traffic (Varnish &lt;-&gt; client) and <b>backend</b> traffic (Varnish &lt;-&gt; backend).
-			Piped transactions aren't included here, since a pipe tunnels the same bytes over both legs at once.
+			Piped bytes flow over both legs, so they count on each; bytes piped back to the client include the
+			raw backend response headers, so they only appear in the totals.
 		</p>
 
 		{{ $report := bandwidth .Transactions.Set }}
